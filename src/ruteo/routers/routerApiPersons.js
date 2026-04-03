@@ -1,14 +1,16 @@
 import express from 'express';
-import  {controllerOrders}  from '../controllers/controllerOrders.js';
+import  {controllerPersons}  from '../controllers/controllerPersons.js';
+import  {controllerPersonsConFiltro}  from '../controllers/controllerPersons.js';
 import  {controllerListarOrders}  from '../controllers/controllerOrders.js';
 import { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 
 
-const routerApiOrder = express.Router();
+const routerApiPersona = express.Router();
 
-routerApiOrder.post('/', autenticacion, controllerOrders); 
-routerApiOrder.get('/', autenticacion, controllerListarOrders); 
+//routerApiOrder.post('/', controllerPersons); 
+routerApiPersona.get('/', controllerPersons); 
+routerApiPersona.get('/:texto', controllerPersonsConFiltro); 
 
 
-export default routerApiOrder;
+export default routerApiPersona;
 

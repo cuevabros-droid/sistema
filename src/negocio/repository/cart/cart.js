@@ -34,7 +34,7 @@ export class cart {
         try {
             const dtos = await this.#dao.getAll()
 
-          if(dtos !== []){
+          if(dtos != []){
             const datos = dtos.map(dto => new Carrito(dto))
             return datos
           } else 

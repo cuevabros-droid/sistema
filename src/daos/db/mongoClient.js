@@ -6,3 +6,4 @@ const mongoClient = new MongoClient(CNX_STR);
 await mongoClient.connect();
 
 export const mongoDatabase = mongoClient.db(DB_NAME)
+

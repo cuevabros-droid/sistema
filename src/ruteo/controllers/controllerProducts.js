@@ -8,7 +8,7 @@ async function controladorPostProductos(req, res) {
 
     const objeto = req.body;
 
-    const producto = await productService.grabarProducto(objeto)
+    const producto = await horarioService.grabarProductos(objeto)
 
     if(producto.message){
         res.status(500)

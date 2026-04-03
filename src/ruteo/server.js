@@ -6,13 +6,17 @@ import routerApiShoppingCart from './routers/routerApiShoppingCart.js'
 import routerImage from './routers/routerImage.js'
 import routerApiOrders from './routers/routerApiOrders.js'
 import routerApiPersons from './routers/routerApiPersons.js'
+import routerApiHorario from './routers/routerApiHorario.js'
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
+import cors from 'cors'
 
 
 const servidor = express()
 
+//Cors
+servidor.use(cors());
 
 //Middlewares para resolver los datos que viene por el Post
 //Si viene por un Json o si viene de un formulario (Form)
@@ -28,6 +32,10 @@ servidor.use('/api/shoppingcartproducts', routerApiShoppingCart)
 servidor.use('/api/images', routerImage)
 servidor.use('/api/orders', routerApiOrders)
 servidor.use('/api/persons', routerApiPersons)
+servidor.use('/api/personsconfiltro', routerApiPersons)
+servidor.use('/api/horario', routerApiHorario)
+servidor.use('/api/horarioconfiltro', routerApiHorario)
+servidor.use('/api/horarioconid', routerApiHorario)
 servidor.use(express.static('public/img'))
 
 //multer

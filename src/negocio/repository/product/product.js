@@ -22,7 +22,7 @@ export class product {
         try {
             const dtos = await this.#dao.getAll()
 
-          if(dtos !== []){
+          if(dtos != []){
             const datos = dtos.map(dto => new Productos(dto))
             return datos
           } else 

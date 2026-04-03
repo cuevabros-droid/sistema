@@ -2491,3 +2491,67 @@
 {"level":40,"time":1682629955406,"pid":1572,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (86374) segundos para que la sesion se expire"}
 {"level":40,"time":1682629980154,"pid":1572,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (86349) segundos para que la sesion se expire"}
 {"level":40,"time":1682645904506,"pid":11292,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (69626) segundos para que la sesion se expire"}
+{"level":50,"time":1703710265915,"pid":9164,"hostname":"DESKTOP-G8F9RK0","msg":"orderService.grabarPerson is not a function"}
+{"level":50,"time":1703710296493,"pid":11880,"hostname":"DESKTOP-G8F9RK0","msg":"orderService.grabarPerson is not a function"}
+{"level":50,"time":1703710298525,"pid":11880,"hostname":"DESKTOP-G8F9RK0","msg":"orderService.grabarPerson is not a function"}
+{"level":50,"time":1703710388755,"pid":11960,"hostname":"DESKTOP-G8F9RK0","msg":"orderService.listarPersonas is not a function"}
+{"level":50,"time":1703771088167,"pid":11032,"hostname":"DESKTOP-G8F9RK0","msg":"persona.listadoPersonas is not a function"}
+{"level":50,"time":1703771161874,"pid":6320,"hostname":"DESKTOP-G8F9RK0","msg":"persona.listarPersona is not a function"}
+{"level":50,"time":1703772121295,"pid":9676,"hostname":"DESKTOP-G8F9RK0","msg":"res is not defined"}
+{"level":50,"time":1703774147017,"pid":9492,"hostname":"DESKTOP-G8F9RK0","msg":"resul is not defined"}
+{"level":50,"time":1704477532897,"pid":5660,"hostname":"DESKTOP-G8F9RK0","msg":"listarPersonaConFiltro is not defined"}
+{"level":50,"time":1704477579672,"pid":6240,"hostname":"DESKTOP-G8F9RK0","msg":"persontService.listarPersonsConFiltro is not a function"}
+{"level":50,"time":1704840442216,"pid":10992,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840442238,"pid":10992,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840645897,"pid":3824,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840645946,"pid":3824,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840669388,"pid":6960,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840669425,"pid":6960,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840703853,"pid":1000,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840703902,"pid":1000,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704840982811,"pid":1888,"hostname":"DESKTOP-G8F9RK0","msg":"personas.datos is not a function"}
+{"level":50,"time":1704840982859,"pid":1888,"hostname":"DESKTOP-G8F9RK0","msg":"personas.datos is not a function"}
+{"level":50,"time":1704841425163,"pid":4524,"hostname":"DESKTOP-G8F9RK0","msg":"personas.datos is not a function"}
+{"level":50,"time":1704841425197,"pid":4524,"hostname":"DESKTOP-G8F9RK0","msg":"personas.datos is not a function"}
+{"level":50,"time":1704841574141,"pid":5092,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704841574171,"pid":5092,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704841793197,"pid":7736,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704841793224,"pid":7736,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704841844656,"pid":5904,"hostname":"DESKTOP-G8F9RK0","msg":"d.datos is not a function"}
+{"level":50,"time":1704841844680,"pid":5904,"hostname":"DESKTOP-G8F9RK0","msg":"d.datos is not a function"}
+{"level":50,"time":1704841950940,"pid":12848,"hostname":"DESKTOP-G8F9RK0","msg":"d.datos is not a function"}
+{"level":50,"time":1704892991287,"pid":10368,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704892991423,"pid":10368,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704893094153,"pid":7660,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704893094184,"pid":7660,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704978655978,"pid":2532,"hostname":"DESKTOP-G8F9RK0","msg":"horario.grabarHorario is not a function"}
+{"level":50,"time":1704980042422,"pid":4856,"hostname":"DESKTOP-G8F9RK0","msg":"horario.grabarHorario is not a function"}
+{"level":50,"time":1704980166598,"pid":4424,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704980242788,"pid":9564,"hostname":"DESKTOP-G8F9RK0","msg":"tipo invalido"}
+{"level":50,"time":1704980284252,"pid":1736,"hostname":"DESKTOP-G8F9RK0","msg":"error de sintaxis en o cerca de «inset»"}
+{"level":50,"time":1704980344055,"pid":1260,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704980459675,"pid":5452,"hostname":"DESKTOP-G8F9RK0","msg":"el mensaje de enlace (bind) entrega 1 parámetros, pero la sentencia preparada «» requiere 2"}
+{"level":50,"time":1704980528530,"pid":4616,"hostname":"DESKTOP-G8F9RK0","msg":"llave duplicada viola restricción de unicidad «id_franja_horaria_pkey»"}
+{"level":50,"time":1704980778099,"pid":3800,"hostname":"DESKTOP-G8F9RK0","msg":"la sintaxis de entrada no es válida para integer: «b32eda90-7a8c-4862-8a74-11b88d2ad957»"}
+{"level":50,"time":1704981160489,"pid":4084,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981232007,"pid":676,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981290171,"pid":8304,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981667830,"pid":2332,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981713460,"pid":2272,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981754478,"pid":9964,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981783766,"pid":2808,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1704981852008,"pid":2300,"hostname":"DESKTOP-G8F9RK0","msg":"el valor null para la columna «id_franja_horaria» viola la restricción not null"}
+{"level":50,"time":1705008368641,"pid":9424,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705008403738,"pid":8504,"hostname":"DESKTOP-G8F9RK0","msg":"horarioService.listarHorarios is not a function"}
+{"level":50,"time":1705008443295,"pid":5828,"hostname":"DESKTOP-G8F9RK0","msg":"listarHorario is not defined"}
+{"level":50,"time":1705008479645,"pid":4092,"hostname":"DESKTOP-G8F9RK0","msg":"listarHorario is not defined"}
+{"level":50,"time":1705412714882,"pid":6004,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705412720695,"pid":6004,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705412722103,"pid":6004,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705412723579,"pid":6004,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705412728681,"pid":6004,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705414198839,"pid":9568,"hostname":"DESKTOP-G8F9RK0","msg":"persontService is not defined"}
+{"level":50,"time":1705414297841,"pid":7032,"hostname":"DESKTOP-G8F9RK0","msg":"horarioService.listarHorariosConFiltro is not a function"}
+{"level":50,"time":1705597569222,"pid":2780,"hostname":"DESKTOP-G8F9RK0","msg":"listarHorarioconid is not defined"}
+{"level":50,"time":1705597590616,"pid":2780,"hostname":"DESKTOP-G8F9RK0","msg":"listarHorarioconid is not defined"}
+{"level":40,"time":1716645792566,"pid":9696,"hostname":"DESKTOP-G8F9RK0","name":"TokenExpiredError","message":"jwt expired","expiredAt":"2023-04-28T21:12:10.000Z","stack":"TokenExpiredError: jwt expired\n    at C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\jsonwebtoken\\verify.js:152:21\n    at getSecret (C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\jsonwebtoken\\verify.js:90:14)\n    at module.exports [as verify] (C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\jsonwebtoken\\verify.js:94:10)\n    at validateUser (file:///C:/Users/Usuario/Desktop/2022/CoderHouse/proyecto_quinta/quinta_backend/src/negocio/utils/jwt.js:8:33)\n    at autenticacion (file:///C:/Users/Usuario/Desktop/2022/CoderHouse/proyecto_quinta/quinta_backend/src/negocio/middlewares/autenticacion.js:18:25)\n    at Layer.handle [as handle_request] (C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\express\\lib\\router\\route.js:144:13)\n    at Route.dispatch (C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\express\\lib\\router\\route.js:114:3)\n    at Layer.handle [as handle_request] (C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at C:\\Users\\Usuario\\Desktop\\2022\\CoderHouse\\proyecto_quinta\\quinta_backend\\node_modules\\express\\lib\\router\\index.js:284:15","type":"Error","msg":"jwt expired"}
