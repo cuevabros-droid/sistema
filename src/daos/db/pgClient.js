@@ -5,12 +5,12 @@ const { Pool } = pkg;
 
  export const pool = new Pool({
     user: 'postgres',
-    host: '31.220.31.59',
-    //host: 'localhost',
+    //host: '31.220.31.59',
+    host: 'localhost',
     database: 'gestion_escuelas',
     //database: 'quinta',
-    password: 'toba123*-a_postgres',
-    //password: 'postgres',
+    //password: 'toba123*-a_postgres',
+    password: 'postgres',
     port: 5432,
   })
 

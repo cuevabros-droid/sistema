@@ -135,7 +135,32 @@ class ContainerPg{
             return error
         } 
     }
+
+        async getAllById(id){
+        try {
+            const objetoBuscado = (await pool.query(`select * from persona where id_persona=$1`, [id]))
+            console.log(id)
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
  
+        async getAllByApellidos(apellido){
+        const apellidosconcomodin = `%${apellido}%`
+        console.log(apellidosconcomodin)
+        try {
+            const objetoBuscado = (await pool.query(`select * from persona where apellidos LIKE $1`, [apellidosconcomodin]))
+                    console.log(objetoBuscado.rows)
+
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
 
  }
 

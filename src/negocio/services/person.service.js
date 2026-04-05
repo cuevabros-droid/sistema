@@ -1,6 +1,7 @@
 import Personas from '../models/person.js'
 import { listarPersona } from '../repository/personas/person.js';
 import { listarPersonsConFiltro } from '../repository/personas/person.js';
+import { Apellido } from '../repository/personas/person.js';
 
 
 class PersontService {
@@ -59,7 +60,23 @@ class PersontService {
         return error*/
     }
 
+    async  Apellido(apellido) {
+        const listadoApellido = await Apellido(apellido)
+        console.log(listadoApellido)
+        return listadoApellido
 
+     /*   if(listadoPersonas){
+            const personas = []
+            listadoPersonas.forEach(d => {
+                personas.push(d.datos())
+        });
+            return personas
+        } else
+            return null
+
+    } catch (error) {
+        return error*/
+    }
 
     //Actualiza los datos de un producto dado
     async actualizarProducto(objeto) {

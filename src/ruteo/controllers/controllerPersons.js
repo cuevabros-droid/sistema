@@ -42,7 +42,6 @@ async function controllerListarPersons(req, res) {
 
 
 async function controllerPersonsConFiltro({ params: { texto } }, res) {
-
   try {
     const resul = await persontService.listarPersonsConFiltro(texto)
     res.status(201).json(resul)
@@ -53,7 +52,19 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
 
 }
    
+
+async function Apellido({ params: { apellido } }, res) {
+  try {
+    const resul = await persontService.Apellido(apellido)
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+
+}
+
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro}
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, Apellido}
 
 

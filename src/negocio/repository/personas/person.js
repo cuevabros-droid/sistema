@@ -17,15 +17,32 @@ const pg = new ContainerPg
         } catch (error) {
             return error
         }    
+       }   
         
-        
-    }
+   
 
     
 
     export async function listarPersonsConFiltro(texto) {
       try {
-        const resul = await pg.getAllConFiltro(texto)
+        const resul = await pg.getAllById(texto)
+        console.log(resul)
+        if (resul ==  []){
+          return null
+        }
+   
+        else 
+        return resul
+      } catch (error) {
+          return error
+      }     
+     }  
+     
+     
+      export async function Apellido(apellido) {
+      try {
+        const resul = await pg.getAllByApellidos(apellido)
+        console.log(resul)
         if (resul ==  []){
           return null
         }
@@ -38,7 +55,7 @@ const pg = new ContainerPg
   }
 
 
-
+ 
 
 
 
