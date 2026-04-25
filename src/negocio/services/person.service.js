@@ -60,7 +60,7 @@ class PersontService {
         return error*/
     }
 
-    async  Apellido(apellido) {
+    async  listarPersonsConFiltroApellido(apellido) {
         const listadoApellido = await Apellido(apellido)
         console.log(listadoApellido)
         return listadoApellido

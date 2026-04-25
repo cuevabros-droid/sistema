@@ -23,74 +23,7 @@ class ContainerPg{
         } 
 
       }
-
-
- 
-               //CONSULTA POR ID
-            async getHorariosById(id){
-
-                let objetoBuscado
-
-       
-                 //   if((await pool.query(`select count(*) from persona where apellidos like $1`, [apellido])) > 0) {
-                        objetoBuscado = (await pool.query(`select id_franja_horaria, detalle from franja_horaria where id_franja_horaria = $1`, [id])).rows
-
-                        if (objetoBuscado===undefined) {
-                            return null
-                        } else {
-                            return objetoBuscado;
-                        }
-                                
-                    }
-        
-
-
-            //CONSULTA CON FILTRO
-            async getHorariosFiltro(detalle){
-                console.log("parece que si")
-                detalle = detalle + '%'
-        
-                          let objetoBuscado
-        
-                 //   if((await pool.query(`select count(*) from persona where apellidos like $1`, [apellido])) > 0) {
-                      objetoBuscado = (await pool.query(`select id_franja_horaria, detalle from franja_horaria where detalle like $1`, [detalle])).rows
-                      // objetoBuscado = (await pool.query(`select id_franja_horaria, detalle from franja_horaria`)).rows
-
-                        console.log("acá esta la salidahoy")
-                        console.log(objetoBuscado)
-                        if (objetoBuscado===undefined) {
-                            return null
-                        } else {
-                            return objetoBuscado;
-                        }
-                                
-                    }
-        
-        
-
-            //CONSULTA SIN FILTRO
-            async getAllHorarios(){
-
-                try {
-        
-                    const objetoBuscado = (await pool.query('select id_franja_horaria, detalle from franja_horaria order by id_franja_horaria')).rows
-        //console.log(objetoBuscado)
-        
-                    if (objetoBuscado===undefined) {
-                        return null
-                    } else {
-                        return objetoBuscado;
-                    }
-                    
-                }
-        
-                catch(error){
-                    return error
-                } 
-        
-            }
-        
-
+   
 
     //BAJA 
     async deleteById(id){

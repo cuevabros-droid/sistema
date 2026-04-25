@@ -53,7 +53,7 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
 }
    
 
-async function Apellido({ params: { apellido } }, res) {
+async function controllerPersonsConFiltroApellido({ params: { apellido } }, res) {
   try {
     const resul = await persontService.Apellido(apellido)
     res.status(201).json(resul)
@@ -65,6 +65,6 @@ async function Apellido({ params: { apellido } }, res) {
 }
 
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, Apellido}
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido}
 
 
