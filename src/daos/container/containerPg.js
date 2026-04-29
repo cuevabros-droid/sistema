@@ -81,12 +81,13 @@ class ContainerPg{
     }
  
         async getAllByApellidos(apellido){
-        const apellidosconcomodin = `%${apellido}%`
-        console.log(apellidosconcomodin)
+        const apellidosconcomodin = `${apellido}%`
+        //console.log(apellidosconcomodin)
         try {
-            const objetoBuscado = (await pool.query(`select * from persona where apellidos LIKE $1`, [apellidosconcomodin]))
-                    console.log(objetoBuscado.rows)
 
+            const objetoBuscado = (await pool.query(`select * from persona where apellidos LIKE $1`, [apellidosconcomodin]))
+                  //  console.log(objetoBuscado.rows)
+    
             return objetoBuscado.rows;
         }
         catch(error){
