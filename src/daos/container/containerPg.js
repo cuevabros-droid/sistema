@@ -72,7 +72,7 @@ class ContainerPg{
         async getAllById(id){
         try {
             const objetoBuscado = (await pool.query(`select * from persona, persona_sexo where persona.id_persona = persona_sexo.id_persona and persona.id_persona=$1`, [id]))
-            console.log(id)
+            //console.log(id)
             return objetoBuscado.rows;
         }
         catch(error){
@@ -85,7 +85,7 @@ class ContainerPg{
         //console.log(apellidosconcomodin)
         try {
 
-            const objetoBuscado = (await pool.query(`select * from persona where activo = 'S' and apellidos LIKE $1`, [apellidosconcomodin]))
+            const objetoBuscado = (await pool.query(`select * from persona where activo = 'S' and apellidos ILIKE $1`, [apellidosconcomodin]))
                   //  console.log(objetoBuscado.rows)
     
             return objetoBuscado.rows;
@@ -95,6 +95,16 @@ class ContainerPg{
         } 
     }
 
+        async getLocalidades(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from localidad`))
+            //console.log(id)
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
 
  }
 

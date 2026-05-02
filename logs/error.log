@@ -2575,3 +2575,8 @@
 {"level":50,"time":1777245943317,"pid":1380,"hostname":"DESKTOP-G8F9RK0","msg":"persontService.Apellido is not a function"}
 {"level":50,"time":1777246069554,"pid":1380,"hostname":"DESKTOP-G8F9RK0","msg":"persontService.Apellido is not a function"}
 {"level":50,"time":1777246138816,"pid":1380,"hostname":"DESKTOP-G8F9RK0","msg":"persontService.Apellido is not a function"}
+{"level":50,"time":1777752028502,"pid":4124,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
+{"level":50,"time":1777752043209,"pid":1508,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
+{"level":50,"time":1777752120083,"pid":1508,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
+{"level":50,"time":1777752132812,"pid":8356,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
+{"level":50,"time":1777752246240,"pid":500,"hostname":"DESKTOP-G8F9RK0","msg":"Assignment to constant variable."}
