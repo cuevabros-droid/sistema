@@ -71,7 +71,7 @@ class ContainerPg{
 
         async getAllById(id){
         try {
-            const objetoBuscado = (await pool.query(`select * from persona where id_persona=$1`, [id]))
+            const objetoBuscado = (await pool.query(`select * from persona, persona_sexo where persona.id_persona = persona_sexo.id_persona and persona.id_persona=$1`, [id]))
             console.log(id)
             return objetoBuscado.rows;
         }
@@ -85,7 +85,7 @@ class ContainerPg{
         //console.log(apellidosconcomodin)
         try {
 
-            const objetoBuscado = (await pool.query(`select * from persona where apellidos LIKE $1`, [apellidosconcomodin]))
+            const objetoBuscado = (await pool.query(`select * from persona where activo = 'S' and apellidos LIKE $1`, [apellidosconcomodin]))
                   //  console.log(objetoBuscado.rows)
     
             return objetoBuscado.rows;
