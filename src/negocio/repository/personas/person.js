@@ -39,7 +39,7 @@ const pg = new ContainerPg
      }  
      
      
-      export async function Apellido(apellido) {
+      export async function listarPersonsConFiltroApellido(apellido) {
       try {
         const resul = await pg.getAllByApellidos(apellido)
         console.log(resul)

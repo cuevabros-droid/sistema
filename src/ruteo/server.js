@@ -7,6 +7,7 @@ import routerImage from './routers/routerImage.js'
 import routerApiOrders from './routers/routerApiOrders.js'
 import routerApiPersons from './routers/routerApiPersons.js'
 import routerApiHorario from './routers/routerApiHorario.js'
+import routerApiLocalidades from './routers/routerApiLocalidades.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
@@ -27,6 +28,7 @@ servidor.use(express.urlencoded({ extended: true }))
 //Middlewares para los routers
 servidor.use('/', routerLogin)
 servidor.use('/', routerApiUser)
+servidor.use('/api/localidades', routerApiLocalidades)
 servidor.use('/api/products', routerApiProducts)
 servidor.use('/api/shoppingcartproducts', routerApiShoppingCart)
 servidor.use('/api/images', routerImage)

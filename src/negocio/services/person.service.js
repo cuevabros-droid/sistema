@@ -1,7 +1,7 @@
 import Personas from '../models/person.js'
 import { listarPersona } from '../repository/personas/person.js';
 import { listarPersonsConFiltro } from '../repository/personas/person.js';
-import { Apellido } from '../repository/personas/person.js';
+import { listarPersonsConFiltroApellido } from '../repository/personas/person.js';
 
 
 class PersontService {
@@ -60,8 +60,8 @@ class PersontService {
         return error*/
     }
 
-    async  Apellido(apellido) {
-        const listadoApellido = await Apellido(apellido)
+    async  listarPersonsConFiltroApellido(apellido) {
+        const listadoApellido = await listarPersonsConFiltroApellido(apellido)
         console.log(listadoApellido)
         return listadoApellido
 
