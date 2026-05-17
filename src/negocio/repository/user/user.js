@@ -20,7 +20,7 @@ export class user {
 
     async buscar_usuario(usuario) {
         try {
-            const resul = await this.#dao.buscar_usuario(usuario)
+            const resul = await this.pg.buscar_usuario(usuario)
 
            if(resul){
             const usermodel = new Usuario(resul)

@@ -23,11 +23,10 @@ servidor.use(cors());
 //Si viene por un Json o si viene de un formulario (Form)
 servidor.use(express.json())
 servidor.use(express.urlencoded({ extended: true }))
-
+console.log(routerLogin)
 
 //Middlewares para los routers
 servidor.use('/', routerLogin)
-servidor.use('/', routerApiUser)
 servidor.use('/api/localidades', routerApiLocalidades)
 servidor.use('/api/products', routerApiProducts)
 servidor.use('/api/shoppingcartproducts', routerApiShoppingCart)
