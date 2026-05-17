@@ -1,12 +1,8 @@
 import express from 'express';
 import routerLogin from './routers/routerLogin.js'
 import routerApiUser from './routers/routerApiUser.js'
-import routerApiProducts from './routers/routerApiProducts.js'
-import routerApiShoppingCart from './routers/routerApiShoppingCart.js'
 import routerImage from './routers/routerImage.js'
-import routerApiOrders from './routers/routerApiOrders.js'
 import routerApiPersons from './routers/routerApiPersons.js'
-import routerApiHorario from './routers/routerApiHorario.js'
 import routerApiLocalidades from './routers/routerApiLocalidades.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
@@ -29,16 +25,10 @@ servidor.use(express.urlencoded({ extended: true }))
 servidor.use('/', routerLogin)
 servidor.use('/', routerApiUser)
 servidor.use('/api/localidades', routerApiLocalidades)
-servidor.use('/api/products', routerApiProducts)
-servidor.use('/api/shoppingcartproducts', routerApiShoppingCart)
 servidor.use('/api/images', routerImage)
-servidor.use('/api/orders', routerApiOrders)
 servidor.use('/api/persons', routerApiPersons)
 servidor.use('/api', routerApiPersons)
 servidor.use('/api/personsconfiltro', routerApiPersons)
-servidor.use('/api/horario', routerApiHorario)
-servidor.use('/api/horarioconfiltro', routerApiHorario)
-servidor.use('/api/horarioconid', routerApiHorario)
 servidor.use(express.static('public/img'))
 
 //multer

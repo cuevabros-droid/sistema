@@ -2580,3 +2580,4 @@
 {"level":50,"time":1777752120083,"pid":1508,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
 {"level":50,"time":1777752132812,"pid":8356,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
 {"level":50,"time":1777752246240,"pid":500,"hostname":"DESKTOP-G8F9RK0","msg":"Assignment to constant variable."}
+{"level":50,"time":1778964838397,"pid":8124,"hostname":"DESKTOP-G8F9RK0","msg":"updatePerson is not defined"}

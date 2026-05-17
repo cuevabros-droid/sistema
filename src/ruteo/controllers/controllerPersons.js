@@ -2,8 +2,6 @@ import loggerError from '../../negocio/utils/pinoError.js';
 import { persontService } from '../../negocio/services/person.service.js';
 import {pool} from '../../daos/db/pgClient.js';
 
-//import pkg from 'pg'
-//const { Pool } = pkg;
 
  async function controllerPersons(req, res) {
 
@@ -14,16 +12,6 @@ import {pool} from '../../daos/db/pgClient.js';
     loggerError(error.message)
     res.status(404).json({error: error.message})
   }
-
-  
- // const getPersonas = async () => {
-    //console.log((await pool.query('select apellidos, nombres from persona')).rows);
- 
- //   const resul = ((await pool.query('select apellidos, nombres from persona')).rows);
- //   res.status(200).json(resul)  
-  //}
-
- // getPersonas();
 
 }
 
@@ -61,10 +49,21 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
     loggerError(error.message)
     res.status(404).json({error: error.message})
   }
-
 }
 
+  async function controllerPersonsUpdate({ body, params: { id } }, res) {
+  try {
+    const resul = await persontService.updatePersons(body, id)
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+  }
+
+
+
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido}
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate}
 
 
