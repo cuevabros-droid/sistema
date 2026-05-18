@@ -2583,3 +2583,4 @@
 {"level":50,"time":1779023095459,"pid":11456,"hostname":"German","msg":"Usuario inexistente"}
 {"level":50,"time":1779023147080,"pid":11456,"hostname":"German","msg":"Password incorrecto"}
 {"level":50,"time":1779025137720,"pid":11456,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779063725829,"pid":5664,"hostname":"German","msg":"Password incorrecto"}

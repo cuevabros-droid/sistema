@@ -6,12 +6,14 @@ import  {controllerListarOrders}  from '../controllers/controllerOrders.js';
 import { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 
 
+
 const routerApiPersona = express.Router();
 
 //routerApiOrder.post('/', controllerPersons); 
 routerApiPersona.get('/', controllerPersons); 
 routerApiPersona.get('/apellido/:apellido', controllerPersonsConFiltroApellido); 
 routerApiPersona.get('/:texto', controllerPersonsConFiltro); 
+routerApiPersona.get('/:id', controllerPersonsUpdate);
 
 
 export default routerApiPersona;
