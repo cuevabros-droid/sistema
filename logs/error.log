@@ -2581,7 +2581,13 @@
 {"level":50,"time":1777752132812,"pid":8356,"hostname":"DESKTOP-G8F9RK0","msg":"Cannot access 'listarLocalidades' before initialization"}
 {"level":50,"time":1777752246240,"pid":500,"hostname":"DESKTOP-G8F9RK0","msg":"Assignment to constant variable."}
 <<<<<<< HEAD
+<<<<<<< HEAD
 {"level":50,"time":1778964838397,"pid":8124,"hostname":"DESKTOP-G8F9RK0","msg":"updatePerson is not defined"}
+=======
+{"level":50,"time":1779023095459,"pid":11456,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779023147080,"pid":11456,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779025137720,"pid":11456,"hostname":"German","msg":"Usuario inexistente"}
+>>>>>>> a705f4b7e76f19c12d0a7eee0b11dde1136c3844
 =======
 {"level":50,"time":1779023095459,"pid":11456,"hostname":"German","msg":"Usuario inexistente"}
 {"level":50,"time":1779023147080,"pid":11456,"hostname":"German","msg":"Password incorrecto"}
