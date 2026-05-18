@@ -18,7 +18,8 @@
   },
   "homepage": "https://github.com/cuevagit/backend#readme",
   "dependencies": {
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.3",
     "cluster": "^0.7.7",
     "colors": "^1.4.0",
     "connect-mongo": "^4.6.0",
@@ -29,6 +30,7 @@
     "express-router": "^0.0.1",
     "express-session": "^1.17.3",
     "firebase-admin": "^11.3.0",
+    "jsonwebtoken": "^9.0.3",
     "knex": "^2.3.0",
     "mongodb": "^4.12.1",
     "mongoose": "^6.8.4",

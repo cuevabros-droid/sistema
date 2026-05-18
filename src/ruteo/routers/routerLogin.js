@@ -5,7 +5,7 @@ import { controladorLoginp } from '../controllers/controllerLogin.js';
 const routerLogin = express.Router();
 
 
-routerLogin.post('/api/sessions', controladorLoginp); 
+routerLogin.post('/api/login', controladorLoginp); 
 
 
 export default routerLogin;
