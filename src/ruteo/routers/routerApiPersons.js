@@ -3,6 +3,7 @@ import  {controllerPersons}  from '../controllers/controllerPersons.js';
 import  {controllerPersonsConFiltro}  from '../controllers/controllerPersons.js';
 import  {controllerPersonsConFiltroApellido}  from '../controllers/controllerPersons.js';
 import {controllerPersonsUpdate} from '../controllers/controllerPersons.js';
+import { controllerPersonsUpdateEstado } from '../controllers/controllerPersons.js';
 import { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 
 
@@ -13,6 +14,7 @@ routerApiPersona.get('/', controllerPersons);
 routerApiPersona.get('/apellido/:apellido', controllerPersonsConFiltroApellido); 
 routerApiPersona.get('/:texto', controllerPersonsConFiltro); 
 routerApiPersona.put('/:id', controllerPersonsUpdate); 
+routerApiPersona.patch('/:id', controllerPersonsUpdateEstado); 
 
 
 
