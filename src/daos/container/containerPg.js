@@ -4,13 +4,6 @@ import {pool} from '../../daos/db/pgClient.js'
 
 class ContainerPg{
 
- /*   coleccion;
-
-    constructor(nombreColeccion) {
-        this.coleccion = pgDatabase.collection(nombreColeccion);
-    }*/
-
-    
     //ALTA
     async save(objeto){
  
@@ -21,7 +14,6 @@ class ContainerPg{
         catch (error){
             return error
         } 
-
       }
    
 
@@ -30,7 +22,6 @@ class ContainerPg{
 
         try {
             const objetoBuscado = (await pool.query(`delete from franja_horaria where id_franja_horaria=$1`, [id]))
-//console.log(objetoBuscado)
 
             if (objetoBuscado===undefined) {
                 return null
@@ -48,10 +39,11 @@ class ContainerPg{
 
     
     //MODICICACIÓN 
-    async update(objeto){
+    async updatePersons(objeto, id){
         try {
-            const objetoBuscado = (await pool.query(`update franja_horaria set detalle = $2 where id_franja_horaria=$1`, [objeto.id, objeto.detalle]))
-            return objetoBuscado;
+            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono ]))
+            const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2 where id_persona=$1`, [id, objeto.id_sexo]))
+            return objetoBuscado, objetoBuscado2;
         }
         catch(error){
             return error
@@ -61,7 +53,6 @@ class ContainerPg{
         async getAll(){
         try {
             const objetoBuscado = (await pool.query(`select * from persona order by apellidos, nombres`))
-            //console.log(objetoBuscado.rows)
             return objetoBuscado.rows;
         }
         catch(error){
@@ -71,8 +62,7 @@ class ContainerPg{
 
         async getAllById(id){
         try {
-            const objetoBuscado = (await pool.query(`select * from persona, persona_sexo where persona.id_persona = persona_sexo.id_persona and persona.id_persona=$1`, [id]))
-            //console.log(id)
+            const objetoBuscado = (await pool.query(`select persona.*, persona_sexo.id_sexo from persona, persona_sexo where persona.id_persona = persona_sexo.id_persona and persona.id_persona=$1`, [id]))
             return objetoBuscado.rows;
         }
         catch(error){
@@ -82,12 +72,10 @@ class ContainerPg{
  
         async getAllByApellidos(apellido){
         const apellidosconcomodin = `${apellido}%`
-        //console.log(apellidosconcomodin)
+
         try {
 
-            const objetoBuscado = (await pool.query(`select * from persona where activo = 'S' and apellidos ILIKE $1`, [apellidosconcomodin]))
-                  //  console.log(objetoBuscado.rows)
-    
+            const objetoBuscado = (await pool.query(`select * from persona where activo = 'S' and apellidos ILIKE $1`, [apellidosconcomodin]))   
             return objetoBuscado.rows;
         }
         catch(error){
@@ -98,7 +86,6 @@ class ContainerPg{
         async getLocalidades(){
         try {
             const objetoBuscado = (await pool.query(`select * from localidad`))
-            //console.log(id)
             return objetoBuscado.rows;
         }
         catch(error){

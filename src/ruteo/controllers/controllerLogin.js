@@ -22,46 +22,64 @@ async function controladorLoginp(
     res
 ) {
 
-    const usuario =
-        await loginService.buscar_usuario(
-            req.body.usuario
-        );
+    try {
 
-    let mensaje = "";
+        const usuario =
+            await loginService.buscar_usuario(
+                req.body.usuario
+            );
 
-    // USUARIO NO EXISTE
-    if (!usuario) {
+        // USUARIO NO EXISTE
+        if (!usuario) {
 
-        mensaje =
-            "Usuario inexistente";
-    }
+            loggerError("Usuario inexistente");
 
+            return res.status(403).json({
+                ok: false,
+                mensaje: "Usuario incorrecto"
+            });
+        }
 
-    // PASSWORD INCORRECTO
-    if (
-        usuario &&
-        !validatePassword(
-            req.body.password,
-            usuario.password_hash
-        )
-    ) {
+        // PASSWORD INCORRECTO
+        const passwordValido =
+           await validatePassword(
+                req.body.password,
+                usuario.password_hash
+            );
 
-      
-        mensaje =
-            "Password incorrecto";
-    }
+        if (!passwordValido) {
 
-    // LOGIN OK
-    if (mensaje === "") {
+            loggerError("Password incorrecto");
 
+            return res.status(403).json({
+                ok: false,
+                mensaje: "Password incorrecto"
+            });
+        }
+
+        // PAYLOAD DEL TOKEN
+        const payload = {
+
+            id_usuario:
+                usuario.id_usuario,
+
+            usuario:
+                usuario.usuario,
+
+            idTipoUsuario:
+                usuario.idtipousuario
+        };
+
+        // TOKEN
         const token =
-            createToken(usuario);
+            createToken(payload);
 
         res.header(
             'authorization',
             `Bearer ${token}`
         );
 
+        // RESPUESTA
         return res.status(200).json({
 
             ok: true,
@@ -69,6 +87,7 @@ async function controladorLoginp(
             token,
 
             usuario: {
+
                 id_usuario:
                     usuario.id_usuario,
 
@@ -86,13 +105,16 @@ async function controladorLoginp(
             }
         });
 
-    } else {
+    } catch (error) {
 
-        loggerError(mensaje);
+        loggerError(error);
 
-        return res.status(403).json({
+        return res.status(500).json({
+
             ok: false,
-            mensaje
+
+            mensaje:
+                "Error interno del servidor"
         });
     }
 }
