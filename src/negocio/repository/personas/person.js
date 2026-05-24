@@ -58,6 +58,21 @@ const pg = new ContainerPg
   }
 
 
+      export async function updatePersonsEstado(id) {
+
+        try {
+
+        const resul = await pg.updatePersonsEstado(id)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
  
 
 

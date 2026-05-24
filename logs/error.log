@@ -2596,6 +2596,7 @@
 {"level":50,"time":1779023147080,"pid":11456,"hostname":"German","msg":"Password incorrecto"}
 {"level":50,"time":1779025137720,"pid":11456,"hostname":"German","msg":"Usuario inexistente"}
 >>>>>>> a705f4b7e76f19c12d0a7eee0b11dde1136c3844
+<<<<<<< HEAD
 >>>>>>> 43ca7888abf70a2ce8c46051ad2d41b0362bda45
 {"level":50,"time":1779541156761,"pid":14196,"hostname":"German","msg":"Password incorrecto"}
 {"level":50,"time":1779541168068,"pid":14196,"hostname":"German","msg":"Usuario inexistente"}
@@ -2619,3 +2620,6 @@
 {"level":50,"time":1779557599430,"pid":8380,"hostname":"German","msg":"Usuario inexistente"}
 {"level":50,"time":1779557835110,"pid":8284,"hostname":"German","msg":"Usuario inexistente"}
 {"level":50,"time":1779565247800,"pid":8284,"hostname":"German","msg":"Usuario inexistente"}
+=======
+{"level":50,"time":1779551023086,"pid":9972,"hostname":"DESKTOP-G8F9RK0","msg":"body is not defined"}
+>>>>>>> d9512d2a67aab883054b53d318b1913a9653fac9

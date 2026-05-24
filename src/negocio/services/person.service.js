@@ -3,6 +3,7 @@ import { listarPersona } from '../repository/personas/person.js';
 import { listarPersonsConFiltro } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellido } from '../repository/personas/person.js';
 import { updatePersons } from '../repository/personas/person.js';
+import { updatePersonsEstado } from '../repository/personas/person.js';
 
 
 class PersontService {
@@ -40,7 +41,7 @@ class PersontService {
 
     }
 
-    //Actualiza los datos de un producto dado
+    //Actualiza los datos de una Persona dada
     async updatePersons(objeto, id) {
         try {
           updatePerson = await updatePersons(objeto, id)
@@ -50,30 +51,15 @@ class PersontService {
         }
     } 
     
-
-    //Elimina un producto dado
-    async eliminarProducto(id) {
+        //Actualiza el Estado de una Persona dada
+    async updatePersonsEstado(id) {
         try {
-            const deleteProduct = await Personas.eliminarProducto(id)
-            return deleteProduct  
+          updatePerson = await updatePersonsEstado(id)
+            return updatePerson  
         } catch (error) {
             return error
         }
-    }
-
-
-    //Lista los datos de un producto dado
-    async listarProductoPorId(id) {
-        try {
-            const producto = await Personas.listarProductoPorId(id)
-            if(producto)
-             return producto.datos()
-            else 
-             return null
-        } catch (error) {
-            return error
-        }
-    }
+    } 
 
 }
 

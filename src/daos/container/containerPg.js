@@ -38,7 +38,7 @@ class ContainerPg{
     }
 
     
-    //MODICICACIÓN 
+    //ACTUALIZA DATOS DE UNA PERSONA 
     async updatePersons(objeto, id){
         try {
             const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono ]))
@@ -50,9 +50,20 @@ class ContainerPg{
         } 
     }
 
+        //ACTUALIZA EL ESTADO DE UNA PERSONA (ELIMINA) 
+    async updatePersonsEstado(id){
+        try {
+            const objetoBuscado = (await pool.query(`update persona set activo = 'B' where id_persona=$1`, [id]))
+            return objetoBuscado;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
         async getAll(){
         try {
-            const objetoBuscado = (await pool.query(`select * from persona order by apellidos, nombres`))
+            const objetoBuscado = (await pool.query(`select * from persona  where activo <> 'B' order by apellidos, nombres`))
             return objetoBuscado.rows;
         }
         catch(error){
