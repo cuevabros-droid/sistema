@@ -58,7 +58,7 @@ const pg = new ContainerPg
   }
 
 
-      export async function updatePersonsEstado(id) {
+  export async function updatePersonsEstado(id) {
 
         try {
 
@@ -73,7 +73,20 @@ const pg = new ContainerPg
       }       
   }
 
- 
+   export async function createPerson(objeto) {
+
+        try {
+
+        const resul = await pg.createPerson(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
 
 
 

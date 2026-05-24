@@ -2,9 +2,10 @@ import express from 'express';
 import  {controllerPersons}  from '../controllers/controllerPersons.js';
 import  {controllerPersonsConFiltro}  from '../controllers/controllerPersons.js';
 import  {controllerPersonsConFiltroApellido}  from '../controllers/controllerPersons.js';
-import {controllerPersonsUpdate} from '../controllers/controllerPersons.js';
-import { controllerPersonsUpdateEstado } from '../controllers/controllerPersons.js';
-import { autenticacion } from '../../negocio/middlewares/autenticacion.js';
+import  {controllerPersonsUpdate} from '../controllers/controllerPersons.js';
+import  {controllerPersonsUpdateEstado} from '../controllers/controllerPersons.js';
+import  {controllerPersonsCreate} from '../controllers/controllerPersons.js';
+import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 
 
 const routerApiPersona = express.Router();
@@ -15,6 +16,7 @@ routerApiPersona.get('/apellido/:apellido', controllerPersonsConFiltroApellido);
 routerApiPersona.get('/:texto', controllerPersonsConFiltro); 
 routerApiPersona.put('/:id', controllerPersonsUpdate); 
 routerApiPersona.patch('/:id', controllerPersonsUpdateEstado); 
+routerApiPersona.post('/', controllerPersonsCreate); 
 
 
 

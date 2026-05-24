@@ -63,16 +63,26 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
 
 
   async function controllerPersonsUpdateEstado({ params: { id } }, res) {
-  try {
-    const resul = await persontService.updatePersonsEstado(id)
-    res.status(201).json(resul)
-  } catch (error) {
-    loggerError(error.message)
-    res.status(404).json({error: error.message})
+    try {
+      const resul = await persontService.updatePersonsEstado(id)
+      res.status(201).json(resul)
+    } catch (error) {
+      loggerError(error.message)
+      res.status(404).json({error: error.message})
+    }
   }
+
+    async function controllerPersonsCreate({ body }, res) {
+    try {
+      const resul = await persontService.PersonsCreate(body)
+      res.status(201).json(resul)
+    } catch (error) {
+      loggerError(error.message)
+      res.status(404).json({error: error.message})
+    }
   }
 
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado}
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate}
 
 

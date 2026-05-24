@@ -3,41 +3,9 @@ import {pool} from '../../daos/db/pgClient.js'
 
 
 class ContainerPg{
-
-    //ALTA
-    async save(objeto){
  
-        try {
-            await pool.query(`insert into franja_horaria values($1, $2)`, [objeto.id, objeto.detalle])
-            return objeto
-        } 
-        catch (error){
-            return error
-        } 
-      }
+
    
-
-    //BAJA 
-    async deleteById(id){
-
-        try {
-            const objetoBuscado = (await pool.query(`delete from franja_horaria where id_franja_horaria=$1`, [id]))
-
-            if (objetoBuscado===undefined) {
-                return null
-            } else {
-                return objetoBuscado;
-            }
-            
-        }
-
-        catch(error){
-            return error
-        } 
-
-    }
-
-    
     //ACTUALIZA DATOS DE UNA PERSONA 
     async updatePersons(objeto, id){
         try {
@@ -103,6 +71,22 @@ class ContainerPg{
             return error
         } 
     }
+
+
+        //ALTA
+    async createPerson(objeto){
+ 
+        try {
+
+            const objetoBuscado = (await pool.query(`insert into persona values($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, [objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono ]))
+
+            return objetoBuscado
+        } 
+        catch (error){
+            return error
+        } 
+    }
+
 
  }
 

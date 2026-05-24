@@ -4,6 +4,7 @@ import { listarPersonsConFiltro } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellido } from '../repository/personas/person.js';
 import { updatePersons } from '../repository/personas/person.js';
 import { updatePersonsEstado } from '../repository/personas/person.js';
+import { createPerson } from '../repository/personas/person.js';
 
 
 class PersontService {
@@ -56,6 +57,15 @@ class PersontService {
         try {
           updatePerson = await updatePersonsEstado(id)
             return updatePerson  
+        } catch (error) {
+            return error
+        }
+    } 
+
+        async PersonCreate(objeto) {
+        try {
+          createPerson = await PersonCreate(objeto)
+            return createPerson  
         } catch (error) {
             return error
         }
