@@ -14,12 +14,8 @@ const routerApiPersona = express.Router();
 routerApiPersona.get('/', controllerPersons); 
 routerApiPersona.get('/apellido/:apellido', controllerPersonsConFiltroApellido); 
 routerApiPersona.get('/:texto', controllerPersonsConFiltro); 
-<<<<<<< HEAD
-routerApiPersona.get('/:id', controllerPersonsUpdate);
-=======
 routerApiPersona.put('/:id', controllerPersonsUpdate); 
 routerApiPersona.patch('/:id', controllerPersonsUpdateEstado); 
->>>>>>> d9512d2a67aab883054b53d318b1913a9653fac9
 
 
 
