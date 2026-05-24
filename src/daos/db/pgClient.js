@@ -14,7 +14,7 @@ const { Pool } = pkg;
     //password: 'Sistema1y2+2',
     password: 'postgres',
     port: 5432
-    //port: 5433
+   // port: 5433
   })
 
   //await pool.connect()

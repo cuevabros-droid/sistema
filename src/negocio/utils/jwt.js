@@ -10,5 +10,5 @@ export const validateUser = (user) => {
 };
   
 export const createToken = function (user) {
-    return jwt.sign({user: user}, SALT, { expiresIn: '24h' });  
+    return jwt.sign({user: user}, SALT, { expiresIn: '1m' });  
 };

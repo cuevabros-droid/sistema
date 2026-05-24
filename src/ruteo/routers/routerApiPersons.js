@@ -8,6 +8,7 @@ import  {controllerPersonsCreate} from '../controllers/controllerPersons.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 
 
+
 const routerApiPersona = express.Router();
 
 //routerApiOrder.post('/', controllerPersons); 
