@@ -2,7 +2,7 @@
 import pkg from 'pg'
 const { Pool } = pkg;
 //import { Pool } from 'pg';
-
+/*
  export const pool = new Pool({
     user: 'postgres',
     //host: '31.220.31.59',
@@ -15,6 +15,14 @@ const { Pool } = pkg;
     password: 'postgres',
     port: 5432
    // port: 5433
+  })*/
+ 
+   export const pool = new Pool({
+    user: 'postgres',
+    host: '76.13.167.174',
+    database: 'gestion_escuelas',
+    password: 'Sistema1y2+2',
+    port: 5433
   })
 
   //await pool.connect()
