@@ -4,22 +4,10 @@ import { listarPersonsConFiltro } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellido } from '../repository/personas/person.js';
 import { updatePersons } from '../repository/personas/person.js';
 import { updatePersonsEstado } from '../repository/personas/person.js';
-import { createPerson } from '../repository/personas/person.js';
+import { PersonsCreate } from '../repository/personas/person.js';
 
 
 class PersontService {
-
-
-    //Agrega un producto nuevo
-    async grabarProducto(objeto) {
-        try {
-            const product = new Productos(objeto);
-            const registroProduct = await persona.grabarProducto(person)
-            return registroProduct  
-        } catch (error) {
-            return error
-        }
-    }
 
 
     //Lista los datos de todos los productos
@@ -53,18 +41,18 @@ class PersontService {
     } 
     
         //Actualiza el Estado de una Persona dada
-    async updatePersonsEstado(id) {
+    async updatePersonsEstado(objeto) {
         try {
-          updatePerson = await updatePersonsEstado(id)
+          updatePerson = await updatePersonsEstado(objeto)
             return updatePerson  
         } catch (error) {
             return error
         }
     } 
 
-        async PersonCreate(objeto) {
+        async PersonsCreate(objeto) {
         try {
-          createPerson = await PersonCreate(objeto)
+          createPerson = await PersonsCreate(objeto)
             return createPerson  
         } catch (error) {
             return error

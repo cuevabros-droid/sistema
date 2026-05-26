@@ -4,7 +4,6 @@ import { controllerLocalidades } from '../controllers/controllerLocalidades.js';
 
 const routerApiLocalidades = express.Router();
 
-//routerApiOrder.post('/', controllerPersons); 
 routerApiLocalidades.get('/', controllerLocalidades); 
 
 

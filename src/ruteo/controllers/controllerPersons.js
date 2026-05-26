@@ -6,7 +6,7 @@ import {pool} from '../../daos/db/pgClient.js';
  async function controllerPersons(req, res) {
 
   try {
-    const resul = await persontService.listarPersonas(req.user)
+    const resul = await persontService.listarPersonas()
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)
@@ -51,8 +51,10 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
   }
 }
 
-  async function controllerPersonsUpdate({ body, params: { id } }, res) {
+  async function controllerPersonsUpdate({ user, body, params: { id } }, res) {
+   
   try {
+    body.usuario = user.usuario
     const resul = await persontService.updatePersons(body, id)
     res.status(201).json(resul)
   } catch (error) {
@@ -62,9 +64,19 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
   }
 
 
-  async function controllerPersonsUpdateEstado({ params: { id } }, res) {
+  async function controllerPersonsUpdateEstado({ user, params: { id } }, res) {
+    
+      const usuario = user.usuario
+
+      const objeto = {
+        id,
+        usuario
+      }
+     
+
     try {
-      const resul = await persontService.updatePersonsEstado(id)
+
+      const resul = await persontService.updatePersonsEstado(objeto)
       res.status(201).json(resul)
     } catch (error) {
       loggerError(error.message)
@@ -72,8 +84,9 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
     }
   }
 
-    async function controllerPersonsCreate({ body }, res) {
+    async function controllerPersonsCreate({ user, body }, res) {
     try {
+      body.usuario = user.usuario
       const resul = await persontService.PersonsCreate(body)
       res.status(201).json(resul)
     } catch (error) {
