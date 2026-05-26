@@ -3,6 +3,7 @@ import loggerWarn from '../../negocio/utils/pinoWarn.js';
 
 
 export function autenticacion(req, res, next) {
+
     // si no tiene credenciales/token reboto con error 401....
   try {
     const authorizationHeader = req.headers.authorization  
@@ -20,6 +21,8 @@ export function autenticacion(req, res, next) {
     loggerWarn(`Le queda (${Math.trunc((exp * 1000 - Date.now())/1000)}) segundos para que la sesion se expire`)
 
     req.user = user
+            console.log(req.user.usuario)
+
     next()
   } catch (error) {
       loggerWarn(error) 

@@ -1,47 +1,17 @@
 //import { pgDatabase } from '../db/pgClient.js';
 import {pool} from '../../daos/db/pgClient.js'
+import { format } from 'date-fns';
 
 
 class ContainerPg{
-
-    //ALTA
-    async save(objeto){
  
-        try {
-            await pool.query(`insert into franja_horaria values($1, $2)`, [objeto.id, objeto.detalle])
-            return objeto
-        } 
-        catch (error){
-            return error
-        } 
-      }
+
    
-
-    //BAJA 
-    async deleteById(id){
-
-        try {
-            const objetoBuscado = (await pool.query(`delete from franja_horaria where id_franja_horaria=$1`, [id]))
-
-            if (objetoBuscado===undefined) {
-                return null
-            } else {
-                return objetoBuscado;
-            }
-            
-        }
-
-        catch(error){
-            return error
-        } 
-
-    }
-
-    
     //ACTUALIZA DATOS DE UNA PERSONA 
     async updatePersons(objeto, id){
         try {
-            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono ]))
+            const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario ]))
             const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2 where id_persona=$1`, [id, objeto.id_sexo]))
             return objetoBuscado, objetoBuscado2;
         }
@@ -51,9 +21,10 @@ class ContainerPg{
     }
 
         //ACTUALIZA EL ESTADO DE UNA PERSONA (ELIMINA) 
-    async updatePersonsEstado(id){
+    async updatePersonsEstado(objeto){
         try {
-            const objetoBuscado = (await pool.query(`update persona set activo = 'B' where id_persona=$1`, [id]))
+            const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+            const objetoBuscado = (await pool.query(`update persona set activo = $2, fecha_ultima_modificacion = $3, usuario_ultima_modificacion = $4 where id_persona=$1`, [objeto.id, 'B', fechaActual, objeto.usuario]))
             return objetoBuscado;
         }
         catch(error){
@@ -94,7 +65,7 @@ class ContainerPg{
         } 
     }
 
-        async getLocalidades(){
+    async getLocalidades(){
         try {
             const objetoBuscado = (await pool.query(`select * from localidad`))
             return objetoBuscado.rows;
@@ -103,8 +74,76 @@ class ContainerPg{
             return error
         } 
     }
+    
+        async getNacionalidades(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from nacionalidad`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
 
- }
+
+        //ALTA
+    async createPerson(objeto){
+
+        // Formato estándar de base de datos sin offset de zona horaria
+        const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+        // Resultado: "2026-05-25 14:20:00"
+    
+        const query = `
+        INSERT INTO persona (
+            apellidos, nombres, fecha_nacimiento, id_localidad_nacimiento, 
+            id_localidad_residencia, id_nacionalidad, correo_electronico, activo, 
+            es_alumno, usuario, recibe_notif_x_correo, telefono, 
+            fecha_alta, usuario_alta, fecha_ultima_modificacion, usuario_ultima_modificacion
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *;
+        `;
+
+        const valores = [
+        objeto.apellidos, 
+        objeto.nombres, 
+        objeto.fecha_nacimiento, 
+        parseInt(objeto.id_localidad_nacimiento), 
+        parseInt(objeto.id_localidad_residencia), 
+        parseInt(objeto.id_nacionalidad), 
+        objeto.correo_electronico, 
+        objeto.activo, 
+        objeto.es_alumno, 
+        objeto.usuario, 
+        objeto.recibe_notif_x_correo, 
+        objeto.telefono, 
+        fechaActual,  //LOCALTIMESTAMP,                  // Fecha alta
+        objeto.usuario,              // Usuario alta
+        fechaActual, //LOCALTIMESTAMP,                  // Fecha modif
+        objeto.usuario               // Usuario modif
+        ];
+
+try {
+        console.log("Intentando ejecutar la consulta con los valores:", valores);
+        
+        // Asegúrate de que 'query' esté correctamente definida arriba de esta línea
+        await pool.query('BEGIN'); 
+        const resultado = await pool.query(query, valores); 
+        await pool.query('COMMIT'); 
+
+        console.log("Datos que Postgres dice haber guardado:", resultado.rows[0]);
+        return resultado;
+    } catch (error) {
+        console.error("❌ Error al insertar en Postgres:", error);
+        throw error; // Volvemos a lanzar el error para que lo maneje el servicio que llama a esta función
+    }
+
+   }  
+
+    }  
+
+
+ 
 
 
 
