@@ -1,7 +1,6 @@
 //import { Pool } from 'pg';
 import pkg from 'pg'
 const { Pool } = pkg;
-//import { Pool } from 'pg';
 import { HOST, DB_NAME, USER, PASSWORD, PORT } from './config.js';
 
  export const pool = new Pool({
@@ -9,10 +8,5 @@ import { HOST, DB_NAME, USER, PASSWORD, PORT } from './config.js';
     host: HOST,
     database: DB_NAME,
     password: PASSWORD,
-    port: PORT
+    port: PORT,
   })
-
- 
-
-  
-
