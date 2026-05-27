@@ -2623,6 +2623,31 @@
 =======
 {"level":50,"time":1779551023086,"pid":9972,"hostname":"DESKTOP-G8F9RK0","msg":"body is not defined"}
 >>>>>>> d9512d2a67aab883054b53d318b1913a9653fac9
+<<<<<<< HEAD
+{"level":50,"time":1779632149581,"pid":2664,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779632152361,"pid":2664,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779635744513,"pid":14684,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779635773658,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779635918884,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779635937544,"pid":14684,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779635949262,"pid":14684,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779635950721,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779635982904,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779635987771,"pid":14684,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779636048870,"pid":14684,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1779638391748,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779638392633,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779638436153,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779638436728,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779638548725,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779638573309,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779639328239,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779639328938,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779639493553,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779639494684,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779639495249,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1779639500507,"pid":14684,"hostname":"German","msg":"Usuario inexistente"}
+=======
 {"level":50,"time":1779633474712,"pid":8728,"hostname":"DESKTOP-G8F9RK0","length":120,"name":"error","severity":"ERROR","code":"42P01","position":"339","file":"src\\backend\\parser\\parse_relation.c","line":"987","routine":"parserOpenTable","stack":"error: no existe la relación «usuarios»\n    at C:\\proyecto_escuelas\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async LoginService.buscar_usuario (file:///C:/proyecto_escuelas/backend/src/negocio/services/login.service.js:13:17)\n    at async controladorLoginp (file:///C:/proyecto_escuelas/backend/src/ruteo/controllers/controllerLogin.js:28:13)","type":"Error","msg":"no existe la relación «usuarios»"}
 {"level":50,"time":1779633477661,"pid":8728,"hostname":"DESKTOP-G8F9RK0","length":120,"name":"error","severity":"ERROR","code":"42P01","position":"339","file":"src\\backend\\parser\\parse_relation.c","line":"987","routine":"parserOpenTable","stack":"error: no existe la relación «usuarios»\n    at C:\\proyecto_escuelas\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async LoginService.buscar_usuario (file:///C:/proyecto_escuelas/backend/src/negocio/services/login.service.js:13:17)\n    at async controladorLoginp (file:///C:/proyecto_escuelas/backend/src/ruteo/controllers/controllerLogin.js:28:13)","type":"Error","msg":"no existe la relación «usuarios»"}
 {"level":50,"time":1779633479437,"pid":8728,"hostname":"DESKTOP-G8F9RK0","length":120,"name":"error","severity":"ERROR","code":"42P01","position":"339","file":"src\\backend\\parser\\parse_relation.c","line":"987","routine":"parserOpenTable","stack":"error: no existe la relación «usuarios»\n    at C:\\proyecto_escuelas\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async LoginService.buscar_usuario (file:///C:/proyecto_escuelas/backend/src/negocio/services/login.service.js:13:17)\n    at async controladorLoginp (file:///C:/proyecto_escuelas/backend/src/ruteo/controllers/controllerLogin.js:28:13)","type":"Error","msg":"no existe la relación «usuarios»"}
@@ -2829,6 +2854,7 @@
 {"level":40,"time":1779753341111,"pid":8384,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (57) segundos para que la sesion se expire"}
 {"level":40,"time":1779753341389,"pid":8384,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (57) segundos para que la sesion se expire"}
 {"level":40,"time":1779753367541,"pid":8384,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (31) segundos para que la sesion se expire"}
+<<<<<<< HEAD
 {"level":40,"time":1779754208313,"pid":1224,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (24) segundos para que la sesion se expire"}
 {"level":40,"time":1779754208638,"pid":1224,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (24) segundos para que la sesion se expire"}
 {"level":40,"time":1779754217062,"pid":1224,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (15) segundos para que la sesion se expire"}
@@ -2863,3 +2889,6 @@
 {"level":40,"time":1779917460561,"pid":10040,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (58) segundos para que la sesion se expire"}
 {"level":40,"time":1779917462515,"pid":10040,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (56) segundos para que la sesion se expire"}
 {"level":40,"time":1779917468966,"pid":10040,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (50) segundos para que la sesion se expire"}
+=======
+>>>>>>> 56dc9b563f2b3fa4f968d43869d3185556667158
+>>>>>>> 366edefd4eff23f2a7766184e42dfd1d5fcf3c11
