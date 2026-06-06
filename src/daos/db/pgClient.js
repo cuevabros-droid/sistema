@@ -23,11 +23,8 @@ const { Pool } = pkg;
     host: '76.13.167.174',
     database: 'gestion_escuelas',
     password: 'Sistema1y2+2',
-=======
-    password: 'Sistema1y2+2',
     //password: 'postgres',
     //port: 5432
->>>>>>> 56dc9b563f2b3fa4f968d43869d3185556667158
     port: 5433
   })
 
