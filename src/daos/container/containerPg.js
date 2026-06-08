@@ -96,6 +96,17 @@ class ContainerPg{
         } 
      }
 
+     
+    async getDocumentosPersona(id){
+        try {
+            const objetoBuscado = (await pool.query(`select * from persona_tipo_documento where id_persona = $1`, [id]))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+     }
+
 
         //ALTA
     async createPerson(objeto){

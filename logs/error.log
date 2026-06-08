@@ -3857,3 +3857,109 @@
 {"level":40,"time":1780846123640,"pid":6816,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (60) segundos para que la sesion se expire"}
 {"level":40,"time":1780846124855,"pid":6816,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (59) segundos para que la sesion se expire"}
 {"level":40,"time":1780846125043,"pid":6816,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (58) segundos para que la sesion se expire"}
+{"level":40,"time":1780854369916,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780854370184,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (114) segundos para que la sesion se expire"}
+{"level":40,"time":1780854383382,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (101) segundos para que la sesion se expire"}
+{"level":40,"time":1780854383593,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (101) segundos para que la sesion se expire"}
+{"level":40,"time":1780854447493,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (37) segundos para que la sesion se expire"}
+{"level":40,"time":1780854447703,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (37) segundos para que la sesion se expire"}
+{"level":40,"time":1780854449069,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (35) segundos para que la sesion se expire"}
+{"level":40,"time":1780854449293,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (35) segundos para que la sesion se expire"}
+{"level":40,"time":1780854521072,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780854521299,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780854618448,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780854618647,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780854620779,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780854621058,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (114) segundos para que la sesion se expire"}
+{"level":40,"time":1780855530159,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (112) segundos para que la sesion se expire"}
+{"level":40,"time":1780855530358,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (112) segundos para que la sesion se expire"}
+{"level":40,"time":1780855535361,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (107) segundos para que la sesion se expire"}
+{"level":40,"time":1780855535544,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (107) segundos para que la sesion se expire"}
+{"level":40,"time":1780858158135,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":40,"time":1780858158370,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":40,"time":1780858165378,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (109) segundos para que la sesion se expire"}
+{"level":40,"time":1780858165738,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (109) segundos para que la sesion se expire"}
+{"level":40,"time":1780858177609,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (97) segundos para que la sesion se expire"}
+{"level":40,"time":1780858178081,"pid":2160,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (96) segundos para que la sesion se expire"}
+{"level":50,"time":1780859408240,"pid":10384,"hostname":"DESKTOP-G8F9RK0","msg":"documentosService.listarDocumentosPerona is not a function"}
+{"level":50,"time":1780859408240,"pid":10384,"hostname":"DESKTOP-G8F9RK0","msg":"documentosService.listarDocumentosPerona is not a function"}
+{"level":50,"time":1780859808534,"pid":7792,"hostname":"DESKTOP-G8F9RK0","msg":"listarDocumentosPersona is not defined"}
+{"level":50,"time":1780859808535,"pid":7792,"hostname":"DESKTOP-G8F9RK0","msg":"listarDocumentosPersona is not defined"}
+{"level":50,"time":1780859968873,"pid":5232,"hostname":"DESKTOP-G8F9RK0","msg":"listarDocumentosPersona is not defined"}
+{"level":50,"time":1780859968873,"pid":5232,"hostname":"DESKTOP-G8F9RK0","msg":"listarDocumentosPersona is not defined"}
+{"level":40,"time":1780871535192,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780871535431,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780871537572,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780871537759,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":50,"time":1780871539170,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780871539185,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780871608519,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (44) segundos para que la sesion se expire"}
+{"level":40,"time":1780871608867,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (44) segundos para que la sesion se expire"}
+{"level":40,"time":1780871609721,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (43) segundos para que la sesion se expire"}
+{"level":40,"time":1780871611575,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (41) segundos para que la sesion se expire"}
+{"level":50,"time":1780871614124,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780871614129,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780871675252,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780871675462,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":50,"time":1780871678179,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780871678181,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780871872876,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780871873079,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":50,"time":1780871875516,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780871875526,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780871886241,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (104) segundos para que la sesion se expire"}
+{"level":40,"time":1780871886583,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (104) segundos para que la sesion se expire"}
+{"level":40,"time":1780871888785,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (102) segundos para que la sesion se expire"}
+{"level":40,"time":1780871888976,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (102) segundos para que la sesion se expire"}
+{"level":50,"time":1780871890025,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780871890033,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780872513397,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780872513622,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780872516944,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (114) segundos para que la sesion se expire"}
+{"level":40,"time":1780872517145,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (113) segundos para que la sesion se expire"}
+{"level":50,"time":1780872518577,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780872518581,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780872689366,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780872689570,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780872691880,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":40,"time":1780872692056,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":50,"time":1780872693513,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780872693516,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780872788234,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780872788438,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780872790699,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":40,"time":1780872790873,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":50,"time":1780872791655,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780872791658,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780872910497,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780872960157,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780872960362,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780872962386,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":40,"time":1780872962573,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":50,"time":1780872963349,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780872963351,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":50,"time":1780872977650,"pid":4248,"hostname":"DESKTOP-G8F9RK0","msg":"id is not defined"}
+{"level":40,"time":1780873044838,"pid":11340,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780873045051,"pid":11340,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780873046993,"pid":11340,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (116) segundos para que la sesion se expire"}
+{"level":40,"time":1780873047182,"pid":11340,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780873396385,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780873396591,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780873398807,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780873398986,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780873629636,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780873629848,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780873902234,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780873902435,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780873907519,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (112) segundos para que la sesion se expire"}
+{"level":40,"time":1780873907709,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (112) segundos para que la sesion se expire"}
+{"level":40,"time":1780874001232,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780874001464,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780874559393,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780874559605,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780874561912,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780874562095,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (114) segundos para que la sesion se expire"}
+{"level":40,"time":1780874700953,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (118) segundos para que la sesion se expire"}
+{"level":40,"time":1780874701562,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (117) segundos para que la sesion se expire"}
+{"level":40,"time":1780874703656,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}
+{"level":40,"time":1780874703831,"pid":712,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (115) segundos para que la sesion se expire"}

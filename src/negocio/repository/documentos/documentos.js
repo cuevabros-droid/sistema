@@ -12,3 +12,11 @@ const pg = new ContainerPg
         }       
     }
     
+    export async function listarDocumentosPersona(id) {
+        try {
+          const resul = await pg.getDocumentosPersona(id)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
