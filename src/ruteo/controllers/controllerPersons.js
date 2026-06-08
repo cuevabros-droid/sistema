@@ -54,7 +54,7 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
   async function controllerPersonsUpdate({ user, body, params: { id } }, res) {
    
   try {
-    body.usuario = user.usuario
+    body.usuario_sistema= user.usuario
     const resul = await persontService.updatePersons(body, id)
     res.status(201).json(resul)
   } catch (error) {
@@ -66,11 +66,11 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
 
   async function controllerPersonsUpdateEstado({ user, params: { id } }, res) {
     
-      const usuario = user.usuario
+      const usuario_sistema = user.usuario
 
       const objeto = {
         id,
-        usuario
+        usuario_sistema
       }
      
 
@@ -86,7 +86,7 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
 
     async function controllerPersonsCreate({ user, body }, res) {
     try {
-      body.usuario = user.usuario
+      body.usuario_sistema = user.usuario
       const resul = await persontService.PersonsCreate(body)
       res.status(201).json(resul)
     } catch (error) {

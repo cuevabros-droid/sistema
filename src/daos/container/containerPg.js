@@ -9,10 +9,11 @@ class ContainerPg{
    
     //ACTUALIZA DATOS DE UNA PERSONA 
     async updatePersons(objeto, id){
+        console.log("update!!!" , objeto)
         try {
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario ]))
-            const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2 where id_persona=$1`, [id, objeto.id_sexo]))
+            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario_sistema ]))
+            const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2, usuario_ultima_modificacion = $3, fecha_ultima_modificacion = $4 where id_persona=$1`, [id, objeto.id_sexo, objeto.usuario_sistema, fechaActual]))
             return objetoBuscado, objetoBuscado2;
         }
         catch(error){
@@ -24,7 +25,7 @@ class ContainerPg{
     async updatePersonsEstado(objeto){
         try {
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const objetoBuscado = (await pool.query(`update persona set activo = $2, fecha_ultima_modificacion = $3, usuario_ultima_modificacion = $4 where id_persona=$1`, [objeto.id, 'B', fechaActual, objeto.usuario]))
+            const objetoBuscado = (await pool.query(`update persona set activo = $2, fecha_ultima_modificacion = $3, usuario_ultima_modificacion = $4 where id_persona=$1`, [objeto.id, 'B', fechaActual, objeto.usuario_sistema]))
             return objetoBuscado;
         }
         catch(error){
@@ -57,7 +58,7 @@ class ContainerPg{
 
         try {
 
-            const objetoBuscado = (await pool.query(`select * from persona where activo = 'S' and apellidos ILIKE $1`, [apellidosconcomodin]))   
+            const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))   
             return objetoBuscado.rows;
         }
         catch(error){
@@ -83,12 +84,32 @@ class ContainerPg{
         catch(error){
             return error
         } 
-    }
+     }
+
+      async getDocumentos(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from tipo_documento`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+     }
+
+     
+    async getDocumentosPersona(id){
+        try {
+            const objetoBuscado = (await pool.query(`select * from persona_tipo_documento where id_persona = $1`, [id]))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+     }
 
 
         //ALTA
     async createPerson(objeto){
-
         // Formato estándar de base de datos sin offset de zona horaria
         const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
         // Resultado: "2026-05-25 14:20:00"
@@ -104,6 +125,16 @@ class ContainerPg{
         RETURNING *;
         `;
 
+        const querysexo = `
+        INSERT INTO persona_sexo (
+            id_persona, id_sexo, activo, 
+            fecha_alta, usuario_alta, fecha_ultima_modificacion, usuario_ultima_modificacion
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *;
+        `;
+
+        
         const valores = [
         objeto.apellidos, 
         objeto.nombres, 
@@ -118,9 +149,9 @@ class ContainerPg{
         objeto.recibe_notif_x_correo, 
         objeto.telefono, 
         fechaActual,  //LOCALTIMESTAMP,                  // Fecha alta
-        objeto.usuario,              // Usuario alta
+        objeto.usuario_sistema,              // Usuario alta
         fechaActual, //LOCALTIMESTAMP,                  // Fecha modif
-        objeto.usuario               // Usuario modif
+        objeto.usuario_sistema               // Usuario modif
         ];
 
 try {
@@ -129,18 +160,31 @@ try {
         // Asegúrate de que 'query' esté correctamente definida arriba de esta línea
         await pool.query('BEGIN'); 
         const resultado = await pool.query(query, valores); 
+
+        const valoressexo = [
+            resultado.rows[0].id_persona,
+            objeto.id_sexo, 
+            'S', 
+            fechaActual,  //LOCALTIMESTAMP,                  // Fecha alta
+            objeto.usuario_sistema,              // Usuario alta
+            fechaActual, //LOCALTIMESTAMP,                  // Fecha modif
+            objeto.usuario_sistema               // Usuario modif
+        ];
+
+        const resultadosexo = await pool.query(querysexo, valoressexo); 
         await pool.query('COMMIT'); 
 
-        console.log("Datos que Postgres dice haber guardado:", resultado.rows[0]);
-        return resultado;
+        console.log("Datos que Postgres dice haber guardado:", resultadosexo.rows[0]);
+        return resultado, resultadosexo;
     } catch (error) {
+        await pool.query('ROLLBACK'); 
         console.error("❌ Error al insertar en Postgres:", error);
         throw error; // Volvemos a lanzar el error para que lo maneje el servicio que llama a esta función
     }
 
    }  
 
-    }  
+}  
 
 
  
