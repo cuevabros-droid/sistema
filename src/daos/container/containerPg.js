@@ -9,14 +9,16 @@ class ContainerPg{
    
     //ACTUALIZA DATOS DE UNA PERSONA 
     async updatePersons(objeto, id){
-        console.log("update!!!" , objeto)
         try {
+            await pool.query('BEGIN'); 
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
             const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario_sistema ]))
             const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2, usuario_ultima_modificacion = $3, fecha_ultima_modificacion = $4 where id_persona=$1`, [id, objeto.id_sexo, objeto.usuario_sistema, fechaActual]))
+            await pool.query('COMMIT'); 
             return objetoBuscado, objetoBuscado2;
         }
         catch(error){
+            await pool.query('ROLLBACK'); 
             return error
         } 
     }
@@ -24,11 +26,14 @@ class ContainerPg{
         //ACTUALIZA EL ESTADO DE UNA PERSONA (ELIMINA) 
     async updatePersonsEstado(objeto){
         try {
+            await pool.query('BEGIN'); 
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
             const objetoBuscado = (await pool.query(`update persona set activo = $2, fecha_ultima_modificacion = $3, usuario_ultima_modificacion = $4 where id_persona=$1`, [objeto.id, 'B', fechaActual, objeto.usuario_sistema]))
+            await pool.query('COMMIT'); 
             return objetoBuscado;
         }
         catch(error){
+            await pool.query('ROLLBACK'); 
             return error
         } 
     }
@@ -107,6 +112,69 @@ class ContainerPg{
         } 
      }
 
+    async actualizarDocumentoPersona(objeto){
+        try {
+            await pool.query('BEGIN'); 
+            const objetoBuscado = (await pool.query(`update persona_tipo_documento set id_tipo_documento = $2, numero = $3, activo = $4 where id_persona_tipo_documento=$1`, [objeto.id_persona_tipo_documento, objeto.id_tipo_documento, objeto.numero, objeto.activo]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
+
+    async eliminarDocumentoPersona(id){
+        try {
+            await pool.query('BEGIN'); 
+            const objetoBuscado = (await pool.query(`delete from persona_tipo_documento where id_persona_tipo_documento=$1`, [id]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
+
+    async registrarDocumentoPersona(objeto){
+
+        // Formato estándar de base de datos sin offset de zona horaria
+        const fecha_alta = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+        // Resultado: "2026-05-25 14:20:00"
+    
+        const query = `
+        INSERT INTO persona_tipo_documento (
+            id_persona, id_tipo_documento, numero, activo, 
+            fecha_alta, usuario_alta
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *;
+        `;
+
+       const valores = [
+        objeto.id_persona, 
+        objeto.id_tipo_documento, 
+        objeto.numero, 
+        objeto.activo, 
+        fecha_alta,  //LOCALTIMESTAMP,                  // Fecha alta
+        objeto.usuario_sistema              // Usuario alta
+       ];
+
+
+        try {
+            await pool.query('BEGIN'); 
+            const resultado = await pool.query(query, valores); 
+            await pool.query('COMMIT'); 
+            return resultado.rows;
+
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
 
         //ALTA
     async createPerson(objeto){
@@ -185,10 +253,6 @@ try {
    }  
 
 }  
-
-
- 
-
 
 
  export {ContainerPg} ;

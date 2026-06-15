@@ -30,7 +30,6 @@ servidor.use('/api/nacionalidades', routerApiNacionalidades)
 servidor.use('/api/documentos', routerApiDocumentos)
 servidor.use('/api/images', routerImage)
 servidor.use('/api/persons', routerApiPersons)
-servidor.use('/api', routerApiPersons)
 servidor.use('/api/personsconfiltro', routerApiPersons)
 servidor.use(express.static('public/img'))
 
