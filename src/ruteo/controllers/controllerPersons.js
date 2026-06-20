@@ -88,10 +88,10 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
     try {
       body.usuario_sistema = user.usuario
       const resul = await persontService.PersonsCreate(body)
-      res.status(201).json(resul)
+      return res.status(201).json(resul)
     } catch (error) {
       loggerError(error.message)
-      res.status(404).json({error: error.message})
+      return res.status(404).json({error: error.message})
     }
   }
 

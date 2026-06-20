@@ -93,7 +93,7 @@ class ContainerPg{
 
       async getDocumentos(){
         try {
-            const objetoBuscado = (await pool.query(`select * from tipo_documento`))
+            const objetoBuscado = (await pool.query(`select * from tipo_documento order by jerarquia`))
             return objetoBuscado.rows;
         }
         catch(error){
@@ -223,32 +223,40 @@ class ContainerPg{
         ];
 
 try {
-        console.log("Intentando ejecutar la consulta con los valores:", valores);
-        
-        // Asegúrate de que 'query' esté correctamente definida arriba de esta línea
-        await pool.query('BEGIN'); 
-        const resultado = await pool.query(query, valores); 
+    console.log("Intentando ejecutar la consulta con los valores:", valores);
+    
+    await pool.query('BEGIN'); 
+    
+    // 1. Insertar la persona
+    const resultado = await pool.query(query, valores); 
+    const personaCreada = resultado.rows[0]; // Aquí está el id_persona generado
 
-        const valoressexo = [
-            resultado.rows[0].id_persona,
-            objeto.id_sexo, 
-            'S', 
-            fechaActual,  //LOCALTIMESTAMP,                  // Fecha alta
-            objeto.usuario_sistema,              // Usuario alta
-            fechaActual, //LOCALTIMESTAMP,                  // Fecha modif
-            objeto.usuario_sistema               // Usuario modif
-        ];
+    // 2. Preparar valores e insertar el sexo usando el id recién obtenido
+    const valoressexo = [
+        personaCreada.id_persona, // 🌟 Id correcto obtenido del RETURNING *
+        objeto.id_sexo, 
+        'S', 
+        fechaActual,
+        objeto.usuario_sistema,
+        fechaActual,
+        objeto.usuario_sistema 
+    ];
 
-        const resultadosexo = await pool.query(querysexo, valoressexo); 
-        await pool.query('COMMIT'); 
+    const resultadosexo = await pool.query(querysexo, valoressexo); 
+    
+    await pool.query('COMMIT'); 
 
-        console.log("Datos que Postgres dice haber guardado:", resultadosexo.rows[0]);
-        return resultado, resultadosexo;
-    } catch (error) {
-        await pool.query('ROLLBACK'); 
-        console.error("❌ Error al insertar en Postgres:", error);
-        throw error; // Volvemos a lanzar el error para que lo maneje el servicio que llama a esta función
-    }
+    console.log("Datos que Postgres dice haber guardado:", personaCreada);
+    
+    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
+    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+    return personaCreada; 
+
+} catch (error) {
+    await pool.query('ROLLBACK'); 
+    console.error("❌ Error al insertar en Postgres:", error);
+    throw error; 
+}
 
    }  
 

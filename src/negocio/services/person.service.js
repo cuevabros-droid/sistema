@@ -52,7 +52,7 @@ class PersontService {
 
         async PersonsCreate(objeto) {
         try {
-          createPerson = await PersonsCreate(objeto)
+          const createPerson = await PersonsCreate(objeto)
             return createPerson  
         } catch (error) {
             return error

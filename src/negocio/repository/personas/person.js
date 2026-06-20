@@ -73,20 +73,21 @@ const pg = new ContainerPg
       }       
   }
 
-   export async function PersonsCreate(objeto) {
+// ✅ ASÍ DEBE QUEDAR EN: repository/personas/person.js
+export async function PersonsCreate(objeto) {
+    try {
+        const resul = await pg.createPerson(objeto);
 
-        try {
-
-        const resul = await pg.createPerson(objeto)
-
-        if (resul ==  []){
-          return null
-        } else 
-          return resul
-      } catch (error) {
-          return error
-      }       
-  }
+        // Si es un array y está vacío, o si no viene nada
+        if (Array.isArray(resul) && resul.length === 0) {
+            return null;
+        } else {
+            return resul;
+        }
+    } catch (error) {
+        return error;
+    }       
+}
 
 
 
