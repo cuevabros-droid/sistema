@@ -1,6 +1,5 @@
 import loggerError from '../../negocio/utils/pinoError.js';
 import { documentosService } from '../../negocio/services/documentos.service.js';
-//import {pool} from '../../daos/db/pgClient.js'
 
 
 
