@@ -80,6 +80,16 @@ class ContainerPg{
             return error
         } 
     }
+
+        async getDesercion(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from motivo_desercion`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
     
         async getNacionalidades(){
         try {
