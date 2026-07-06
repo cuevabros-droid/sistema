@@ -59,6 +59,18 @@ class PersontService {
         }
     } 
 
+    async  listarSaldoAlumnoPorId(id) {
+        console.log(id)
+        const listadoSaldoAlumno = await listarSaldoAlumnoPorId(id)
+        return listadoSaldoAlumno
+    }
+
+    
+    async  listarAlumnosPorUsuario(usuario) {
+        const listarAlumnos = await listarAlumnosPorUsuario(usuario)
+        return listarAlumnos
+    }
+
 }
 
 export const persontService = new PersontService()

@@ -1,11 +1,11 @@
-import Personas from '../../models/person.js'
+//import Alumnos from '../../models/alumnos.js'
 import {pool} from '../../../daos/db/pgClient.js'
 import  {ContainerPg}  from '../../../daos/container/containerPg.js'
 
 
 const pg = new ContainerPg
 
-    export async function listarPersona() {
+    export async function listarAlumnos() {
         try {
           const resul = await pg.getAll()
           return resul
@@ -15,9 +15,9 @@ const pg = new ContainerPg
        }   
           
 
-    export async function listarPersonsConFiltro(texto) {
+    export async function listarAlumnosConFiltro(texto, id_establecimiento) {
       try {
-        const resul = await pg.getAllById(texto)
+        const resul = await pg.getAllAlumnosById(texto, id_establecimiento)
         if (resul ==  []){
           return null
         }
@@ -29,7 +29,7 @@ const pg = new ContainerPg
      }  
      
      
-      export async function listarPersonsConFiltroApellido(apellido) {
+      export async function listarAlumnosConFiltroApellido(apellido) {
       try {
         const resul = await pg.getAllByApellidos(apellido)
         if (resul ==  []){
@@ -43,10 +43,10 @@ const pg = new ContainerPg
       }       
   }
 
-    export async function updatePersons(objeto, id) {
+    export async function updateAlumnos(objeto) {
       try {
 
-        const resul = await pg.updatePersons(objeto, id)
+        const resul = await pg.updateAlumnos(objeto)
 
         if (resul ==  []){
           return null
@@ -58,11 +58,11 @@ const pg = new ContainerPg
   }
 
 
-  export async function updatePersonsEstado(objeto) {
+  export async function updateAlumnosEstado(objeto) {
 
         try {
 
-        const resul = await pg.updatePersonsEstado(objeto)
+        const resul = await pg.updateAlumnosEstado(objeto)
 
         if (resul ==  []){
           return null
@@ -74,9 +74,9 @@ const pg = new ContainerPg
   }
 
 // ✅ ASÍ DEBE QUEDAR EN: repository/personas/person.js
-export async function PersonsCreate(objeto) {
+export async function AlumnosCreate(objeto) {
     try {
-        const resul = await pg.createPerson(objeto);
+        const resul = await pg.createAlumno(objeto);
 
         // Si es un array y está vacío, o si no viene nada
         if (Array.isArray(resul) && resul.length === 0) {
@@ -89,27 +89,5 @@ export async function PersonsCreate(objeto) {
     }       
 }
 
-export async function listarSaldoAlumnoPorId(id) {
-  try {
-    console.log(id)
-    const resul = await pg.getSaldosPorAlumno(id);''
-    if (resul == []) {
-      return null;
-    } else return resul;
-  } catch (error) {
-    return error;
-  }
-}
-
-export async function listarAlumnosPorUsuario(usuario) {
-  try {
-    const resul = await pg.getAlumnosPorUsuario(usuario);
-    if (resul == []) {
-      return null;
-    } else return resul;
-  } catch (error) {
-    return error;
-  }
-}
 
 

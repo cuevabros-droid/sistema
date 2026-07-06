@@ -6,18 +6,21 @@ import  {controllerPersonsUpdate} from '../controllers/controllerPersons.js';
 import  {controllerPersonsUpdateEstado} from '../controllers/controllerPersons.js';
 import  {controllerPersonsCreate} from '../controllers/controllerPersons.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
+import {controllerPersonsSaldos} from '../controllers/controllerPersons.js';
+import {controllerAlumnosPorTutor} from '../controllers/controllerPersons.js';
 
 
 
 const routerApiPersona = express.Router();
 
-//routerApiOrder.post('/', controllerPersons); 
 routerApiPersona.get('/', autenticacion, controllerPersons); 
 routerApiPersona.get('/apellido/:apellido', autenticacion, controllerPersonsConFiltroApellido); 
 routerApiPersona.get('/:texto', autenticacion, controllerPersonsConFiltro); 
 routerApiPersona.put('/:id', autenticacion, controllerPersonsUpdate); 
 routerApiPersona.patch('/:id', autenticacion, controllerPersonsUpdateEstado); 
 routerApiPersona.post('/', autenticacion, controllerPersonsCreate); 
+routerApiPersona.post('/SaldoAlumno/:id', autenticacion, controllerPersonsSaldos ); 
+routerApiPersona.post('/AlumnosTutor/:usuario', autenticacion, controllerAlumnosPorTutor);
 
 
 

@@ -3,6 +3,7 @@ import routerLogin from './routers/routerLogin.js'
 import routerApiUser from './routers/routerApiUser.js'
 import routerImage from './routers/routerImage.js'
 import routerApiPersons from './routers/routerApiPersons.js'
+import routerApiAlumnos from './routers/routerApiAlumnos.js'
 import routerApiLocalidades from './routers/routerApiLocalidades.js';
 import routerApiNacionalidades from './routers/routerApiNacionalidades.js';
 import routerApiDocumentos from './routers/routerApiDocumentos.js';
@@ -33,6 +34,7 @@ servidor.use('/api/desercion', routerApiDesercion)
 servidor.use('/api/images', routerImage)
 servidor.use('/api/persons', routerApiPersons)
 servidor.use('/api/personsconfiltro', routerApiPersons)
+servidor.use('/api/alumnos', routerApiAlumnos)
 servidor.use(express.static('public/img'))
 
 //multer

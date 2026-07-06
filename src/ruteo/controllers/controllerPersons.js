@@ -19,7 +19,7 @@ import {pool} from '../../daos/db/pgClient.js';
 async function controllerListarPersons(req, res) {
 
   try {
-    const pers = await orderService.listarPerson(req.user)
+    const pers = await persontService.listarPerson(req.user)
     res.status(200).json(pers)
   } catch (error) {
     loggerError(error.message)
@@ -95,7 +95,28 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
     }
   }
 
+
+    async function controllerPersonsSaldos({ user, params: { id } }, res){
+      try {
+    const resul = await persontService.listarSaldoAlumnoPorId(id)
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+  }
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate}
+  async function controllerAlumnosPorTutor({ user, params: { usuario } }, res){
+      try {
+    const resul = await persontService.listarAlumnosPorUsuario(usuario)
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+  }
+
+  
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor}
 
 

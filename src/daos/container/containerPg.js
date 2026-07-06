@@ -58,6 +58,18 @@ class ContainerPg{
         } 
     }
  
+
+    async getAllAlumnosById(id, id_establecimiento){
+        try {
+            const objetoBuscado = (await pool.query(`select persona.*, alumno.* from persona, alumno where persona.id_persona = alumno.id_persona and persona.id_persona=$1 and alumno.id_establecimiento=$2`, [id, id_establecimiento]))
+
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
         async getAllByApellidos(apellido){
         const apellidosconcomodin = `${apellido}%`
 
@@ -270,7 +282,209 @@ try {
 
    }  
 
+
+        //ALTA
+    async createAlumno(objeto){
+        // Formato estándar de base de datos sin offset de zona horaria
+       // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+        // Resultado: "2026-05-25 14:20:00"
+   
+        const query = `
+        INSERT INTO alumno (
+            id_persona, legajo, extranjero, regular, 
+            id_motivo_desercion, es_celiaco, direccion_calle, direccion_numero, 
+            direccion_piso, direccion_depto, id_medio_pago_inscripcion, paga_inscripcion_en_cuotas, 
+            id_establecimiento
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING *;
+        `;
+
+       
+        const valores = [
+        objeto.id_persona, 
+        objeto.legajo, 
+        objeto.extranjero, 
+        objeto.regular,
+        parseInt(objeto.id_motivo_desercion), 
+        objeto.es_celiaco,
+        objeto.direccion_calle, 
+        objeto.direccion_numero, 
+        objeto.direccion_piso, 
+        objeto.direccion_depto, 
+        null, //parseInt(objeto.id_medio_pago_inscripcion), 
+        null, //objeto.paga_inscripcion_en_cuotas, 
+        1   //parseInt(objeto.id_establecimiento)
+        ];
+
+try {
+    console.log("Intentando ejecutar la consulta con los valores:", valores);
+    
+    await pool.query('BEGIN'); 
+    
+    // 1. Insertar el alumno
+    const resultado = await pool.query(query, valores); 
+    const alumnoCreado = resultado.rows[0]; // Aquí está el id_alumno generado
+  
+    await pool.query('COMMIT'); 
+
+    console.log("Datos que Postgres dice haber guardado:", alumnoCreado);
+    
+    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
+    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+    return alumnoCreado; 
+
+} catch (error) {
+    await pool.query('ROLLBACK'); 
+    console.error("❌ Error al insertar en Postgres:", error);
+    throw error; 
+}
+
+   }  
+   
+
+       //ACTUALIZA DATOS DE UNA PERSONA 
+    async updateAlumnos(objeto){
+
+        try {
+            await pool.query('BEGIN'); 
+           // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+            objeto.id_establecimiento = 1
+            const resultadoBusqueda = (await pool.query(`select id_alumno from alumno where id_persona=$1 and id_establecimiento=$2`, [objeto.id_persona, objeto.id_establecimiento]))
+
+            // Verificamos si el alumno existe antes de continuar
+        if (resultadoBusqueda.rows.length === 0) {
+            console.log("No se encontró el alumno. Cancelando operación.");
+            await pool.query('ROLLBACK'); // Cancelamos la transacción
+            return null;
+        }
+
+            const id_alumno = resultadoBusqueda.rows[0].id_alumno;
+            
+            const objetoBuscado = (await pool.query(`update alumno set legajo = $2, extranjero = $3, regular = $4, id_motivo_desercion = $5, es_celiaco = $6, direccion_calle = $7, direccion_numero = $8, direccion_piso = $9, direccion_depto = $10 where id_alumno=$1`, [id_alumno, objeto.legajo, objeto.extranjero, objeto.regular, objeto.id_motivo_desercion, objeto.es_celiaco, objeto.direccion_calle, objeto.direccion_numero, objeto.direccion_piso, objeto.direccion_depto ]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+    }
+
+
+
+
+  async getAlumnosPorUsuario(usuario) {
+    try {
+        
+      const objetoBuscado = await pool.query(
+        `SELECT  P.id_persona, 
+            CONCAT(P.apellidos, ' ', P.nombres) AS Tutor,  P.usuario,
+            a.id_alumno, a.legajo, 
+            CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno
+        FROM Persona P
+        INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
+        INNER JOIN alumno A ON  A.id_alumno = pa.id_alumno
+                            AND A.Regular = 'S'	
+        INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
+        WHERE pa.tutor = 'S' AND pa.activo = 'S'
+        AND P.activo = 'S' AND P.es_alumno = 'N'
+        AND p.usuario = $1
+        `,
+        [usuario],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getSaldosPorAlumno(id) {
+    try {
+        console.log(id)
+      const objetoBuscado = await pool.query(
+        `SELECT  g.nombre AS Grado,  CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, a.legajo
+, RIGHT(acc.cuota, 4) AS Anio, LEFT(acc.cuota, 2) AS Cuota,
+		CONCAT(CASE WHEN LEFT(acc.cuota, 2) = '01' then 'ENERO' 
+		     WHEN LEFT(acc.cuota, 2) = '02' then 'FEBRERO'
+			 WHEN LEFT(acc.cuota, 2) = '03' then 'MARZO'
+			 WHEN LEFT(acc.cuota, 2) = '04' then 'ABRIL'
+			 WHEN LEFT(acc.cuota, 2) = '05' then 'MAYO'
+			 WHEN LEFT(acc.cuota, 2) = '06' then 'JUNIO'
+			 WHEN LEFT(acc.cuota, 2) = '07' then 'JULIO'
+			 WHEN LEFT(acc.cuota, 2) = '08' then 'AGOSTO'
+			 WHEN LEFT(acc.cuota, 2) = '09' then 'SEPTIEMBRE'
+			 WHEN LEFT(acc.cuota, 2) = '10' then 'OCTUBRE'
+			 WHEN LEFT(acc.cuota, 2) = '11' then 'NOVIEMBRE'
+			 WHEN LEFT(acc.cuota, 2) = '12' then 'DICIEMBRE' 
+			 WHEN RIGHT(acc.cuota, 4) = ''  then ' MATERIALES '
+			 WHEN LENGTH(acc.cuota) = 4     then 'PAGO INSCRIPCIÓN '
+			 END, case when RIGHT(acc.cuota, 4) <> '' then ' DEL ' else '' end, right(acc.cuota, 4)) AS Anio_Cuota
+			 , 
+		SUM(tcc.importe) AS SaldoCuota, SaldoTotal  
+FROM transaccion_cuenta_corriente tcc
+INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_Cc = tcc.id_alumno_cc
+INNER JOIN alumno a ON a.id_alumno = acc.id_alumno AND a.regular = 'S'
+LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
+LEFT JOIN public.medio_pago mp ON pt.id_medio_pago = mp.id_medio_pago
+INNER JOIN persona p ON p.id_persona = a.id_persona
+INNER JOIN 
+	(select id_alumno, sum(tc.importe) AS SaldoCuota
+	 from transaccion_cuenta_corriente tc
+	inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
+	group by id_alumno
+	 having  sum(tc.importe)> 0
+	) AS R1 ON R1.id_alumno = a.id_alumno
+INNER JOIN
+	(select id_alumno, sum(tc.importe) AS SaldoTotal 
+	 from transaccion_cuenta_corriente tc
+	inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
+	group by id_alumno
+	 having  sum(tc.importe)> 0) as r2 on r2.id_alumno = a.id_alumno
+inner join
+	 (SELECT id_alumno, max(id_grado) as ultGrado
+	FROM alumno_datos_cursada
+	--where id_alumno =  272
+	group by id_alumno) as adc on adc.id_alumno = r1.id_alumno
+inner join grado g on g.id_grado = adc.ultGrado
+WHERE  a.id_alumno = $1
+GROUP BY  g.nombre, p.apellidos, p.nombres, a.legajo, acc.id_alumno_cc, acc.cuota, SaldoTotal 
+--HAVING SUM(tcc.importe) > 0
+--ORDER BY  g.nombre, p.apellidos, p.nombres  --a.legajo
+ORDER BY  
+    CASE 
+        WHEN g.nombre ILIKE 'Sala%' THEN 0
+        ELSE 1
+    END,
+
+    -- Orden dentro de "Sala de X"
+    CASE 
+        WHEN g.nombre ILIKE 'Sala%' 
+        THEN CAST(REPLACE(g.nombre, 'Sala de ', '') AS INTEGER)
+    END,
+
+    -- Orden dentro de grados numéricos (1er, 2do, etc.)
+    CASE 
+        WHEN g.nombre NOT ILIKE 'Sala%' 
+        THEN CAST(SUBSTRING(g.nombre FROM '^[0-9]+') AS INTEGER)
+    END,
+
+    p.apellidos,
+    p.nombres;
+
+        `,
+        [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
 }  
+
+
+
 
 
  export {ContainerPg} ;
