@@ -313,7 +313,7 @@ try {
         objeto.direccion_piso, 
         objeto.direccion_depto, 
         null, //parseInt(objeto.id_medio_pago_inscripcion), 
-        null, //objeto.paga_inscripcion_en_cuotas, 
+        'N', //objeto.paga_inscripcion_en_cuotas, 
         parseInt(objeto.id_establecimiento)
         ];
 
