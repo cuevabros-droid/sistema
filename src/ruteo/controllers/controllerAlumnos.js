@@ -29,10 +29,9 @@ async function controllerListarAlumnos(req, res) {
 }
 
 
-async function controllerAlumnosConFiltro( { id_establecimiento, params: { id } }, res) {
+async function controllerAlumnosConFiltro(  { params: { id }, user}, res) {
   try {
-    id_establecimiento = 1
-    const resul = await alumnosService.listarAlumnosConFiltro(id, id_establecimiento)
+    const resul = await alumnosService.listarAlumnosConFiltro(id, user.identidadeducativa)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)
@@ -56,6 +55,7 @@ async function controllerAlumnosConFiltroApellido({ params: { apellido } }, res)
    
   try {
     body.usuario_sistema= user.usuario
+    body.id_establecimiento = user.identidadeducativa
     const resul = await alumnosService.updateAlumnos(body)
     res.status(201).json(resul)
   } catch (error) {
@@ -85,11 +85,13 @@ async function controllerAlumnosConFiltroApellido({ params: { apellido } }, res)
     }
   }
 
-    async function controllerAlumnosCreate({ user, body }, res) {
-    //  console.log("acá está el controlador!!!!")
-    //  console.log(user)
+
+  async function controllerAlumnosCreate({ user, body }, res) {
+
     try {
       body.usuario_sistema = user.usuario
+      body.id_establecimiento = user.identidadeducativa
+
     //  body.id_establecimiento = identidadeducativa
       const resul = await alumnosService.AlumnosCreate(body)
       return res.status(201).json(resul)

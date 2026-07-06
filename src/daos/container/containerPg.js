@@ -314,7 +314,7 @@ try {
         objeto.direccion_depto, 
         null, //parseInt(objeto.id_medio_pago_inscripcion), 
         null, //objeto.paga_inscripcion_en_cuotas, 
-        1   //parseInt(objeto.id_establecimiento)
+        parseInt(objeto.id_establecimiento)
         ];
 
 try {
@@ -349,7 +349,6 @@ try {
         try {
             await pool.query('BEGIN'); 
            // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            objeto.id_establecimiento = 1
             const resultadoBusqueda = (await pool.query(`select id_alumno from alumno where id_persona=$1 and id_establecimiento=$2`, [objeto.id_persona, objeto.id_establecimiento]))
 
             // Verificamos si el alumno existe antes de continuar

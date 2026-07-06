@@ -37,12 +37,19 @@ async function controladorLoginp(req, res) {
 
     // PAYLOAD DEL TOKEN
     const payload = {
-      id_usuario: usuario.id_usuario,
 
-      usuario: usuario.usuario,
+        id_usuario: usuario.id_usuario,
 
-      tipoUsuario: usuario.tipousuario,
-      entidadeducativa: usuario.entidadeducativa,
+        usuario: usuario.usuario,
+
+        email: usuario.email,
+
+        nombre: usuario.nombre,
+
+        idtipoUsuario: usuario.idtipousuario,
+        tipoUsuario: usuario.tipousuario,
+        identidadeducativa: usuario.identidadeducativa,
+        entidadeducativa: usuario.entidadeducativa
     };
 
     console.log(payload);
