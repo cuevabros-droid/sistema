@@ -8,6 +8,7 @@ import  {controllerPersonsCreate} from '../controllers/controllerPersons.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 import {controllerPersonsSaldos} from '../controllers/controllerPersons.js';
 import {controllerAlumnosPorTutor} from '../controllers/controllerPersons.js';
+import {controllerAlumnosPorTutorId} from '../controllers/controllerPersons.js';
 
 
 
@@ -21,6 +22,7 @@ routerApiPersona.patch('/:id', autenticacion, controllerPersonsUpdateEstado);
 routerApiPersona.post('/', autenticacion, controllerPersonsCreate); 
 routerApiPersona.post('/SaldoAlumno/:id', autenticacion, controllerPersonsSaldos ); 
 routerApiPersona.post('/AlumnosTutor/:usuario', autenticacion, controllerAlumnosPorTutor);
+routerApiPersona.get('/AlumnosTutorId/:id', controllerAlumnosPorTutorId);
 
 
 

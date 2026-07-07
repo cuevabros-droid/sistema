@@ -40,11 +40,11 @@ class ContainerPg{
 
         async getAll(){
         try {
-            const objetoBuscado = (await pool.query(`select * from persona  where activo <> 'B' order by apellidos, nombres`))
+            const objetoBuscado = (await pool.query(`select * from persona, persona_tipo_documento where persona.id_persona = persona_tipo_documento.id_persona and persona_tipo_documento.id_tipo_documento = 8 and persona.activo <> 'B' order by apellidos, nombres`))
             return objetoBuscado.rows;
         }
         catch(error){
-            return error
+            throw error
         } 
     }
 
@@ -394,7 +394,7 @@ try {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -476,7 +476,36 @@ ORDER BY
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
+    }
+  }
+
+
+    async getAlumnosPorId(id) {
+    try {
+        
+      const objetoBuscado = await pool.query(
+        `SELECT  P.id_persona, 
+            CONCAT(P.apellidos, ' ', P.nombres) AS Tutor,  P.usuario,
+            a.id_alumno, a.legajo, 
+            CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno
+        FROM Persona P
+        INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
+        INNER JOIN alumno A ON  A.id_alumno = pa.id_alumno
+                            AND A.Regular = 'S'	
+        INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
+        WHERE pa.tutor = 'S' AND pa.activo = 'S'
+        AND P.activo = 'S' AND P.es_alumno = 'N'
+        AND p.id_persona = $1
+        `,
+        [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+// 🌟 INTERCEPTAMOS EL ERROR DE NODE: Creamos un error de texto plano estático
+      // Esto evita que pg-pool intente leer el stack trace roto de la librería
+      const mensajeSeguro = error && error.message ? error.message : "Error inesperado en consulta SQL";
+      throw new Error(`[DB Error] ${mensajeSeguro}`);
     }
   }
 

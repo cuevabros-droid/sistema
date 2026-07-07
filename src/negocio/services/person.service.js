@@ -2,6 +2,9 @@ import Personas from '../models/person.js'
 import { listarPersona } from '../repository/personas/person.js';
 import { listarPersonsConFiltro } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellido } from '../repository/personas/person.js';
+import { listarSaldoAlumnoPorId } from '../repository/personas/person.js';
+import { listarAlumnosPorUsuario } from '../repository/personas/person.js';
+import { listarAlumnosPorId } from '../repository/personas/person.js';
 import { updatePersons } from '../repository/personas/person.js';
 import { updatePersonsEstado } from '../repository/personas/person.js';
 import { PersonsCreate } from '../repository/personas/person.js';
@@ -60,7 +63,6 @@ class PersontService {
     } 
 
     async  listarSaldoAlumnoPorId(id) {
-        console.log(id)
         const listadoSaldoAlumno = await listarSaldoAlumnoPorId(id)
         return listadoSaldoAlumno
     }
@@ -70,6 +72,12 @@ class PersontService {
         const listarAlumnos = await listarAlumnosPorUsuario(usuario)
         return listarAlumnos
     }
+
+    async  listarAlumnosPorId(id) {
+        const listarAlumnos = await listarAlumnosPorId(id)
+        return listarAlumnos
+    }
+
 
 }
 

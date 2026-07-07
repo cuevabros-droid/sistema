@@ -112,4 +112,14 @@ export async function listarAlumnosPorUsuario(usuario) {
   }
 }
 
+export async function listarAlumnosPorId(id) {
+  try {
+    const resul = await pg.getAlumnosPorId(id);
+ if (!resul || resul.length === 0) {      return null;
+    } else return resul;
+  } catch (error) {
+    throw error;
+  }
+}
+
 
