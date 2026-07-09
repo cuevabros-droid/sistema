@@ -46,7 +46,7 @@ class LoginService {
       // DEVUELVE USUARIO
       return usuarioBD;
     } catch (error) {
-      console.log(error);
+      //console.log(error);
 
       throw error;
     }

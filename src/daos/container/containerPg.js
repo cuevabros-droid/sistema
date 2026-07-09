@@ -9,6 +9,10 @@ class ContainerPg{
    
     //ACTUALIZA DATOS DE UNA PERSONA 
     async updatePersons(objeto, id){
+
+        if (objeto.es_alumno === "S")
+            objeto.usuario = null
+
         try {
             await pool.query('BEGIN'); 
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
@@ -40,7 +44,27 @@ class ContainerPg{
 
         async getAll(){
         try {
-            const objetoBuscado = (await pool.query(`select * from persona, persona_tipo_documento where persona.id_persona = persona_tipo_documento.id_persona and persona_tipo_documento.id_tipo_documento = 8 and persona.activo <> 'B' order by apellidos, nombres`))
+            const objetoBuscado = (await pool.query(` SELECT * FROM (
+            SELECT DISTINCT ON (persona.id_persona) 
+                persona.*, 
+                persona_tipo_documento.id_tipo_documento, 
+                persona_tipo_documento.numero, 
+                td.nombre_corto,
+                alumno.id_alumno,
+                regular,
+                motivo_desercion.nombre AS motivo_desercion -- <-- Se agrega el campo nombre asignándole un alias claro
+            FROM persona 
+            INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+            INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+            LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+            LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
+            WHERE persona.activo <> 'B' 
+            ORDER BY 
+                persona.id_persona, 
+                CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
+                persona_tipo_documento.fecha_alta ASC
+        ) subconsulta 
+        ORDER BY apellidos ASC, nombres ASC; `))
             return objetoBuscado.rows;
         }
         catch(error){
@@ -75,7 +99,30 @@ class ContainerPg{
 
         try {
 
-            const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))   
+            //const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))   
+
+            const objetoBuscado = (await pool.query(`  SELECT * FROM (
+            SELECT DISTINCT ON (persona.id_persona) 
+                persona.*, 
+                persona_tipo_documento.id_tipo_documento, 
+                persona_tipo_documento.numero, 
+                td.nombre_corto,
+                alumno.id_alumno,
+                regular,
+                motivo_desercion.nombre AS motivo_desercion -- <-- Se agrega el campo nombre asignándole un alias claro
+            FROM persona 
+            INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+            INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+            LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+            LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
+            WHERE persona.activo <> 'B'  and apellidos ILIKE $1
+            ORDER BY 
+                persona.id_persona, 
+                CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
+                persona_tipo_documento.fecha_alta ASC
+        ) subconsulta 
+        ORDER BY apellidos ASC, nombres ASC;  `, [apellidosconcomodin]));   
+
             return objetoBuscado.rows;
         }
         catch(error){
@@ -288,8 +335,14 @@ try {
         // Formato estándar de base de datos sin offset de zona horaria
        // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
         // Resultado: "2026-05-25 14:20:00"
-   
-        const query = `
+
+        if (objeto.regular === "S")
+            objeto.id_motivo_desercion = null
+        else
+            objeto.id_motivo_desercion = parseInt(objeto.id_motivo_desercion)
+
+
+       const query = `
         INSERT INTO alumno (
             id_persona, legajo, extranjero, regular, 
             id_motivo_desercion, es_celiaco, direccion_calle, direccion_numero, 
@@ -306,7 +359,7 @@ try {
         objeto.legajo, 
         objeto.extranjero, 
         objeto.regular,
-        parseInt(objeto.id_motivo_desercion), 
+        objeto.id_motivo_desercion, 
         objeto.es_celiaco,
         objeto.direccion_calle, 
         objeto.direccion_numero, 
@@ -345,6 +398,9 @@ try {
 
        //ACTUALIZA DATOS DE UNA PERSONA 
     async updateAlumnos(objeto){
+
+          if (objeto.regular === "S")
+            objeto.id_motivo_desercion = null
 
         try {
             await pool.query('BEGIN'); 
@@ -400,7 +456,6 @@ try {
 
   async getSaldosPorAlumno(id) {
     try {
-        console.log(id)
       const objetoBuscado = await pool.query(
         `SELECT  g.nombre AS Grado,  CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, a.legajo
 , RIGHT(acc.cuota, 4) AS Anio, LEFT(acc.cuota, 2) AS Cuota,

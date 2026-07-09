@@ -91,7 +91,6 @@ export async function PersonsCreate(objeto) {
 
 export async function listarSaldoAlumnoPorId(id) {
   try {
-    console.log(id)
     const resul = await pg.getSaldosPorAlumno(id);''
     if (resul == []) {
       return null;

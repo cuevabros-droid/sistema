@@ -52,7 +52,7 @@ async function controladorLoginp(req, res) {
         entidadeducativa: usuario.entidadeducativa
     };
 
-    console.log(payload);
+   // console.log(payload);
     // TOKEN
     const token = createToken(payload);
 

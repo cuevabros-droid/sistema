@@ -21,7 +21,7 @@ export function autenticacion(req, res, next) {
     loggerWarn(`Le queda (${Math.trunc((exp * 1000 - Date.now())/1000)}) segundos para que la sesion se expire`)
 
     req.user = user
-            console.log(req.user.usuario)
+            //console.log(req.user.usuario)
 
     next()
   } catch (error) {
