@@ -428,7 +428,6 @@ try {
 
 
 
-
   async getAlumnosPorUsuario(usuario) {
     try {
         
@@ -540,18 +539,57 @@ ORDER BY
     try {
         
       const objetoBuscado = await pool.query(
-        `SELECT  P.id_persona, 
-            CONCAT(P.apellidos, ' ', P.nombres) AS Tutor,  P.usuario,
-            a.id_alumno, a.legajo, 
-            CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno
-        FROM Persona P
-        INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
-        INNER JOIN alumno A ON  A.id_alumno = pa.id_alumno
-                            AND A.Regular = 'S'	
-        INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
-        WHERE pa.tutor = 'S' AND pa.activo = 'S'
-        AND P.activo = 'S' AND P.es_alumno = 'N'
-        AND p.id_persona = $1
+        `WITH AlumnoDocumentosPriorizados AS (
+            SELECT  
+                P.id_persona, 
+                CONCAT(P.apellidos, ' ', P.nombres) AS nombre_tutor,
+                P.usuario,
+                a.id_alumno, 
+                PAlumno.id_persona AS id_persona_alumno, -- <--- NUEVO: ID Persona del Alumno
+                a.legajo, 
+                CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno,
+                ta.nombre AS tipo_allegado_nombre,
+                pa.tutor AS es_tutor,
+                pa.activo,
+                td.id_tipo_documento,
+                td.numero,
+                tdoc.nombre_corto,
+                -- Particionamos por el ID del alumno para obtener 1 documento por cada alumno
+                ROW_NUMBER() OVER (
+                    PARTITION BY a.id_alumno 
+                    ORDER BY 
+                        CASE WHEN td.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC,
+                        td.id_persona_tipo_documento ASC
+                ) AS rn
+            FROM Persona P
+            INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
+            INNER JOIN alumno A ON A.id_alumno = pa.id_alumno AND A.Regular = 'S'    
+            INNER JOIN tipo_allegado ta ON pa.id_tipo_allegado = ta.id_tipo_allegado
+            INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
+            -- JOIN con los documentos DEL ALUMNO (PAlumno):
+            INNER JOIN persona_tipo_documento td ON PAlumno.id_persona = td.id_persona
+            INNER JOIN tipo_documento tdoc ON td.id_tipo_documento = tdoc.id_tipo_documento
+            WHERE pa.activo = 'S'
+            AND P.activo = 'S' 
+            AND P.es_alumno = 'N'
+            AND P.id_persona = $1
+        )
+        SELECT 
+            id_persona,
+            nombre_tutor AS "Tutor",
+            usuario,
+            id_alumno,
+            id_persona_alumno,     -- ID Persona del Alumno
+            legajo,
+            NombreAlumno,
+            tipo_allegado_nombre AS nombre,
+            es_tutor AS tutor,
+            activo,
+            id_tipo_documento,
+            numero,
+            nombre_corto
+        FROM AlumnoDocumentosPriorizados
+        WHERE rn = 1;
         `,
         [id],
       );
