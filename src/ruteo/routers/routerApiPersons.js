@@ -9,6 +9,8 @@ import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 import {controllerPersonsSaldos} from '../controllers/controllerPersons.js';
 import {controllerAlumnosPorTutor} from '../controllers/controllerPersons.js';
 import {controllerAlumnosPorTutorId} from '../controllers/controllerPersons.js';
+import {controllerAlumnoTutoresId} from '../controllers/controllerPersons.js';
+import {controllerPersonsConFiltroApellidoDocumento} from '../controllers/controllerPersons.js';
 
 
 
@@ -23,6 +25,8 @@ routerApiPersona.post('/', autenticacion, controllerPersonsCreate);
 routerApiPersona.post('/SaldoAlumno/:id', autenticacion, controllerPersonsSaldos ); 
 routerApiPersona.post('/AlumnosTutor/:usuario', autenticacion, controllerAlumnosPorTutor);
 routerApiPersona.get('/AlumnosTutorId/:id', controllerAlumnosPorTutorId);
+routerApiPersona.get('/AlumnoTutoresId/:id', controllerAlumnoTutoresId);
+routerApiPersona.get('/apellidodocumento/:apellidodocumento', autenticacion, controllerPersonsConFiltroApellidoDocumento); 
 
 
 

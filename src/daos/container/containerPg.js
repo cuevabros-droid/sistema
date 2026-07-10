@@ -457,73 +457,73 @@ try {
     try {
       const objetoBuscado = await pool.query(
         `SELECT  g.nombre AS Grado,  CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, a.legajo
-, RIGHT(acc.cuota, 4) AS Anio, LEFT(acc.cuota, 2) AS Cuota,
-		CONCAT(CASE WHEN LEFT(acc.cuota, 2) = '01' then 'ENERO' 
-		     WHEN LEFT(acc.cuota, 2) = '02' then 'FEBRERO'
-			 WHEN LEFT(acc.cuota, 2) = '03' then 'MARZO'
-			 WHEN LEFT(acc.cuota, 2) = '04' then 'ABRIL'
-			 WHEN LEFT(acc.cuota, 2) = '05' then 'MAYO'
-			 WHEN LEFT(acc.cuota, 2) = '06' then 'JUNIO'
-			 WHEN LEFT(acc.cuota, 2) = '07' then 'JULIO'
-			 WHEN LEFT(acc.cuota, 2) = '08' then 'AGOSTO'
-			 WHEN LEFT(acc.cuota, 2) = '09' then 'SEPTIEMBRE'
-			 WHEN LEFT(acc.cuota, 2) = '10' then 'OCTUBRE'
-			 WHEN LEFT(acc.cuota, 2) = '11' then 'NOVIEMBRE'
-			 WHEN LEFT(acc.cuota, 2) = '12' then 'DICIEMBRE' 
-			 WHEN RIGHT(acc.cuota, 4) = ''  then ' MATERIALES '
-			 WHEN LENGTH(acc.cuota) = 4     then 'PAGO INSCRIPCIÓN '
-			 END, case when RIGHT(acc.cuota, 4) <> '' then ' DEL ' else '' end, right(acc.cuota, 4)) AS Anio_Cuota
-			 , 
-		SUM(tcc.importe) AS SaldoCuota, SaldoTotal  
-FROM transaccion_cuenta_corriente tcc
-INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_Cc = tcc.id_alumno_cc
-INNER JOIN alumno a ON a.id_alumno = acc.id_alumno AND a.regular = 'S'
-LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
-LEFT JOIN public.medio_pago mp ON pt.id_medio_pago = mp.id_medio_pago
-INNER JOIN persona p ON p.id_persona = a.id_persona
-INNER JOIN 
-	(select id_alumno, sum(tc.importe) AS SaldoCuota
-	 from transaccion_cuenta_corriente tc
-	inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
-	group by id_alumno
-	 having  sum(tc.importe)> 0
-	) AS R1 ON R1.id_alumno = a.id_alumno
-INNER JOIN
-	(select id_alumno, sum(tc.importe) AS SaldoTotal 
-	 from transaccion_cuenta_corriente tc
-	inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
-	group by id_alumno
-	 having  sum(tc.importe)> 0) as r2 on r2.id_alumno = a.id_alumno
-inner join
-	 (SELECT id_alumno, max(id_grado) as ultGrado
-	FROM alumno_datos_cursada
-	--where id_alumno =  272
-	group by id_alumno) as adc on adc.id_alumno = r1.id_alumno
-inner join grado g on g.id_grado = adc.ultGrado
-WHERE  a.id_alumno = $1
-GROUP BY  g.nombre, p.apellidos, p.nombres, a.legajo, acc.id_alumno_cc, acc.cuota, SaldoTotal 
---HAVING SUM(tcc.importe) > 0
---ORDER BY  g.nombre, p.apellidos, p.nombres  --a.legajo
-ORDER BY  
-    CASE 
-        WHEN g.nombre ILIKE 'Sala%' THEN 0
-        ELSE 1
-    END,
+            , RIGHT(acc.cuota, 4) AS Anio, LEFT(acc.cuota, 2) AS Cuota,
+                    CONCAT(CASE WHEN LEFT(acc.cuota, 2) = '01' then 'ENERO' 
+                        WHEN LEFT(acc.cuota, 2) = '02' then 'FEBRERO'
+                        WHEN LEFT(acc.cuota, 2) = '03' then 'MARZO'
+                        WHEN LEFT(acc.cuota, 2) = '04' then 'ABRIL'
+                        WHEN LEFT(acc.cuota, 2) = '05' then 'MAYO'
+                        WHEN LEFT(acc.cuota, 2) = '06' then 'JUNIO'
+                        WHEN LEFT(acc.cuota, 2) = '07' then 'JULIO'
+                        WHEN LEFT(acc.cuota, 2) = '08' then 'AGOSTO'
+                        WHEN LEFT(acc.cuota, 2) = '09' then 'SEPTIEMBRE'
+                        WHEN LEFT(acc.cuota, 2) = '10' then 'OCTUBRE'
+                        WHEN LEFT(acc.cuota, 2) = '11' then 'NOVIEMBRE'
+                        WHEN LEFT(acc.cuota, 2) = '12' then 'DICIEMBRE' 
+                        WHEN RIGHT(acc.cuota, 4) = ''  then ' MATERIALES '
+                        WHEN LENGTH(acc.cuota) = 4     then 'PAGO INSCRIPCIÓN '
+                        END, case when RIGHT(acc.cuota, 4) <> '' then ' DEL ' else '' end, right(acc.cuota, 4)) AS Anio_Cuota
+                        , 
+                    SUM(tcc.importe) AS SaldoCuota, SaldoTotal  
+            FROM transaccion_cuenta_corriente tcc
+            INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_Cc = tcc.id_alumno_cc
+            INNER JOIN alumno a ON a.id_alumno = acc.id_alumno AND a.regular = 'S'
+            LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
+            LEFT JOIN public.medio_pago mp ON pt.id_medio_pago = mp.id_medio_pago
+            INNER JOIN persona p ON p.id_persona = a.id_persona
+            INNER JOIN 
+                (select id_alumno, sum(tc.importe) AS SaldoCuota
+                from transaccion_cuenta_corriente tc
+                inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
+                group by id_alumno
+                having  sum(tc.importe)> 0
+                ) AS R1 ON R1.id_alumno = a.id_alumno
+            INNER JOIN
+                (select id_alumno, sum(tc.importe) AS SaldoTotal 
+                from transaccion_cuenta_corriente tc
+                inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
+                group by id_alumno
+                having  sum(tc.importe)> 0) as r2 on r2.id_alumno = a.id_alumno
+            inner join
+                (SELECT id_alumno, max(id_grado) as ultGrado
+                FROM alumno_datos_cursada
+                --where id_alumno =  272
+                group by id_alumno) as adc on adc.id_alumno = r1.id_alumno
+            inner join grado g on g.id_grado = adc.ultGrado
+            WHERE  a.id_alumno = $1
+            GROUP BY  g.nombre, p.apellidos, p.nombres, a.legajo, acc.id_alumno_cc, acc.cuota, SaldoTotal 
+            --HAVING SUM(tcc.importe) > 0
+            --ORDER BY  g.nombre, p.apellidos, p.nombres  --a.legajo
+            ORDER BY  
+                CASE 
+                    WHEN g.nombre ILIKE 'Sala%' THEN 0
+                    ELSE 1
+                END,
 
-    -- Orden dentro de "Sala de X"
-    CASE 
-        WHEN g.nombre ILIKE 'Sala%' 
-        THEN CAST(REPLACE(g.nombre, 'Sala de ', '') AS INTEGER)
-    END,
+                -- Orden dentro de "Sala de X"
+                CASE 
+                    WHEN g.nombre ILIKE 'Sala%' 
+                    THEN CAST(REPLACE(g.nombre, 'Sala de ', '') AS INTEGER)
+                END,
 
-    -- Orden dentro de grados numéricos (1er, 2do, etc.)
-    CASE 
-        WHEN g.nombre NOT ILIKE 'Sala%' 
-        THEN CAST(SUBSTRING(g.nombre FROM '^[0-9]+') AS INTEGER)
-    END,
+                -- Orden dentro de grados numéricos (1er, 2do, etc.)
+                CASE 
+                    WHEN g.nombre NOT ILIKE 'Sala%' 
+                    THEN CAST(SUBSTRING(g.nombre FROM '^[0-9]+') AS INTEGER)
+                END,
 
-    p.apellidos,
-    p.nombres;
+                p.apellidos,
+                p.nombres;
 
         `,
         [id],
@@ -601,6 +601,121 @@ ORDER BY
       throw new Error(`[DB Error] ${mensajeSeguro}`);
     }
   }
+
+
+     async getTutoresPorId(id) {
+    try {
+        
+      const objetoBuscado = await pool.query(
+        `WITH AlumnoDocumentosPriorizados AS (
+            SELECT  
+                P.id_persona, 
+                CONCAT(P.apellidos, ' ', P.nombres) AS nombre_tutor,
+                P.usuario,
+                ea.nombre AS nivel_estudio_tutor,     -- Nivel de estudio del tutor
+                o.nombre AS ocupacion_tutor,          -- Ocupación del tutor
+                a.id_alumno, 
+                PAlumno.id_persona AS id_persona_alumno,
+                a.legajo, 
+                CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno,
+                ta.nombre AS tipo_allegado_nombre,
+                pa.tutor AS es_tutor,
+                pa.activo,
+                td.id_tipo_documento,
+                td.numero,
+                tdoc.nombre_corto,
+                -- Particionamos por el ID del tutor para obtener 1 documento por cada TUTOR de este alumno
+                ROW_NUMBER() OVER (
+                    PARTITION BY P.id_persona 
+                    ORDER BY 
+                        CASE WHEN td.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC,
+                        td.id_persona_tipo_documento ASC
+                ) AS rn
+            FROM Persona P
+            INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
+            INNER JOIN alumno A ON A.id_alumno = pa.id_alumno AND A.Regular = 'S'    
+            INNER JOIN tipo_allegado ta ON pa.id_tipo_allegado = ta.id_tipo_allegado
+            INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
+            -- JOIN con los documentos DEL TUTOR (P):
+            INNER JOIN persona_tipo_documento td ON P.id_persona = td.id_persona
+            INNER JOIN tipo_documento tdoc ON td.id_tipo_documento = tdoc.id_tipo_documento
+            -- Nuevos JOINs para Estudio y Ocupación:
+            LEFT JOIN estudio_alcanzado ea ON pa.id_estudio_alcanzado = ea.id_estudio_alcanzado  
+            LEFT JOIN ocupacion o ON pa.id_ocupacion = o.id_ocupacion                        
+            WHERE pa.activo = 'S'
+            AND P.activo = 'S' 
+            AND P.es_alumno = 'N'
+            -- CAMBIO AQUÍ: Filtramos por el id_persona del ALUMNO
+            AND PAlumno.id_persona = $1
+        )
+        SELECT 
+            id_persona,
+            nombre_tutor || ' - ' || nombre_corto || ': ' || numero AS "Tutor",
+            usuario,
+            nivel_estudio_tutor,
+            ocupacion_tutor,
+            id_alumno,
+            id_persona_alumno,
+            legajo,
+            NombreAlumno,
+            tipo_allegado_nombre AS nombre,
+            es_tutor AS tutor,
+            activo,
+            id_tipo_documento,
+            numero,
+            nombre_corto
+        FROM AlumnoDocumentosPriorizados
+        WHERE rn = 1;
+        `,
+        [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+// 🌟 INTERCEPTAMOS EL ERROR DE NODE: Creamos un error de texto plano estático
+      // Esto evita que pg-pool intente leer el stack trace roto de la librería
+      const mensajeSeguro = error && error.message ? error.message : "Error inesperado en consulta SQL";
+      throw new Error(`[DB Error] ${mensajeSeguro}`);
+    }
+  }
+
+
+
+async getAllByApellidosDocumento(apellidodocumento){
+        const comodin = `${apellidodocumento}%`
+
+        try {
+
+            //const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))   
+
+            const objetoBuscado = (await pool.query(`  SELECT * FROM (
+            SELECT DISTINCT ON (persona.id_persona) 
+                persona.*, 
+                persona_tipo_documento.id_tipo_documento, 
+                persona_tipo_documento.numero, 
+                td.nombre_corto,
+                alumno.id_alumno,
+                regular,
+                motivo_desercion.nombre AS motivo_desercion -- <-- Se agrega el campo nombre asignándole un alias claro
+            FROM persona 
+            INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+            INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+            LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+            LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
+            WHERE persona.activo <> 'B' and es_alumno = 'N'  and (apellidos ILIKE $1 or numero ILIKE $1)
+            ORDER BY 
+                persona.id_persona, 
+                CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
+                persona_tipo_documento.fecha_alta ASC
+        ) subconsulta 
+        ORDER BY apellidos ASC, nombres ASC;  `, [comodin]));   
+
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
 
 }  
 

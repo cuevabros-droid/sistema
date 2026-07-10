@@ -126,7 +126,29 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
      }
   }
 
+      
+  async function controllerAlumnoTutoresId({ user, params: { id } }, res){
+      try {
+        const resul = await persontService.listarTutoresPorId(id)
+        res.status(201).json(resul)
+        } catch (error) {
+        loggerError(error.message)
+        res.status(404).json({error: error.message})
+     }
+  }
+
+
+  async function controllerPersonsConFiltroApellidoDocumento({ params: { apellidodocumento } }, res) {
+    //console.log(apellidodocumento)
+  try {
+    const resul = await persontService.listarPersonsConFiltroApellidoDocumento(apellidodocumento)
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+}
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId}
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento}
 
 

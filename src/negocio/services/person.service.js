@@ -5,9 +5,12 @@ import { listarPersonsConFiltroApellido } from '../repository/personas/person.js
 import { listarSaldoAlumnoPorId } from '../repository/personas/person.js';
 import { listarAlumnosPorUsuario } from '../repository/personas/person.js';
 import { listarAlumnosPorId } from '../repository/personas/person.js';
+import { listarTutoresPorId } from '../repository/personas/person.js';
 import { updatePersons } from '../repository/personas/person.js';
 import { updatePersonsEstado } from '../repository/personas/person.js';
 import { PersonsCreate } from '../repository/personas/person.js';
+import { listarPersonsConFiltroApellidoDocumento } from '../repository/personas/person.js';
+
 
 
 class PersontService {
@@ -76,6 +79,18 @@ class PersontService {
     async  listarAlumnosPorId(id) {
         const listarAlumnos = await listarAlumnosPorId(id)
         return listarAlumnos
+    }
+
+    async  listarTutoresPorId(id) {
+        const listarAlumnos = await listarTutoresPorId(id)
+        return listarAlumnos
+    }
+
+
+    async  listarPersonsConFiltroApellidoDocumento(apellidodocumento) {
+        const listadoApellido = await listarPersonsConFiltroApellidoDocumento(apellidodocumento)
+        return listadoApellido
+
     }
 
 

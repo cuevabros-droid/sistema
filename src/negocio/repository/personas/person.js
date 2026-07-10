@@ -29,7 +29,7 @@ const pg = new ContainerPg
      }  
      
      
-      export async function listarPersonsConFiltroApellido(apellido) {
+  export async function listarPersonsConFiltroApellido(apellido) {
       try {
         const resul = await pg.getAllByApellidos(apellido)
         if (resul ==  []){
@@ -114,11 +114,38 @@ export async function listarAlumnosPorUsuario(usuario) {
 export async function listarAlumnosPorId(id) {
   try {
     const resul = await pg.getAlumnosPorId(id);
+    console.log(resul)
  if (!resul || resul.length === 0) {      return null;
     } else return resul;
   } catch (error) {
     throw error;
   }
 }
+
+export async function listarTutoresPorId(id) {
+  try {
+    const resul = await pg.getTutoresPorId(id);
+ if (!resul || resul.length === 0) {      
+     return null;
+    } else return resul;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
+  export async function listarPersonsConFiltroApellidoDocumento(apellidodocumento) {
+      try {
+        const resul = await pg.getAllByApellidosDocumento(apellidodocumento)
+        if (resul ==  []){
+          return null
+        }
+   
+        else 
+        return resul
+      } catch (error) {
+          return error
+      }       
+  }
 
 
