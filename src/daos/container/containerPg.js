@@ -170,6 +170,37 @@ class ContainerPg{
         } 
      }
 
+    async getOcupaciones(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from ocupacion order by id_ocupacion`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+     }
+
+    async getEstudios(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from estudio_alcanzado order by id_estudio_alcanzado`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+     }
+
+
+    async getTiposAllegado(){
+        try {
+            const objetoBuscado = (await pool.query(`select * from tipo_allegado order by id_tipo_allegado`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+     }
+
      
     async getDocumentosPersona(id){
         try {
