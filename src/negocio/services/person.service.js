@@ -9,7 +9,10 @@ import { listarTutoresPorId } from '../repository/personas/person.js';
 import { updatePersons } from '../repository/personas/person.js';
 import { updatePersonsEstado } from '../repository/personas/person.js';
 import { PersonsCreate } from '../repository/personas/person.js';
+import { PersonaAllegadaCreate } from '../repository/personas/person.js';
+import { eliminarAllegado } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellidoDocumento } from '../repository/personas/person.js';
+import { updatePersonaAllegada } from '../repository/personas/person.js';
 
 
 
@@ -93,6 +96,32 @@ class PersontService {
 
     }
 
+    async PersonaAllegadaCreate(objeto) {
+        try {
+          const createPersonaAllegada = await PersonaAllegadaCreate(objeto)
+            return createPersonaAllegada  
+        } catch (error) {
+            console.error("Error en service PersonaAllegadaCreate:", error);
+            throw error; // Re-lanza el error nativo sin re-instanciar objetos raros
+        }
+    } 
+
+    //Elimina documento persona
+    async eliminarAllegado(id) {
+        const registro = await eliminarAllegado(id)
+            return registro
+    }
+
+
+        //Actualiza los datos de una Persona dada
+    async updatePersonaAllegada(objeto, id) {
+        try {
+          updatePersonaAllegada = await updatePersonaAllegada(objeto, id)
+            return updatePersonaAllegada  
+        } catch (error) {
+            return error
+        }
+    } 
 
 }
 

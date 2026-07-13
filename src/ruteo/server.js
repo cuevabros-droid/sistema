@@ -46,7 +46,6 @@ servidor.use(express.static('public/img'))
 //multer
 multer_function()
 
-
 //Si viene de una ruta no implementada
 servidor.all('*', (req, res) => {
   res.status(404).json({error: "404", descripcion: "ruta " + req.url + " método " + req.method + " no implementado"})

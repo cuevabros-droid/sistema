@@ -84,7 +84,7 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
     }
   }
 
-    async function controllerPersonsCreate({ user, body }, res) {
+  async function controllerPersonsCreate({ user, body }, res) {
     try {
       body.usuario_sistema = user.usuario
       const resul = await persontService.PersonsCreate(body)
@@ -148,7 +148,44 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
     res.status(404).json({error: error.message})
   }
 }
+
+  async function controllerPersonaAllegadaCreate({ user, body }, res) {
+    try {
+      body.usuario_sistema = user.usuario
+      const resul = await persontService.PersonaAllegadaCreate(body)
+      return res.status(201).json(resul)
+    } catch (error) {
+        console.error("Error en controllerPersonaAllegadaCreate:", error);
+            // Devuelve respuesta limpia al frontend
+            return res.status(500).json({ 
+              error: error.message || "Error interno al guardar allegado" 
+            });
+    }
+  }
+
+  async function controllerPersonaAllegadaDelete(req, res) {
+    const id = req.params.id
+    try {
+      const resul = await persontService.eliminarAllegado(id)
+      res.status(201).json(resul)
+    } catch (error) {
+      loggerError(error.message)
+      loggerError(error.message)
+      res.status(404).json({error: error.message})
+    }
+  }
   
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento}
+    async function controllerPersonaAllegadaUpdate({ user, body, params: { id } }, res) {
+      try {
+        body.usuario_sistema= user.usuario
+        const resul = await persontService.updatePersonaAllegada(body, id)
+        res.status(201).json(resul)
+      } catch (error) {
+        loggerError(error.message)
+        res.status(404).json({error: error.message})
+      }
+  }
+
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate}
 
 

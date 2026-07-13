@@ -72,6 +72,32 @@ async function controllerEliminarDocumentoPersona(req, res) {
 }
 
 
-export {controllerDocumentos, controllerDocumentosPersona, controllerRegistrarDocumentoPersona, controllerActualizarDocumentoPersona, controllerEliminarDocumentoPersona}
+async function controllerExistePersona(req, res) {
+  try {
+    const { tipo, numero } = req.query;
+
+    // 1. Validar primero que vengan los datos
+    if (!tipo || !numero) {
+      return res.status(400).json({ error: "Debe proporcionar tipo y numero de documento" });
+    }
+
+    // 2. Llamar al servicio
+    const resul = await documentosService.ExistePersona(tipo, numero);
+
+    // 3. Responder según el resultado del servicio
+    if (resul) {
+      // Si el servicio devuelve la persona o el id directamente:
+      return res.status(200).json({ existe: true });
+    } else {
+      return res.status(200).json({ existe: false });    }
+
+  } catch (error) {
+    console.error("Error en controllerExistePersona:", error);
+    return res.status(500).json({ error: "Error interno del servidor", detalle: error.message });
+  }
+}
+
+
+export {controllerDocumentos, controllerDocumentosPersona, controllerRegistrarDocumentoPersona, controllerActualizarDocumentoPersona, controllerEliminarDocumentoPersona, controllerExistePersona}
 
 

@@ -48,3 +48,13 @@ const pg = new ContainerPg
             return error
         }       
     }
+
+        
+    export async function ExistePersona(tipo, numero) {
+        try {
+          const resul = await pg.ExistePersona(tipo, numero)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }

@@ -4,6 +4,7 @@ import { listarDocumentosPersona } from '../repository/documentos/documentos.js'
 import { registrarDocumentoPersona } from '../repository/documentos/documentos.js';
 import { actualizarDocumentoPersona } from '../repository/documentos/documentos.js';
 import { eliminarDocumentoPersona } from '../repository/documentos/documentos.js';
+import { ExistePersona } from '../repository/documentos/documentos.js';
 
 
 class DocumentosService {
@@ -33,9 +34,15 @@ class DocumentosService {
             return registro
     }
 
-    //Actualiza documento persona
+    //Elimina documento persona
     async eliminarDocumentoPersona(id) {
             const registro = await eliminarDocumentoPersona(id)
+            return registro
+    }
+
+    //Controla si ya existe persona por tipo y documento persona
+    async ExistePersona(tipo, numero) {
+            const registro = await ExistePersona(tipo, numero)
             return registro
     }
 

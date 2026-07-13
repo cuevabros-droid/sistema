@@ -148,4 +148,41 @@ export async function listarTutoresPorId(id) {
       }       
   }
 
+export async function PersonaAllegadaCreate(objeto) {
+    try {
+        const resul = await pg.createPersonaAllegada(objeto);
 
+        // Si es un array y está vacío, o si no viene nada
+        if (Array.isArray(resul) && resul.length === 0) {
+            return null;
+        } else {
+            return resul;
+        }
+    } catch (error) {
+        return error;
+    }       
+}
+
+
+    export async function eliminarAllegado(id) {
+        try {
+          const resul = await pg.eliminarAllegado(id)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
+
+    export async function updatePersonaAllegada(objeto, id) {
+      try {
+
+        const resul = await pg.updatePersonaAllegada(objeto, id)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }

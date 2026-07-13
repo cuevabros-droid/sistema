@@ -640,6 +640,7 @@ try {
       const objetoBuscado = await pool.query(
         `WITH AlumnoDocumentosPriorizados AS (
             SELECT  
+                pa.id_persona_allegado,
                 P.id_persona, 
                 CONCAT(P.apellidos, ' ', P.nombres) AS nombre_tutor,
                 P.usuario,
@@ -673,13 +674,14 @@ try {
             -- Nuevos JOINs para Estudio y Ocupación:
             LEFT JOIN estudio_alcanzado ea ON pa.id_estudio_alcanzado = ea.id_estudio_alcanzado  
             LEFT JOIN ocupacion o ON pa.id_ocupacion = o.id_ocupacion                        
-            WHERE pa.activo = 'S'
-            AND P.activo = 'S' 
+            WHERE (pa.activo = 'S' OR pa.activo = 'N')
+            AND P.activo = 'S'
             AND P.es_alumno = 'N'
             -- CAMBIO AQUÍ: Filtramos por el id_persona del ALUMNO
             AND PAlumno.id_persona = $1
         )
         SELECT 
+            id_persona_allegado,
             id_persona,
             nombre_tutor || ' - ' || nombre_corto || ': ' || numero AS "Tutor",
             usuario,
@@ -747,9 +749,131 @@ async getAllByApellidosDocumento(apellidodocumento){
         } 
     }
 
+        //ALTA
+    async createPersonaAllegada(objeto){
+        // Formato estándar de base de datos sin offset de zona horaria
+       // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+        // Resultado: "2026-05-25 14:20:00"
+//console.log("este es el DAO"  + objeto.usuario)
+       const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
 
-}  
+       const query = `
+        INSERT INTO persona_allegado (
+            id_persona, id_alumno, id_tipo_allegado, id_estudio_alcanzado, 
+            id_ocupacion, tutor, activo, 
+            fecha_alta, usuario_alta, fecha_ultima_modificacion, usuario_ultima_modificacion
 
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING *;
+        `;
+
+        const valores = [
+        objeto.id_persona, 
+        objeto.id_alumno, 
+        objeto.id_tipo_allegado, 
+        objeto.id_estudio_alcanzado,
+        objeto.id_ocupacion, 
+        objeto.tutor,
+        objeto.activo, 
+        fechaActual, 
+        objeto.usuario_sistema, 
+        fechaActual, 
+        objeto.usuario_sistema
+        ];
+
+try {
+    console.log("Intentando ejecutar la consulta con los valores:", valores);
+    
+    await pool.query('BEGIN'); 
+    
+    // 1. Insertar el alumno
+    const resultado = await pool.query(query, valores); 
+    const allegadosCreado = resultado.rows[0]; // Aquí está el id_alumno generado
+  
+    await pool.query('COMMIT'); 
+
+    console.log("Datos que Postgres dice haber guardado:", allegadosCreado);
+    
+    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
+    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+    return allegadosCreado; 
+
+} catch (error) {
+    await pool.query('ROLLBACK'); 
+    console.error("❌ Error al insertar en Postgres:", error);
+    throw error; 
+}
+
+   }  
+
+
+       async eliminarAllegado(id){
+        try {
+            await pool.query('BEGIN'); 
+            const objetoBuscado = (await pool.query(`delete from persona_allegado where id_persona_allegado=$1`, [id]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
+
+
+    async ExistePersona(tipo, numero){
+
+        try {
+      
+            if (!tipo || !numero) {
+            return  'Faltan parámetros de búsqueda' ;
+            }
+
+            // Consulta en la tabla que relaciona personas con documentos
+            const query = `
+            SELECT id_persona 
+            FROM persona_tipo_documento 
+            WHERE id_tipo_documento = $1 AND numero = $2 
+            LIMIT 1
+            `;
+            const result = await pool.query(query, [tipo, numero]);
+
+            if(result.rows.length > 0)
+              return true
+            else
+              return false
+            
+        } catch (error) {
+            console.error('Error al validar documento:', error);
+            return  'Error interno del servidor';
+        }
+
+    }  
+
+
+
+        //ACTUALIZA DATOS DE UNA PERSONA ALLEGADA 
+    async updatePersonaAllegada(objeto, id){
+
+        if (objeto.es_alumno === "S")
+            objeto.usuario = null
+
+        try {
+            await pool.query('BEGIN'); 
+            const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario_sistema ]))
+            const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2, usuario_ultima_modificacion = $3, fecha_ultima_modificacion = $4 where id_persona=$1`, [id, objeto.id_sexo, objeto.usuario_sistema, fechaActual]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado, objetoBuscado2;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+    }
+
+}
 
 
 
