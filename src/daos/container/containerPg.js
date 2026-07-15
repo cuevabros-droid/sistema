@@ -515,7 +515,6 @@ try {
 
   async getSaldosPorAlumno(id) {
     try {
-        console.log(id)
       const objetoBuscado = await pool.query(
         `SELECT  acc.id_alumno_cc, g.nombre AS Grado,  CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, a.legajo
         , RIGHT(acc.cuota, 4) AS Anio, 
@@ -870,12 +869,10 @@ try {
 
         //ACTUALIZA DATOS DE UNA PERSONA ALLEGADA 
     async updatePersonaAllegada(objeto, id){
-console.log(id)
-console.log(objeto)
+
          try {
             await pool.query('BEGIN'); 
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            console.log(fechaActual)
             const objetoBuscado = (await pool.query(`update persona_allegado set id_persona = $2, id_alumno = $3, id_tipo_allegado = $4, id_estudio_alcanzado = $5, id_ocupacion = $6, tutor = $7, activo = $8, fecha_alta = $9, usuario_alta = $10, fecha_ultima_modificacion = $11, usuario_ultima_modificacion = $12 where id_persona_allegado=$1`, [id, objeto.id_persona, objeto.id_alumno, objeto.id_tipo_allegado, objeto.id_estudio_alcanzado, objeto.id_ocupacion, objeto.tutor, objeto.activo, fechaActual, objeto.usuario_sistema, fechaActual, objeto.usuario_sistema ]))
             await pool.query('COMMIT'); 
             return objetoBuscado;

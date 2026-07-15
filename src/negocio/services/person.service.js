@@ -116,7 +116,6 @@ class PersontService {
         //Actualiza los datos de una Persona dada
     async updatePersonaAllegada(body, id) {
         try {
-            console.log(id)
           updatePersonaAllegada = await updatePersonaAllegada(body, id)
             return updatePersonaAllegada  
         } catch (error) {
