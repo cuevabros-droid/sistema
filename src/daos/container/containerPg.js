@@ -870,17 +870,15 @@ try {
 
         //ACTUALIZA DATOS DE UNA PERSONA ALLEGADA 
     async updatePersonaAllegada(objeto, id){
-
-        if (objeto.es_alumno === "S")
-            objeto.usuario = null
-
-        try {
+console.log(id)
+console.log(objeto)
+         try {
             await pool.query('BEGIN'); 
             const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario_sistema ]))
-            const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2, usuario_ultima_modificacion = $3, fecha_ultima_modificacion = $4 where id_persona=$1`, [id, objeto.id_sexo, objeto.usuario_sistema, fechaActual]))
+            console.log(fechaActual)
+            const objetoBuscado = (await pool.query(`update persona_allegado set id_persona = $2, id_alumno = $3, id_tipo_allegado = $4, id_estudio_alcanzado = $5, id_ocupacion = $6, tutor = $7, activo = $8, fecha_alta = $9, usuario_alta = $10, fecha_ultima_modificacion = $11, usuario_ultima_modificacion = $12 where id_persona_allegado=$1`, [id, objeto.id_persona, objeto.id_alumno, objeto.id_tipo_allegado, objeto.id_estudio_alcanzado, objeto.id_ocupacion, objeto.tutor, objeto.activo, fechaActual, objeto.usuario_sistema, fechaActual, objeto.usuario_sistema ]))
             await pool.query('COMMIT'); 
-            return objetoBuscado, objetoBuscado2;
+            return objetoBuscado;
         }
         catch(error){
             await pool.query('ROLLBACK'); 

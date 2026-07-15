@@ -114,9 +114,10 @@ class PersontService {
 
 
         //Actualiza los datos de una Persona dada
-    async updatePersonaAllegada(objeto, id) {
+    async updatePersonaAllegada(body, id) {
         try {
-          updatePersonaAllegada = await updatePersonaAllegada(objeto, id)
+            console.log(id)
+          updatePersonaAllegada = await updatePersonaAllegada(body, id)
             return updatePersonaAllegada  
         } catch (error) {
             return error
