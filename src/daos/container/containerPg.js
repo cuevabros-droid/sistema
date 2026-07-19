@@ -931,55 +931,54 @@ try {
     }
 
 
-           //ALTA
-    async createAcademica(objeto){
-        // Formato estándar de base de datos sin offset de zona horaria
-       // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-        // Resultado: "2026-05-25 14:20:00"
+// ALTA MÚLTIPLE
+async createAcademica(objeto) {
+    const query = `
+    INSERT INTO alumno_datos_cursada (
+        id_alumno, id_grado, division, genero_costo_inscripcion, 
+        pago_inscripcion, anio_cursada, id_division
+    ) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+    `;
 
-       const query = `
-        INSERT INTO alumno_datos_cursada (
-            id_alumno, id_grado, division, genero_costo_inscripcion, 
-            pago_inscripcion, anio_cursada, id_division
-        ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *;
-        `;
+    // Array para guardar los resultados de cada inserción
+    const resultadosInsertados = [];
 
-        const valores = [
-        objeto.historialAcademico[0].id_alumno, 
-        parseInt(objeto.historialAcademico[0].id_grado), 
-        objeto.historialAcademico[0].division, 
-        objeto.historialAcademico[0].genero_cargo,
-        objeto.historialAcademico[0].pago_cargo, 
-        objeto.historialAcademico[0].anio_cursada,
-        parseInt(objeto.historialAcademico[0].id_division)
-        ];
+    try {
+        await pool.query('BEGIN'); 
 
-try {
-    console.log("Intentando ejecutar la consulta con los valores:", valores);
-    
-    await pool.query('BEGIN'); 
-    
-    // 1. Insertar el alumno
-    const resultado = await pool.query(query, valores); 
-    const academicaCreado = resultado.rows[0]; // Aquí está el id_alumno generado
-  
-    await pool.query('COMMIT'); 
+        // 🌟 RECORREMOS todo el historial académico que viene del frontend
+        for (const item of objeto.historialAcademico) {
+            
+            const valores = [
+                item.id_alumno, 
+                parseInt(item.id_grado), 
+                item.division, 
+                item.genero_cargo,
+                item.pago_cargo, 
+                item.anio_cursada,
+                parseInt(item.id_division)
+            ];
 
-    console.log("Datos que Postgres dice haber guardado:", academicaCreado);
-    
-    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
-    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
-    return academicaCreado; 
+            console.log("Intentando insertar registro con los valores:", valores);
+            
+            const resultado = await pool.query(query, valores); 
+            resultadosInsertados.push(resultado.rows[0]);
+        }
+      
+        await pool.query('COMMIT'); 
+        console.log("Todos los registros se guardaron correctamente. Cantidad:", resultadosInsertados.length);
+        
+        // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+        return resultadosInsertados; 
 
-} catch (error) {
-    await pool.query('ROLLBACK'); 
-    console.error("❌ Error al insertar en Postgres:", error);
-    throw error; 
+    } catch (error) {
+        await pool.query('ROLLBACK'); 
+        console.error("❌ Error al insertar múltiples registros en Postgres:", error);
+        throw error; 
+    }
 }
-
-   }  
 
 
     async deleteAcademica(id){
