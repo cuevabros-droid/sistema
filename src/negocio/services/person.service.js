@@ -79,8 +79,8 @@ class PersontService {
         return listarAlumnos
     }
 
-    async  listarAlumnosPorId(id) {
-        const listarAlumnos = await listarAlumnosPorId(id)
+    async  listarAlumnosPorId(id, id_establecimiento) {
+        const listarAlumnos = await listarAlumnosPorId(id, id_establecimiento)
         return listarAlumnos
     }
 

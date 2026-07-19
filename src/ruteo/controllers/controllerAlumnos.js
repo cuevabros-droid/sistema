@@ -87,7 +87,6 @@ async function controllerAlumnosConFiltroApellido({ params: { apellido } }, res)
 
 
   async function controllerAlumnosCreate({ user, body }, res) {
-
     try {
       body.usuario_sistema = user.usuario
       body.id_establecimiento = user.identidadeducativa

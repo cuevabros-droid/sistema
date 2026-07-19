@@ -118,7 +118,7 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
 
     async function controllerAlumnosPorTutorId({ user, params: { id } }, res){
       try {
-        const resul = await persontService.listarAlumnosPorId(id)
+        const resul = await persontService.listarAlumnosPorId(id, user.identidadeducativa)
         res.status(201).json(resul)
         } catch (error) {
         loggerError(error.message)

@@ -111,9 +111,9 @@ export async function listarAlumnosPorUsuario(usuario) {
   }
 }
 
-export async function listarAlumnosPorId(id) {
+export async function listarAlumnosPorId(id, id_establecimiento) {
   try {
-    const resul = await pg.getAlumnosPorId(id);
+    const resul = await pg.getAlumnosPorId(id, id_establecimiento);
  if (!resul || resul.length === 0) {      return null;
     } else return resul;
   } catch (error) {

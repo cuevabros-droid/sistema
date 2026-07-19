@@ -27,7 +27,7 @@ routerApiPersona.post('/', autenticacion, controllerPersonsCreate);
 routerApiPersona.post('/SaldoAlumno/:id', autenticacion, controllerPersonsSaldos ); 
 routerApiPersona.post('/AlumnosTutor/:usuario', autenticacion, controllerAlumnosPorTutor);
 routerApiPersona.get('/AlumnosTutorId/:id', autenticacion, controllerAlumnosPorTutorId);
-routerApiPersona.get('/AlumnoTutoresId/:id',  controllerAlumnoTutoresId);
+routerApiPersona.get('/AlumnoTutoresId/:id',  autenticacion, controllerAlumnoTutoresId);
 routerApiPersona.get('/apellidodocumento/:apellidodocumento', autenticacion, controllerPersonsConFiltroApellidoDocumento); 
 routerApiPersona.post('/AlumnoTutores/', autenticacion, controllerPersonaAllegadaCreate); 
 routerApiPersona.delete('/AlumnoTutores/:id', autenticacion, controllerPersonaAllegadaDelete); 

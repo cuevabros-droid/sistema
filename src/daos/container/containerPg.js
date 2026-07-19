@@ -580,7 +580,7 @@ ORDER BY
     }
   }
 
-    async getAlumnosPorId(id) {
+    async getAlumnosPorId(id, id_establecimiento) {
     try {
         
       const objetoBuscado = await pool.query(
@@ -618,6 +618,7 @@ ORDER BY
             AND P.activo = 'S' 
             AND P.es_alumno = 'N'
             AND P.id_persona = $1
+            AND id_establecimiento = $2
         )
         SELECT 
             id_persona,
@@ -636,7 +637,7 @@ ORDER BY
         FROM AlumnoDocumentosPriorizados
         WHERE rn = 1;
         `,
-        [id],
+        [id, id_establecimiento],
       );
       return objetoBuscado.rows;
     } catch (error) {
@@ -882,6 +883,172 @@ try {
             return error
         } 
     }
+
+
+    async getGrado(id_establecimiento){
+        try {
+            const objetoBuscado = (await pool.query(`select id_grado, nombre from grado where id_establecimiento = $1 order by id_grado`, [id_establecimiento] ))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+    async getDivision(id_establecimiento){
+        try {
+            const objetoBuscado = (await pool.query(`select id_division, division from divisiones where id_establecimiento = $1 order by id_division`, [id_establecimiento] ))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+    
+    async getAnioCursado(){
+        try {
+            const objetoBuscado = (await pool.query(`select id_anio, anio from anio order by anio desc`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+    async getListado(id, id_establecimiento){
+        try {
+            const objetoBuscado = (await pool.query(`select dc.*, g.*, a.*, d.* from alumno_datos_cursada dc, grado g, anio a, divisiones d, alumno alu
+                where dc.id_grado = g.id_grado and dc.anio_cursada = a.id_anio and dc.id_division = d.id_division and
+                alu.id_alumno = dc.id_alumno and alu.id_establecimiento = $2 and
+                dc.id_alumno = $1
+                order by a.anio DESC`, [id, id_establecimiento] ))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+
+           //ALTA
+    async createAcademica(objeto){
+        // Formato estándar de base de datos sin offset de zona horaria
+       // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+        // Resultado: "2026-05-25 14:20:00"
+
+       const query = `
+        INSERT INTO alumno_datos_cursada (
+            id_alumno, id_grado, division, genero_costo_inscripcion, 
+            pago_inscripcion, anio_cursada, id_division
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *;
+        `;
+
+        const valores = [
+        objeto.historialAcademico[0].id_alumno, 
+        parseInt(objeto.historialAcademico[0].id_grado), 
+        objeto.historialAcademico[0].division, 
+        objeto.historialAcademico[0].genero_cargo,
+        objeto.historialAcademico[0].pago_cargo, 
+        objeto.historialAcademico[0].anio_cursada,
+        parseInt(objeto.historialAcademico[0].id_division)
+        ];
+
+try {
+    console.log("Intentando ejecutar la consulta con los valores:", valores);
+    
+    await pool.query('BEGIN'); 
+    
+    // 1. Insertar el alumno
+    const resultado = await pool.query(query, valores); 
+    const academicaCreado = resultado.rows[0]; // Aquí está el id_alumno generado
+  
+    await pool.query('COMMIT'); 
+
+    console.log("Datos que Postgres dice haber guardado:", academicaCreado);
+    
+    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
+    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+    return academicaCreado; 
+
+} catch (error) {
+    await pool.query('ROLLBACK'); 
+    console.error("❌ Error al insertar en Postgres:", error);
+    throw error; 
+}
+
+   }  
+
+
+    async deleteAcademica(id){
+        try {
+            await pool.query('BEGIN'); 
+            const objetoBuscado = (await pool.query(`delete from alumno_datos_cursada where id_alumno_dato_cursada=$1`, [id]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
+
+
+
+async updateAcademica(objeto) {
+  try {
+    const resultados = [];
+
+    // 1. Validamos que exista el historial y sea un array recorrible
+    if (!objeto || !objeto.historialAcademico || !Array.isArray(objeto.historialAcademico)) {
+      return null;
+    }
+
+    // 2. Definimos el bucle para iterar sobre cada registro utilizando 'item'
+    for (const item of objeto.historialAcademico) {
+      // ¡Acá agregamos el UPDATE que faltaba al principio!
+      const queryText = `
+        UPDATE alumno_datos_cursada 
+        SET id_alumno = $2, 
+            id_grado = $3, 
+            division = $4, 
+            genero_costo_inscripcion = $5, 
+            pago_inscripcion = $6, 
+            anio_cursada = $7, 
+            id_division = $8 
+        WHERE id_alumno_dato_cursada = $1
+        RETURNING *;
+      `;
+
+      const queryValues = [
+        parseInt(item.id_alumno_dato_cursada),                // $1
+        parseInt(item.id_alumno),                             // $2
+        parseInt(item.id_grado),                              // $3
+        item.division,                                        // $4
+        item.genero_costo_inscripcion,   // $5
+        item.pago_inscripcion,             // $6
+        parseInt(item.anio_cursada),          // $7
+        parseInt(item.id_division)                            // $8
+      ];
+
+      // 3. Ejecutamos la consulta en tu pool de base de datos
+      const resQuery = await pool.query(queryText, queryValues); 
+      // Nota: Si usás "this.pool" o "pool" directo, adaptalo según cómo esté instanciado en tu clase ContainerPg
+      
+      if (resQuery.rows.length > 0) {
+        resultados.push(resQuery.rows[0]);
+      }
+    }
+
+    return resultados;
+
+  } catch (error) {
+    console.error("Error en ContainerPg.updateAcademica:", error);
+    throw error;
+  }
+}
 
 }
 
