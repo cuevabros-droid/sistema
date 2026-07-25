@@ -1049,6 +1049,179 @@ async updateAcademica(objeto) {
   }
 }
 
+
+    async getMedios(){
+        try {
+            const objetoBuscado = (await pool.query(`select id_medio_pago, nombre from medio_pago order by jerarquia`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+    async getMarcas(){
+        try {
+            const objetoBuscado = (await pool.query(`select id_marca_tarjeta, nombre from marca_tarjeta order by jerarquia`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+    async getEntidades(){
+        try {
+            const objetoBuscado = (await pool.query(`select id_entidad_bancaria, nombre from entidad_bancaria order by id_entidad_bancaria`))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+        
+    async getListadoPagos(id, id_establecimiento){
+        try {
+            const objetoBuscado = (await pool.query(`SELECT 
+    at.id_alumno_tarjeta, 
+    at.id_alumno, 
+    at.id_medio_pago, 
+    COALESCE(mp.nombre, '-') AS medio_pago, 
+    at.id_marca_tarjeta, 
+    COALESCE(mt.nombre, '-') AS marca_tarjeta, 
+    at.id_entidad_bancaria, 
+    COALESCE(eb.nombre, '-') AS entidad_bancaria, 
+    COALESCE(at.numero_tarjeta, '-') AS numero_tarjeta, 
+    COALESCE(at.nombre_titular, '-') AS nombre_titular, 
+    COALESCE(at.activo, '-') AS activo
+FROM alumno_tarjeta at
+JOIN alumno a ON at.id_alumno = a.id_alumno
+JOIN persona p ON a.id_persona = p.id_persona
+JOIN medio_pago mp ON at.id_medio_pago = mp.id_medio_pago
+LEFT JOIN marca_tarjeta mt ON at.id_marca_tarjeta = mt.id_marca_tarjeta
+LEFT JOIN entidad_bancaria eb ON at.id_entidad_bancaria = eb.id_entidad_bancaria
+WHERE a.id_alumno = $1
+  AND a.id_establecimiento = $2;`, [id, id_establecimiento] ))
+            return objetoBuscado.rows;
+        }
+        catch(error){
+            return error
+        } 
+    }
+
+
+    
+// ALTA MÚLTIPLE
+async createPago(objeto) {
+   
+    const query = `
+    INSERT INTO alumno_tarjeta (
+        id_alumno, id_medio_pago, id_marca_tarjeta, id_entidad_bancaria, 
+        numero_tarjeta, activo, nombre_titular
+    ) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+    `;
+
+    try {
+        await pool.query('BEGIN'); 
+
+        if(Number(objeto.id_medio_pago) === 1 || Number(objeto.id_medio_pago) === 2 || Number(objeto.id_medio_pago) === 5 || Number(objeto.id_medio_pago) === 6) {
+            objeto.id_marca_tarjeta = null
+            objeto.id_entidad_bancaria = null
+            objeto.numero_tarjeta = null
+            objeto.activo = null
+            objeto.nombre_titular = null
+        }
+            
+            const valores = [
+                objeto.id_alumno, 
+                objeto.id_medio_pago, 
+                objeto.id_marca_tarjeta, 
+                objeto.id_entidad_bancaria,
+                objeto.numero_tarjeta, 
+                objeto.activo,
+                objeto.nombre_titular
+            ];
+
+            console.log("Intentando insertar registro con los valores:", valores);
+            
+            const resultado = await pool.query(query, valores); 
+      
+        await pool.query('COMMIT'); 
+        
+        return resultado; 
+
+    } catch (error) {
+        await pool.query('ROLLBACK'); 
+        console.error("❌ Error al insertar múltiples registros en Postgres:", error);
+        throw error; 
+    }
+}
+
+
+    async deletePago(id){
+        try {
+            await pool.query('BEGIN'); 
+            const objetoBuscado = (await pool.query(`delete from alumno_tarjeta where id_alumno_tarjeta=$1`, [id]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado;
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
+
+
+
+async updatePago(objeto) {
+  try {
+
+        if(Number(objeto.id_medio_pago) === 1 || Number(objeto.id_medio_pago) === 2 || Number(objeto.id_medio_pago) === 5 || Number(objeto.id_medio_pago) === 6) {
+            objeto.id_marca_tarjeta = null
+            objeto.id_entidad_bancaria = null
+            objeto.numero_tarjeta = null
+            objeto.activo = null
+            objeto.nombre_titular = null
+        }
+
+      const queryText = `
+        UPDATE alumno_tarjeta 
+        SET id_alumno = $2, 
+            id_medio_pago = $3, 
+            id_marca_tarjeta = $4, 
+            id_entidad_bancaria = $5, 
+            numero_tarjeta = $6, 
+            activo = $7, 
+            nombre_titular = $8 
+        WHERE id_alumno_tarjeta = $1
+        RETURNING *;
+      `;
+
+      const queryValues = [
+        objeto.id_alumno_tarjeta,                // $1
+        objeto.id_alumno,                             // $2
+        objeto.id_medio_pago,                              // $3
+        objeto.id_marca_tarjeta,                                        // $4
+        objeto.id_entidad_bancaria,   // $5
+        objeto.numero_tarjeta,             // $6
+        objeto.activo,          // $7
+        objeto.nombre_titular                            // $8
+      ];
+
+      // 3. Ejecutamos la consulta en tu pool de base de datos
+      const resultados = await pool.query(queryText, queryValues); 
+      
+    return resultados;
+
+  } catch (error) {
+    console.error("Error en ContainerPg.updateAcademica:", error);
+    throw error;
+  }
+}
+
 }
 
 

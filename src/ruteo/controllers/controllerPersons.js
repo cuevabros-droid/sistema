@@ -139,7 +139,6 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
 
 
   async function controllerPersonsConFiltroApellidoDocumento({ params: { apellidodocumento } }, res) {
-    //console.log(apellidodocumento)
   try {
     const resul = await persontService.listarPersonsConFiltroApellidoDocumento(apellidodocumento)
     res.status(201).json(resul)
