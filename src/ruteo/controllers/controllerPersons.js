@@ -5,12 +5,12 @@ import {pool} from '../../daos/db/pgClient.js';
 
  async function controllerPersons(req, res) {
 
-  try {
-    const resul = await persontService.listarPersonas()
-    res.status(201).json(resul)
+try {
+    // req.query contiene los QueryParams que mandó React: { search, esAlumno, esTutor, estado }
+    const personas = await persontService.listarPersonas(req.query);
+    res.json(personas);
   } catch (error) {
-    loggerError(error.message)
-    res.status(404).json({error: error.message})
+    res.status(500).json({ error: "Error al obtener las personas" });
   }
 
 }
@@ -40,16 +40,6 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
 
 }
    
-
-async function controllerPersonsConFiltroApellido({ params: { apellido } }, res) {
-  try {
-    const resul = await persontService.listarPersonsConFiltroApellido(apellido)
-    res.status(201).json(resul)
-  } catch (error) {
-    loggerError(error.message)
-    res.status(404).json({error: error.message})
-  }
-}
 
   async function controllerPersonsUpdate({ user, body, params: { id } }, res) {
    
@@ -185,6 +175,6 @@ async function controllerPersonsConFiltroApellido({ params: { apellido } }, res)
       }
   }
 
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsConFiltroApellido, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate}
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate}
 
 

@@ -94,14 +94,47 @@ class ContainerPg{
         } 
     }
 
-        async getAllByApellidos(apellido){
-        const apellidosconcomodin = `${apellido}%`
 
-        try {
+async getAllWithFilters(filtros = {}) {
+  const { search, esAlumno, esTutor, estado } = filtros;
 
-            //const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))   
+  // Condiciones base para el WHERE
+  const conditions = ["persona.activo <> 'B'"];
+  const params = [];
 
-            const objetoBuscado = (await pool.query(`  SELECT * FROM (
+  // 1. Filtro por Texto Libre (Búsqueda por Nombre, Apellido o Número de Documento)
+  if (search && search.trim() !== '') {
+    params.push(`%${search.trim()}%`);
+    const paramIndex = `$${params.length}`;
+    
+    // Busca concordancia en nombres, apellidos o número de documento
+    conditions.push(`(
+      persona.apellidos ILIKE ${paramIndex} OR 
+      persona.nombres ILIKE ${paramIndex} OR 
+      persona_tipo_documento.numero ILIKE ${paramIndex}
+    )`);
+  }
+// 3. Filtros por Rol
+  if (String(esAlumno) === 'true') {
+    conditions.push(`alumno.id_alumno IS NOT NULL`);
+  }
+
+  if (String(esTutor) === 'true') {
+    conditions.push(`es_alumno = 'N'`);
+  }
+
+  // 4. Estado de Alumno (Comparamos con 'S' y 'N')
+  if (String(esAlumno) === 'true' && estado === 'activo') {
+    conditions.push(`alumno.regular = 'S'`);
+  } else if (String(esAlumno) === 'true' && estado === 'pasivo') {
+    conditions.push(`alumno.regular = 'N'`);
+  }
+  // Unimos todas las condiciones con AND
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  try {
+    const query = `
+     SELECT * FROM (
             SELECT DISTINCT ON (persona.id_persona) 
                 persona.*, 
                 persona_tipo_documento.id_tipo_documento, 
@@ -115,20 +148,23 @@ class ContainerPg{
             INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
             LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
             LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
-            WHERE persona.activo <> 'B'  and apellidos ILIKE $1
+        ${whereClause}
             ORDER BY 
                 persona.id_persona, 
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
                 persona_tipo_documento.fecha_alta ASC
         ) subconsulta 
-        ORDER BY apellidos ASC, nombres ASC;  `, [apellidosconcomodin]));   
+        ORDER BY apellidos ASC, nombres ASC; 
+    `;
 
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-    }
+    const objetoBuscado = await pool.query(query, params);
+    return objetoBuscado.rows;
+
+  } catch (error) {
+    console.error("Error en getAllWithFilters:", error);
+    throw error;
+  }
+}
 
     async getLocalidades(){
         try {

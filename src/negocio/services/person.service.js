@@ -20,8 +20,9 @@ class PersontService {
 
 
     //Lista los datos de todos los productos
-    async listarPersonas() {
-            const listadoPersonas = await listarPersona()
+    async listarPersonas(filtro) {
+
+            const listadoPersonas = await listarPersona(filtro)
             return listadoPersonas
         }
 

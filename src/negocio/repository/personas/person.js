@@ -5,9 +5,10 @@ import  {ContainerPg}  from '../../../daos/container/containerPg.js'
 
 const pg = new ContainerPg
 
-    export async function listarPersona() {
+    export async function listarPersona(filtro) {
         try {
-          const resul = await pg.getAll()
+         // const resul = await pg.getAll()
+         const resul = await pg.getAllWithFilters(filtro)
           return resul
         } catch (error) {
             return error
