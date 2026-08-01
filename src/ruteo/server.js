@@ -22,12 +22,28 @@ import cors from 'cors'
 const servidor = express()
 
 //Cors
-servidor.use(cors());
+servidor.use(cors({
+  origin: '*', // O la URL de tu frontend React
+  exposedHeaders: ['Content-Disposition'] // 👈 CLAVE: Permite que el navegador reconozca el adjunto
+}));
+
+
+//servidor.use(cors());
+
+// Configuración de CORS
+/*servidor.use(cors({
+  origin: 'http://localhost:3000', // Tu puerto de React
+  credentials: true,
+  exposedHeaders: ['Content-Disposition'] // 👈 ¡CLAVE! Permite al navegador leer el archivo adjunto
+}));*/
 
 //Middlewares para resolver los datos que viene por el Post
 //Si viene por un Json o si viene de un formulario (Form)
-servidor.use(express.json())
-servidor.use(express.urlencoded({ extended: true }))
+/*servidor.use(express.json())
+servidor.use(express.urlencoded({ extended: true }))*/
+// Línea 36: Aumentamos el límite de tamaño permitido
+servidor.use(express.json({ limit: '50mb' }));
+servidor.use(express.urlencoded({ limit: '50mb', extended: true }));
 //console.log(routerLogin)
 
 //Middlewares para los routers

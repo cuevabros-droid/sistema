@@ -175,6 +175,79 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
       }
   }
 
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate}
+
+  async function controllerPersonaExcel({ user, body }, res) {
+     const personas = Array.isArray(body) ? body : (body?.data || []);
+ 
+ // 2. Configuración para ExcelJS
+  const excelColumns = [
+    { header: 'Apellido', key: 'apellidos', width: 35 },
+    { header: 'Nombres', key: 'nombres', width: 35 },
+    { header: 'Tipo de Documento', key: 'nombre_corto', width: 16 },
+    { header: 'Número', key: 'numero', width: 15 },
+    { header: 'Tipo de Usuario', key: 'es_alumno', width: 15, getValue: (row) => row.es_alumno === 'S' ? 'Alumno' : 'Tutor' },
+  ];
+
+  try {
+    const { exportToExcelCustom } = await import('../../negocio/utils/excel.js');
+
+    // Le pasamos `res` (la respuesta de Express/Node)
+    await exportToExcelCustom({
+      columnsConfig: excelColumns,
+      data: personas,
+      fileName: 'Reporte_Personas',
+      sheetName: 'Reporte de Personas',
+      res // <-- ¡IMPORTANTE! Agregar res aquí
+    });
+  } catch (error) {
+    console.error("Error al exportar Excel:", error);
+    res.status(500).json({ message: "Error al generar el Excel" });
+  }
+  }
+
+
+ async function controllerPersonaPDF({ user, body }, res) {
+
+  const pdfColumns = [
+    { header: 'Apellido', key: 'apellidos', width: '30%' },
+    { header: 'Nombres', key: 'nombres', width: '30%' },
+    { header: 'Tipo de Documento', key: 'nombre_corto', width: '16%' },
+    { header: 'Número', key: 'numero', width: '12%' },
+    { header: 'Tipo de Usuario', key: 'es_alumno', width: '15%' },
+  ];
+
+  try {
+    // 1. Cargar dependencias
+    const React = (await import('react')).default;
+    const { GenericPDFReport } = await import('../../negocio/utils/pdf.js');
+// 👈 IMPORTANTE: Importa renderToBuffer en lugar de pdf
+    const { renderToBuffer } = await import('@react-pdf/renderer');
+
+  // 1. Instanciar el documento
+const doc = React.createElement(GenericPDFReport, {
+  data: body,
+  columns: pdfColumns,
+  title: "Reporte de Personas"
+});
+
+
+
+// 3. Generar el Buffer del PDF con renderToBuffer
+    const buffer = await renderToBuffer(doc);
+
+    // 4. Configurar cabeceras HTTP
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="Reporte_Personas.pdf"');
+
+    // 5. Enviar el buffer compilado
+    return res.end(buffer);
+
+  } catch (error) {
+    console.error("Error al generar PDF:", error);
+    return res.status(500).json({ message: "Error al generar el PDF" });
+  }
+}
+
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF}
 
 

@@ -13,10 +13,14 @@ import {controllerPersonsConFiltroApellidoDocumento} from '../controllers/contro
 import {controllerPersonaAllegadaCreate} from '../controllers/controllerPersons.js';
 import {controllerPersonaAllegadaDelete} from '../controllers/controllerPersons.js';
 import {controllerPersonaAllegadaUpdate} from '../controllers/controllerPersons.js';
+import {controllerPersonaExcel} from '../controllers/controllerPersons.js';
+import {controllerPersonaPDF} from '../controllers/controllerPersons.js';
 
 
 const routerApiPersona = express.Router();
 
+routerApiPersona.post('/excel', autenticacion, controllerPersonaExcel); 
+routerApiPersona.post('/pdf', autenticacion, controllerPersonaPDF); 
 routerApiPersona.get('/', autenticacion, controllerPersons); 
 routerApiPersona.get('/:texto', autenticacion, controllerPersonsConFiltro); 
 routerApiPersona.put('/:id', autenticacion, controllerPersonsUpdate); 
@@ -30,6 +34,8 @@ routerApiPersona.get('/apellidodocumento/:apellidodocumento', autenticacion, con
 routerApiPersona.post('/AlumnoTutores/', autenticacion, controllerPersonaAllegadaCreate); 
 routerApiPersona.delete('/AlumnoTutores/:id', autenticacion, controllerPersonaAllegadaDelete); 
 routerApiPersona.put('/AlumnoTutores/:id', autenticacion, controllerPersonaAllegadaUpdate); 
+
+
 
 
 export default routerApiPersona;
