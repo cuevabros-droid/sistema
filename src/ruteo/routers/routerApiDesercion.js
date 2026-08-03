@@ -5,7 +5,7 @@ import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 
 const routerApiDesercion = express.Router();
 
-routerApiDesercion.get('/', autenticacion, controllerDesercion); 
+routerApiDesercion.get('/', autenticacion, controllerDesercion);
 
 
 export default routerApiDesercion;
