@@ -51,13 +51,13 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   
-  // Área principal de columnas dinámicas que llena el espacio
+  // Área principal de columnas dinámicas
   tableColumnsContainer: {
     flex: 1,
     flexDirection: 'row'
   },
 
-  // Columnas verticales continuas de arriba a abajo
+  // Columnas verticales continuas
   colCodeContainer: { 
     width: '15%', 
     borderRightWidth: 1, 
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     width: '20%' 
   },
 
-  // Celdas individuales dentro de cada columna
+  // Celdas individuales
   headerCell: {
     height: '100%',
     justify: 'center',
@@ -132,7 +132,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justify: 'space-between'
   },
-  qrCode: { width: 75, height: 75 },
   footerCenter: {
     flex: 1,
     paddingLeft: 10,
@@ -174,7 +173,9 @@ export const FacturaPDF = ({ data }) => {
 
   const { emisor, periodo, receptor, items, totales, afip } = data;
 
-  return React.createElement(Document, null,
+  const nombreArchivo = `Factura_${emisor?.puntoVenta || '0003'}-${emisor?.numeroComprobante || '0001'}`;
+
+  return React.createElement(Document, { title: nombreArchivo },
     React.createElement(Page, { size: "A4", style: styles.page },
       
       // 1. Periodo Facturado
@@ -249,7 +250,7 @@ export const FacturaPDF = ({ data }) => {
         )
       ),
 
-      // 4. Tabla de items con columnas verticales extendidas
+      // 4. Tabla de items
       React.createElement(View, { style: styles.tableContainer },
         
         // Encabezado
@@ -259,7 +260,7 @@ export const FacturaPDF = ({ data }) => {
           React.createElement(View, { style: [styles.colTotalContainer, styles.headerCell] }, React.createElement(Text, null, "Total"))
         ),
         
-        // Cuerpo: Las 3 columnas ocupan todo el alto libre mediante flex: 1
+        // Cuerpo
         React.createElement(View, { style: styles.tableColumnsContainer },
           
           // Columna 1: Código
@@ -305,49 +306,56 @@ export const FacturaPDF = ({ data }) => {
         )
       ),
 
-      // 5. Pie Oficial ARCA / AFIP
-      React.createElement(View, { style: styles.footerBox },
-        //afip?.qrUrl ? React.createElement(Image, { src: afip.qrUrl, style: styles.qrCode }) : React.createElement(View, { style: styles.qrCode }),
-// 1. Imagen del Código QR con hipervínculo
-// 1. Contenedor del Código QR con enlace superpuesto
-data.afip?.qrDataUrl ? (
-  React.createElement(View, { style: { position: 'relative', width: 60, height: 60, marginRight: 6 } },
-    // A) Imagen visible del QR
-    React.createElement(Image, { 
-      src: data.afip.qrDataUrl, 
-      style: { width: 60, height: 60 } 
-    }),
-    // B) Capa transparente del Link por encima para registrar el clic
-    data.afip?.qrUrl ? (
-      React.createElement(Link, { 
-        src: data.afip.qrUrl, 
-        style: { 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: 60, 
-          height: 60 
-        } 
-      })
-    ) : null
-  )
-) : null,
-
-        React.createElement(View, { style: styles.footerCenter },
-          React.createElement(View, { style: styles.arcaHeader },
-            React.createElement(Text, { style: styles.arcaTitle }, "ARCA"),
-            React.createElement(Text, { style: styles.arcaSubtitle }, "AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO")
-          ),
-          React.createElement(Text, { style: [styles.bold, { fontSize: 8 }] }, "Comprobante Autorizado"),
-          React.createElement(Text, { style: styles.legalText }, "Esta Administración Federal no se responsabiliza por los datos ingresados en el detalle de la operación")
-        ),
-
-        React.createElement(View, { style: styles.caeBox },
-          React.createElement(Text, { style: styles.pageNumber }, "Página 1/1"),
-          React.createElement(Text, { style: styles.bold }, `CAE N°: ${afip?.cae || ''}`),
-          React.createElement(Text, { style: styles.bold }, `FECHA DE VTO: ${afip?.vencimientoCae || ''}`)
-        )
+// 5. Pie Oficial ARCA / AFIP
+React.createElement(View, { style: styles.footerBox },
+  
+  // QR Limpio: escaneable por celular, clickable en Navegador y Acrobat
+  afip?.qrDataUrl ? (
+    afip?.qrUrl ? (
+      React.createElement(Link, {
+        src: afip.qrUrl,
+        style: { width: 75, height: 75, marginRight: 6 }
+      },
+        React.createElement(Image, {
+          src: afip.qrDataUrl,
+          style: { width: 75, height: 75 }
+        })
       )
+    ) : (
+      React.createElement(Image, {
+        src: afip.qrDataUrl,
+        style: { width: 65, height: 65, marginRight: 6 }
+      })
+    )
+  ) : null,
+
+  // Centro con enlace textual de respaldo
+  React.createElement(View, { style: styles.footerCenter },
+    React.createElement(View, { style: styles.arcaHeader },
+      React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold', marginRight: 4 } }, "ARCA"),
+      React.createElement(Text, { style: { fontSize: 6, color: '#333' } }, "AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO")
+    ),
+    React.createElement(Text, { style: [styles.bold, { fontSize: 8 }] }, "Comprobante Autorizado"),
+    
+    afip?.qrUrl ? (
+      React.createElement(Link, {
+        src: afip.qrUrl,
+        style: { fontSize: 6.5, color: '#0055BB', textDecoration: 'underline', marginTop: 2, marginBottom: 2 }
+      },
+        React.createElement(Text, null, "Ver comprobante en AFIP / ARCA")
+      )
+    ) : null,
+
+    React.createElement(Text, { style: styles.legalText }, "Esta Administración Federal no se responsabiliza por los datos ingresados en el detalle de la operación")
+  ),
+
+  // Lado derecho (CAE y Vencimiento)
+  React.createElement(View, { style: styles.caeBox },
+    React.createElement(Text, { style: styles.pageNumber }, "Página 1/1"),
+    React.createElement(Text, { style: styles.bold }, `CAE N°: ${afip?.cae || ''}`),
+    React.createElement(Text, { style: styles.bold }, `FECHA DE VTO: ${afip?.vencimientoCae || ''}`)
+  )
+)
 
     )
   );

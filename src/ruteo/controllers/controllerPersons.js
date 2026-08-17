@@ -263,8 +263,13 @@ async function controllerFacturaPDF({ user, body }, res) {
     // 1. Generar la imagen Base64 del QR antes de armar el PDF
     if (body.afip && body.afip.qrUrl) {
       body.afip.qrDataUrl = await QRCode.toDataURL(body.afip.qrUrl, {
-        margin: 1,
-        width: 100
+          errorCorrectionLevel: 'L', // 'L' (Low 7%) genera la menor cantidad de cuadritos posibles. ¡Súper escaneable!
+          margin: 2,                 // Crea el borde blanco indispensable alrededor para que el celular reconozca el QR
+          scale: 6,                  // Le da buena nitidez de definición
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
       });
     }
     
