@@ -552,60 +552,152 @@ try {
   async getSaldosPorAlumno(id) {
     try {
       const objetoBuscado = await pool.query(
-        `SELECT  acc.id_alumno_cc, g.nombre AS Grado,  CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, a.legajo
-        , RIGHT(acc.cuota, 4) AS Anio, 
-        CASE WHEN LENGTH(acc.cuota) = 4 THEN '0' ELSE LEFT(acc.cuota, 2) END AS Cuota,
-		CONCAT(CASE WHEN LEFT(acc.cuota, 2) = '01' then 'ENERO' 
-		     WHEN LEFT(acc.cuota, 2) = '02' then 'FEBRERO'
-			 WHEN LEFT(acc.cuota, 2) = '03' then 'MARZO'
-			 WHEN LEFT(acc.cuota, 2) = '04' then 'ABRIL'
-			 WHEN LEFT(acc.cuota, 2) = '05' then 'MAYO'
-			 WHEN LEFT(acc.cuota, 2) = '06' then 'JUNIO'
-			 WHEN LEFT(acc.cuota, 2) = '07' then 'JULIO'
-			 WHEN LEFT(acc.cuota, 2) = '08' then 'AGOSTO'
-			 WHEN LEFT(acc.cuota, 2) = '09' then 'SEPTIEMBRE'
-			 WHEN LEFT(acc.cuota, 2) = '10' then 'OCTUBRE'
-			 WHEN LEFT(acc.cuota, 2) = '11' then 'NOVIEMBRE'
-			 WHEN LEFT(acc.cuota, 2) = '12' then 'DICIEMBRE' 
-			 WHEN RIGHT(acc.cuota, 4) = ''  then ' MATERIALES '
-			 WHEN LENGTH(acc.cuota) = 4     then 'PAGO INSCRIPCIÓN '
-			 END, case when RIGHT(acc.cuota, 4) <> '' then ' DEL ' else '' end, right(acc.cuota, 4)) AS Anio_Cuota
-			 , 
-		SUM(tcc.importe) AS SaldoCuota, SaldoTotal  
+        `SELECT  
+    tcc.id_transaccion_cc, 
+    acc.id_alumno_cc, 
+    MAX(tcc.id_estado_cuota) AS id_estado_cuota, 
+	MAX(ec.nombre) as estado_cuota,
+    MAX(fecha_pago) AS fecha_pago, 
+    MAX(fecha_respuesta_prisma) AS fecha_respuesta_prisma, 
+    tcc.fecha_transaccion, 
+    MAX(tcc.id_medio_pago) AS id_medio_pago, 
+	MAX(mp.nombre) as medio_pago,
+    MAX(tcc.id_marca_tarjeta) AS id_marca_tarjeta, 
+    MAX(id_motivo_rechazo1) AS id_motivo_rechazo1, 
+    MAX(id_motivo_rechazo2) AS id_motivo_rechazo2, 
+    MAX(codigo_error_debito) AS codigo_error_debito, 
+    MAX(descripcion_error_debito) AS descripcion_error_debito, 
+    g.nombre AS Grado,  
+    CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, 
+    a.legajo,
+    MAX(a.direccion_calle) || ' ' || MAX(a.direccion_numero) as direccion_alumno,
+    MAX(tcc.numero_comprobante) AS numero_comprobante, 
+    MAX(numero_lote) AS numero_lote, 
+    MAX(numero_autorizacion) AS numero_autorizacion, 
+    MAX(punto_venta) AS punto_venta, 
+    MAX(comprobante_tipo) AS comprobante_tipo, 
+    MAX(comprobante_numero) AS comprobante_numero,
+	max(mt.nombre) as nombre_tarjeta,
+    max(tcc.descripcion_error_debito) as motivo_rechazo,
+    max(tcc.importe) as importe,
+    max(tcc.CAE) as cae,
+max(ee.entidadeducativa) as entidad_educativa,
+max(ee.direccion) as direccion,
+max(ee.numero) as numero,
+max(ee.logo) as logo,
+max(ee.cuit) as cuit_institucion,
+max(persona_allegada) as persona_allegada,
+max(loc.nombre) as localidad_nombre,
+max(prov.nombre) as provincia_nombre,
+max(cuit_tutor) as cuil_tutor, 		
+max(ingresos_brutos) as ingresos_brutos,
+max(condicion_iva) as condicion_iva,
+max(inicio_actividades) as inicio_actividades,
+
+    		SUM(tcc.importe) AS SaldoCuota, SaldoTotal,
+    -- Año: toma el año de generación para Materiales e Inscripción, o el año de acc.cuota para el resto
+    CASE 
+        WHEN UPPER(acc.descripcion) LIKE '%INSCRIP%' OR UPPER(acc.descripcion) LIKE '%MATERIAL%' 
+            THEN TO_CHAR(acc.fecha_generacion_cc, 'YYYY')
+        WHEN acc.cuota IS NULL OR TRIM(acc.cuota) = '' THEN SUBSTRING(acc.descripcion FROM 20 FOR 4)
+        ELSE RIGHT(acc.cuota, 4)
+    END AS Anio,
+
+    -- Cuota: asigna '00_INS' o '00_MAT' para ordenarlos al inicio del año antes del mes 01
+-- Cuota: Toma el mes de generación real para Materiales/Inscripción y le concatena un identificador
+    CASE 
+        WHEN UPPER(acc.descripcion) LIKE '%INSCRIP%' 
+            THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_INS'
+        WHEN UPPER(acc.descripcion) LIKE '%MATERIAL%' 
+            THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_MAT'
+        WHEN acc.cuota IS NULL OR TRIM(acc.cuota) = '' 
+            THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_VAR'
+        ELSE LEFT(acc.cuota, 2) 
+    END AS Cuota,
+
+    acc.descripcion AS Anio_Cuota,
+    SUM(tcc.importe) AS SaldoCuota, 
+    SaldoTotal  
+
 FROM transaccion_cuenta_corriente tcc
-INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_Cc = tcc.id_alumno_cc
+INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
 INNER JOIN alumno a ON a.id_alumno = acc.id_alumno AND a.regular = 'S'
 LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
-LEFT JOIN public.medio_pago mp ON pt.id_medio_pago = mp.id_medio_pago
+LEFT JOIN marca_tarjeta mt ON tcc.id_marca_tarjeta = mt.id_marca_tarjeta
+LEFT JOIN public.medio_pago mp ON tcc.id_medio_pago = mp.id_medio_pago
+INNER JOIN public.estado_cuota ec ON tcc.id_estado_cuota = ec.id_estado_cuota
+LEFT JOIN entidades_educativas ee ON ee.identidadeducativa = a.id_establecimiento
+LEFT JOIN localidad loc ON ee.localidad = loc.id_localidad
+LEFT JOIN provincia prov ON ee.provincia = prov.id_provincia
+INNER JOIN (
+    SELECT 
+        id_establecimiento,
+        MAX(CASE WHEN id_parametro = 18 THEN valor END) AS ingresos_brutos,
+        MAX(CASE WHEN id_parametro = 22 THEN valor END) AS condicion_iva,
+        MAX(CASE WHEN id_parametro = 19 THEN valor END) AS inicio_actividades
+    FROM parametros_sistema 
+    WHERE id_parametro IN (18, 22, 19)
+    GROUP BY id_establecimiento
+) AS param ON param.id_establecimiento = a.id_establecimiento
 INNER JOIN persona p ON p.id_persona = a.id_persona
+INNER JOIN (
+    SELECT 
+        pa.id_alumno,
+        per.apellidos || ', ' || per.nombres AS persona_allegada,
+        tipdoc.numero AS cuit_tutor,
+        ROW_NUMBER() OVER (
+            PARTITION BY pa.id_alumno 
+            ORDER BY 
+                CASE 
+                    WHEN tipdoc.id_tipo_documento = 7 THEN 1 
+                    WHEN tipdoc.id_tipo_documento = 8 THEN 2 
+                    ELSE 3 
+                END
+        ) as orden
+    FROM persona_allegado pa
+    INNER JOIN persona per ON per.id_persona = pa.id_persona
+    LEFT JOIN persona_tipo_documento tipdoc ON tipdoc.id_persona = pa.id_persona
+) RP ON RP.id_alumno = a.id_alumno AND RP.orden = 1
 INNER JOIN 
-	(select id_alumno, sum(tc.importe) AS SaldoCuota
-	 from transaccion_cuenta_corriente tc
-	inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
-	group by id_alumno
-	 having  sum(tc.importe)> 0
-	) AS R1 ON R1.id_alumno = a.id_alumno
+    (SELECT id_alumno, SUM(tc.importe) AS SaldoCuota
+     FROM transaccion_cuenta_corriente tc
+     INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
+     GROUP BY id_alumno
+     HAVING SUM(tc.importe) > 0
+    ) AS R1 ON R1.id_alumno = a.id_alumno
 INNER JOIN
-	(select id_alumno, sum(tc.importe) AS SaldoTotal 
-	 from transaccion_cuenta_corriente tc
-	inner join alumno_cuenta_corriente acc on acc.id_alumno_cc = tc.id_alumno_cc	
-	group by id_alumno
-	 having  sum(tc.importe)> 0) as r2 on r2.id_alumno = a.id_alumno
-inner join
-	 (SELECT id_alumno, max(id_grado) as ultGrado
-	FROM alumno_datos_cursada
-	--where id_alumno =  272
-	group by id_alumno) as adc on adc.id_alumno = r1.id_alumno
-inner join grado g on g.id_grado = adc.ultGrado
-WHERE  a.id_alumno = $1
-GROUP BY  g.nombre, p.apellidos, p.nombres, a.legajo, acc.id_alumno_cc, acc.cuota, SaldoTotal 
---HAVING SUM(tcc.importe) > 0
---ORDER BY  g.nombre, p.apellidos, p.nombres  --a.legajo
+    (SELECT id_alumno, SUM(tc.importe) AS SaldoTotal 
+     FROM transaccion_cuenta_corriente tc
+     INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
+     GROUP BY id_alumno
+     HAVING SUM(tc.importe) > 0) AS r2 ON r2.id_alumno = a.id_alumno
+INNER JOIN
+     (SELECT id_alumno, MAX(id_grado) AS ultGrado
+      FROM alumno_datos_cursada
+      GROUP BY id_alumno) AS adc ON adc.id_alumno = r1.id_alumno
+INNER JOIN grado g ON g.id_grado = adc.ultGrado
+
+WHERE a.id_alumno = $1
+
+GROUP BY 
+    tcc.id_transaccion_cc, 
+    tcc.fecha_transaccion, 
+    g.nombre, 
+    p.apellidos, 
+    p.nombres, 
+    a.legajo, 
+    acc.id_alumno_cc, 
+    acc.cuota, 
+    acc.descripcion,
+    acc.fecha_generacion_cc,
+    SaldoTotal  
+
 ORDER BY 
-    CASE 
-        WHEN LENGTH(acc.cuota) = 4 THEN acc.cuota || '00'
-        ELSE RIGHT(acc.cuota, 4) || LEFT(acc.cuota, 2)
-    END
+    Anio,
+    Cuota,
+	tcc.id_transaccion_cc,
+    tcc.fecha_transaccion ASC;
+
 
         `,
         [id],
@@ -1257,6 +1349,20 @@ async updatePago(objeto) {
     throw error;
   }
 }
+
+
+    async getEscuela(id){
+        try {
+            await pool.query('BEGIN'); 
+            const objetoBuscado = (await pool.query(`select * from entidades_educativas where identidadeducativa=$1`, [id]))
+            await pool.query('COMMIT'); 
+            return objetoBuscado.rows[0];
+        }
+        catch(error){
+            await pool.query('ROLLBACK'); 
+            return error
+        } 
+     }
 
 }
 

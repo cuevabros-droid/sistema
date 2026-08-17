@@ -1,6 +1,9 @@
 import loggerError from '../../negocio/utils/pinoError.js';
 import { persontService } from '../../negocio/services/person.service.js';
 import {pool} from '../../daos/db/pgClient.js';
+import path from 'path';
+import fs from 'fs';
+import QRCode from 'qrcode'; // o const QRCode = require('qrcode');
 
 
  async function controllerPersons(req, res) {
@@ -86,9 +89,9 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
   }
 
 
-    async function controllerPersonsSaldos({ user, params: { id } }, res){
+    async function controllerPersonsSaldos({ user, params: { id_alumno } }, res){
       try {
-    const resul = await persontService.listarSaldoAlumnoPorId(id)
+    const resul = await persontService.listarSaldoAlumnoPorId(id_alumno)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)
@@ -248,6 +251,65 @@ const doc = React.createElement(GenericPDFReport, {
   }
 }
 
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF}
+
+async function controllerFacturaPDF({ user, body }, res) {
+
+  try {
+    // 1. Cargar dependencias dinámicamente
+    const React = (await import('react')).default;
+    const { FacturaPDF } = await import('../../negocio/utils/facturaPDF.js'); // Revisa la ruta de tu componente
+    const { renderToBuffer } = await import('@react-pdf/renderer');
+
+    // 1. Generar la imagen Base64 del QR antes de armar el PDF
+    if (body.afip && body.afip.qrUrl) {
+      body.afip.qrDataUrl = await QRCode.toDataURL(body.afip.qrUrl, {
+        margin: 1,
+        width: 100
+      });
+    }
+    
+    // 1. Obtener la ruta del archivo y convertir a Base64
+    let logoBase64 = null;
+    const logoRelativo = body.emisor?.logoUrl; // Ej: '/logoEscuela.png'
+
+    if (logoRelativo) {
+      const rutaFisica = path.join(process.cwd(), 'public', logoRelativo);
+      if (fs.existsSync(rutaFisica)) {
+        const fileBuffer = fs.readFileSync(rutaFisica);
+        // Ajusta 'image/png' o 'image/jpeg' según corresponda
+        logoBase64 = `data:image/png;base64,${fileBuffer.toString('base64')}`;
+      }
+    }
+
+
+     body = {
+      ...body,
+      emisor: {
+        ...body.emisor,
+        logoUrl: logoBase64
+      }
+    };
+
+    // 2. Instanciar la plantilla pasándole 'body' como la propiedad 'data'
+    const doc = React.createElement(FacturaPDF, { data: body });
+    // 3. Generar el Buffer del PDF
+    const buffer = await renderToBuffer(doc);
+
+    // 4. Configurar cabeceras HTTP
+    const numComprobante = body.emisor.numeroComprobante || 'comprobante';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="Factura_${numComprobante}.pdf"`);
+
+    // 5. Enviar el buffer compilado
+    return res.end(buffer);
+
+  } catch (error) {
+    console.error("Error al generar PDF de Factura:", error);
+    return res.status(500).json({ message: "Error al generar el PDF de la factura" });
+  }
+}
+
+
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF, controllerFacturaPDF}
 
 
