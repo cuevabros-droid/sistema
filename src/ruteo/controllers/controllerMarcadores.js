@@ -8,6 +8,7 @@ import { marcadoresService } from '../../negocio/services/marcadores.service..js
 
   try {
     const resul = await marcadoresService.listarMarcadores()
+    console.log(resul)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)

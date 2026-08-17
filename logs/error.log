@@ -55605,3 +55605,46 @@
 {"level":40,"time":1785717882594,"pid":4960,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (21588) segundos para que la sesion se expire"}
 {"level":40,"time":1785718390010,"pid":11240,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (21595) segundos para que la sesion se expire"}
 {"level":40,"time":1785718390223,"pid":11240,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (21595) segundos para que la sesion se expire"}
+{"level":40,"time":1786197265586,"pid":14468,"hostname":"German","msg":"Le queda (21586) segundos para que la sesion se expire"}
+{"level":40,"time":1786197266176,"pid":14468,"hostname":"German","msg":"Le queda (21585) segundos para que la sesion se expire"}
+{"level":40,"time":1786197266959,"pid":14468,"hostname":"German","msg":"Le queda (21585) segundos para que la sesion se expire"}
+{"level":40,"time":1786197267191,"pid":14468,"hostname":"German","msg":"Le queda (21584) segundos para que la sesion se expire"}
+{"level":40,"time":1786197267778,"pid":14468,"hostname":"German","msg":"Le queda (21584) segundos para que la sesion se expire"}
+{"level":40,"time":1786197267973,"pid":14468,"hostname":"German","msg":"Le queda (21584) segundos para que la sesion se expire"}
+{"level":40,"time":1786207245229,"pid":13460,"hostname":"German","msg":"Le queda (215949) segundos para que la sesion se expire"}
+{"level":40,"time":1786207245971,"pid":13460,"hostname":"German","msg":"Le queda (215949) segundos para que la sesion se expire"}
+{"level":40,"time":1786207247236,"pid":13460,"hostname":"German","msg":"Le queda (215947) segundos para que la sesion se expire"}
+{"level":40,"time":1786207248380,"pid":13460,"hostname":"German","msg":"Le queda (215946) segundos para que la sesion se expire"}
+{"level":50,"time":1786208762323,"pid":12972,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1786208786055,"pid":12972,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1786208809606,"pid":12972,"hostname":"German","msg":"Usuario inexistente"}
+{"level":50,"time":1786208875233,"pid":12972,"hostname":"German","msg":"Usuario inexistente"}
+{"level":40,"time":1786210155679,"pid":12464,"hostname":"German","msg":"Le queda (215981) segundos para que la sesion se expire"}
+{"level":40,"time":1786210251492,"pid":12464,"hostname":"German","msg":"Le queda (215885) segundos para que la sesion se expire"}
+{"level":40,"time":1786210322272,"pid":14432,"hostname":"German","msg":"Le queda (215979) segundos para que la sesion se expire"}
+{"level":40,"time":1786210420038,"pid":15092,"hostname":"German","msg":"Le queda (215881) segundos para que la sesion se expire"}
+{"level":40,"time":1786210449097,"pid":9372,"hostname":"German","msg":"Le queda (215852) segundos para que la sesion se expire"}
+{"level":40,"time":1786210499971,"pid":12032,"hostname":"German","msg":"Le queda (215802) segundos para que la sesion se expire"}
+{"level":40,"time":1786210550325,"pid":15972,"hostname":"German","msg":"Le queda (215751) segundos para que la sesion se expire"}
+{"level":40,"time":1786210597169,"pid":6860,"hostname":"German","msg":"Le queda (215704) segundos para que la sesion se expire"}
+{"level":40,"time":1786210769508,"pid":14016,"hostname":"German","msg":"Le queda (215532) segundos para que la sesion se expire"}
+{"level":40,"time":1786210804400,"pid":9504,"hostname":"German","msg":"Le queda (215497) segundos para que la sesion se expire"}
+{"level":40,"time":1786233516465,"pid":14680,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1786233522124,"pid":14680,"hostname":"German","msg":"Le queda (215992) segundos para que la sesion se expire"}
+{"level":40,"time":1786233745544,"pid":5724,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1786234040245,"pid":5108,"hostname":"German","msg":"Le queda (215703) segundos para que la sesion se expire"}
+{"level":40,"time":1786280797115,"pid":9792,"hostname":"German","msg":"Le queda (215986) segundos para que la sesion se expire"}
+{"level":40,"time":1786280964913,"pid":4184,"hostname":"German","msg":"Le queda (215819) segundos para que la sesion se expire"}
+{"level":40,"time":1786282851312,"pid":6292,"hostname":"German","msg":"Le queda (215993) segundos para que la sesion se expire"}
+{"level":40,"time":1786282976714,"pid":6292,"hostname":"German","msg":"Le queda (213807) segundos para que la sesion se expire"}
+{"level":40,"time":1786283337239,"pid":6292,"hostname":"German","msg":"Le queda (215990) segundos para que la sesion se expire"}
+{"level":40,"time":1786283532148,"pid":6292,"hostname":"German","msg":"Le queda (215989) segundos para que la sesion se expire"}
+{"level":40,"time":1786283777461,"pid":14784,"hostname":"German","msg":"Le queda (215744) segundos para que la sesion se expire"}
+{"level":40,"time":1786291004009,"pid":14784,"hostname":"German","name":"TokenExpiredError","message":"jwt expired","expiredAt":"2026-07-17T00:02:32.000Z","stack":"TokenExpiredError: jwt expired\n    at C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\jsonwebtoken\\verify.js:190:21\n    at getSecret (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\jsonwebtoken\\verify.js:97:14)\n    at module.exports [as verify] (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\jsonwebtoken\\verify.js:101:10)\n    at validateUser (file:///C:/Users/GermanNotebook/Desktop/DISCO%20VIEJO/CARPETAS/SISTEMA%20ESCUELA%20NUEVO/BackEnd/src/negocio/utils/jwt.js:8:33)\n    at autenticacion (file:///C:/Users/GermanNotebook/Desktop/DISCO%20VIEJO/CARPETAS/SISTEMA%20ESCUELA%20NUEVO/BackEnd/src/negocio/middlewares/autenticacion.js:19:25)\n    at Layer.handle [as handle_request] (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\route.js:144:13)\n    at Route.dispatch (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\route.js:114:3)\n    at Layer.handle [as handle_request] (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\index.js:284:15","type":"Error","msg":"jwt expired"}
+{"level":40,"time":1786291033843,"pid":14784,"hostname":"German","msg":"Le queda (215956) segundos para que la sesion se expire"}
+{"level":40,"time":1786291140229,"pid":14784,"hostname":"German","name":"TokenExpiredError","message":"jwt expired","expiredAt":"2026-07-17T00:02:32.000Z","stack":"TokenExpiredError: jwt expired\n    at C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\jsonwebtoken\\verify.js:190:21\n    at getSecret (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\jsonwebtoken\\verify.js:97:14)\n    at module.exports [as verify] (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\jsonwebtoken\\verify.js:101:10)\n    at validateUser (file:///C:/Users/GermanNotebook/Desktop/DISCO%20VIEJO/CARPETAS/SISTEMA%20ESCUELA%20NUEVO/BackEnd/src/negocio/utils/jwt.js:8:33)\n    at autenticacion (file:///C:/Users/GermanNotebook/Desktop/DISCO%20VIEJO/CARPETAS/SISTEMA%20ESCUELA%20NUEVO/BackEnd/src/negocio/middlewares/autenticacion.js:19:25)\n    at Layer.handle [as handle_request] (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at next (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\route.js:144:13)\n    at Route.dispatch (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\route.js:114:3)\n    at Layer.handle [as handle_request] (C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\layer.js:95:5)\n    at C:\\Users\\GermanNotebook\\Desktop\\DISCO VIEJO\\CARPETAS\\SISTEMA ESCUELA NUEVO\\BackEnd\\node_modules\\express\\lib\\router\\index.js:284:15","type":"Error","msg":"jwt expired"}
+{"level":40,"time":1786291154640,"pid":14784,"hostname":"German","msg":"Le queda (215835) segundos para que la sesion se expire"}
+{"level":40,"time":1786824013709,"pid":2144,"hostname":"German","msg":"Le queda (215975) segundos para que la sesion se expire"}
+{"level":40,"time":1786824014425,"pid":2144,"hostname":"German","msg":"Le queda (215974) segundos para que la sesion se expire"}
+{"level":40,"time":1786824020351,"pid":2144,"hostname":"German","msg":"Le queda (215968) segundos para que la sesion se expire"}
+{"level":40,"time":1786824020561,"pid":2144,"hostname":"German","msg":"Le queda (215968) segundos para que la sesion se expire"}
