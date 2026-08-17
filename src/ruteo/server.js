@@ -13,8 +13,6 @@ import routerApiEstudio from './routers/routerApiEstudio.js';
 import routerApiTipoAllegado from './routers/routerApiTipoAllegado.js';
 import routerApiAcademica from './routers/routerApiAcademica.js';
 import routerApiPagos from './routers/routerApiPagos.js';
-import routerApiMarcadores from './routers/routerApiMarcadores.js';
-import routerApiArchivosAfectacion  from './routers/routerApiArchivosAfectacion.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
@@ -25,9 +23,18 @@ import cors from 'cors'
 const servidor = express()
 
 //Cors
-servidor.use(cors({
+/*servidor.use(cors({
   origin: '*', // O la URL de tu frontend React
+  //origin: 'http://localhost:3000', // 👈 Pones la URL exacta de tu React
+  credentials: true,                // 👈 Permitir cookies de sesión atravesar dominios
   exposedHeaders: ['Content-Disposition'] // 👈 CLAVE: Permite que el navegador reconozca el adjunto
+}));*/
+
+servidor.use(cors({
+  //origin: 'http://localhost:3000', // 👈 URL exacta del frontend (SIN / al final)
+  origin: '*', // O la URL de tu frontend React
+  credentials: true,                // 👈 Permitir cookies de sesión
+  exposedHeaders: ['Content-Disposition']
 }));
 
 
@@ -64,7 +71,6 @@ servidor.use('/api/personsconfiltro', routerApiPersons)
 servidor.use('/api/alumnos', routerApiAlumnos)
 servidor.use('/api/academica', routerApiAcademica)
 servidor.use('/api/pagos', routerApiPagos)
-servidor.use('/api/marcadores', routerApiMarcadores)
 servidor.use(express.static('public/img'))
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
 
