@@ -7,6 +7,7 @@ class MarcadoresService {
     //Lista los datos de todos los productos
     async listarMarcadores() {
             const lista = await listarMarcadores()
+            console.log(lista)
             return lista
     }
 

@@ -1,50 +1,67 @@
 //import { pgDatabase } from '../db/pgClient.js';
-import {pool} from '../../daos/db/pgClient.js'
-import { format } from 'date-fns';
+import { pool } from "../../daos/db/pgClient.js";
+import { format } from "date-fns";
 
+class ContainerPg {
+  //ACTUALIZA DATOS DE UNA PERSONA
+  async updatePersons(objeto, id) {
+    if (objeto.es_alumno === "S") objeto.usuario = null;
 
-class ContainerPg{
- 
-
-   
-    //ACTUALIZA DATOS DE UNA PERSONA 
-    async updatePersons(objeto, id){
-
-        if (objeto.es_alumno === "S")
-            objeto.usuario = null
-
-        try {
-            await pool.query('BEGIN'); 
-            const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const objetoBuscado = (await pool.query(`update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`, [id, objeto.apellidos, objeto.nombres, objeto.fecha_nacimiento, objeto.id_localidad_nacimiento, objeto.id_localidad_residencia, objeto.id_nacionalidad, objeto.correo_electronico, objeto.activo, objeto.es_alumno, objeto.usuario, objeto.recibe_notif_x_correo, objeto.telefono, fechaActual, objeto.usuario_sistema ]))
-            const objetoBuscado2 = (await pool.query(`update persona_sexo set id_sexo = $2, usuario_ultima_modificacion = $3, fecha_ultima_modificacion = $4 where id_persona=$1`, [id, objeto.id_sexo, objeto.usuario_sistema, fechaActual]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado, objetoBuscado2;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
+    try {
+      await pool.query("BEGIN");
+      const fechaActual = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+      const objetoBuscado = await pool.query(
+        `update persona set apellidos = $2, nombres = $3, fecha_nacimiento = $4, id_localidad_nacimiento = $5, id_localidad_residencia = $6, id_nacionalidad = $7, correo_electronico = $8, activo = $9, es_alumno = $10, usuario = $11, recibe_notif_x_correo = $12, telefono = $13, fecha_ultima_modificacion = $14, usuario_ultima_modificacion = $15 where id_persona=$1`,
+        [
+          id,
+          objeto.apellidos,
+          objeto.nombres,
+          objeto.fecha_nacimiento,
+          objeto.id_localidad_nacimiento,
+          objeto.id_localidad_residencia,
+          objeto.id_nacionalidad,
+          objeto.correo_electronico,
+          objeto.activo,
+          objeto.es_alumno,
+          objeto.usuario,
+          objeto.recibe_notif_x_correo,
+          objeto.telefono,
+          fechaActual,
+          objeto.usuario_sistema,
+        ],
+      );
+      const objetoBuscado2 = await pool.query(
+        `update persona_sexo set id_sexo = $2, usuario_ultima_modificacion = $3, fecha_ultima_modificacion = $4 where id_persona=$1`,
+        [id, objeto.id_sexo, objeto.usuario_sistema, fechaActual],
+      );
+      await pool.query("COMMIT");
+      return (objetoBuscado, objetoBuscado2);
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
     }
+  }
 
-        //ACTUALIZA EL ESTADO DE UNA PERSONA (ELIMINA) 
-    async updatePersonsEstado(objeto){
-        try {
-            await pool.query('BEGIN'); 
-            const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const objetoBuscado = (await pool.query(`update persona set activo = $2, fecha_ultima_modificacion = $3, usuario_ultima_modificacion = $4 where id_persona=$1`, [objeto.id, 'B', fechaActual, objeto.usuario_sistema]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
+  //ACTUALIZA EL ESTADO DE UNA PERSONA (ELIMINA)
+  async updatePersonsEstado(objeto) {
+    try {
+      await pool.query("BEGIN");
+      const fechaActual = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+      const objetoBuscado = await pool.query(
+        `update persona set activo = $2, fecha_ultima_modificacion = $3, usuario_ultima_modificacion = $4 where id_persona=$1`,
+        [objeto.id, "B", fechaActual, objeto.usuario_sistema],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
     }
+  }
 
-        async getAll(){
-        try {
-            const objetoBuscado = (await pool.query(` SELECT * FROM (
+  async getAll() {
+    try {
+      const objetoBuscado = await pool.query(` SELECT * FROM (
             SELECT DISTINCT ON (persona.id_persona) 
                 persona.*, 
                 persona_tipo_documento.id_tipo_documento, 
@@ -64,76 +81,78 @@ class ContainerPg{
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
                 persona_tipo_documento.fecha_alta ASC
         ) subconsulta 
-        ORDER BY apellidos ASC, nombres ASC; `))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            throw error
-        } 
+        ORDER BY apellidos ASC, nombres ASC; `);
+      return objetoBuscado.rows;
+    } catch (error) {
+      throw error;
     }
+  }
 
-        async getAllById(id){
-        try {
-            const objetoBuscado = (await pool.query(`select persona.*, persona_sexo.id_sexo from persona, persona_sexo where persona.id_persona = persona_sexo.id_persona and persona.id_persona=$1`, [id]))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getAllById(id) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select persona.*, persona_sexo.id_sexo from persona, persona_sexo where persona.id_persona = persona_sexo.id_persona and persona.id_persona=$1`,
+        [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
- 
+  }
 
-    async getAllAlumnosById(id, id_establecimiento){
-        try {
-            const objetoBuscado = (await pool.query(`select persona.*, alumno.* from persona, alumno where persona.id_persona = alumno.id_persona and persona.id_persona=$1 and alumno.id_establecimiento=$2`, [id, id_establecimiento]))
+  async getAllAlumnosById(id, id_establecimiento) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select persona.*, alumno.* from persona, alumno where persona.id_persona = alumno.id_persona and persona.id_persona=$1 and alumno.id_establecimiento=$2`,
+        [id, id_establecimiento],
+      );
 
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
+  async getAllWithFilters(filtros = {}) {
+    const { search, esAlumno, esTutor, estado } = filtros;
 
-async getAllWithFilters(filtros = {}) {
-  const { search, esAlumno, esTutor, estado } = filtros;
+    // Condiciones base para el WHERE
+    const conditions = ["persona.activo <> 'B'"];
+    const params = [];
 
-  // Condiciones base para el WHERE
-  const conditions = ["persona.activo <> 'B'"];
-  const params = [];
+    // 1. Filtro por Texto Libre (Búsqueda por Nombre, Apellido o Número de Documento)
+    if (search && search.trim() !== "") {
+      params.push(`%${search.trim()}%`);
+      const paramIndex = `$${params.length}`;
 
-  // 1. Filtro por Texto Libre (Búsqueda por Nombre, Apellido o Número de Documento)
-  if (search && search.trim() !== '') {
-    params.push(`%${search.trim()}%`);
-    const paramIndex = `$${params.length}`;
-    
-    // Busca concordancia en nombres, apellidos o número de documento
-    conditions.push(`(
+      // Busca concordancia en nombres, apellidos o número de documento
+      conditions.push(`(
       persona.apellidos ILIKE ${paramIndex} OR 
       persona.nombres ILIKE ${paramIndex} OR 
       persona_tipo_documento.numero ILIKE ${paramIndex}
     )`);
-  }
-// 3. Filtros por Rol
-  if (String(esAlumno) === 'true') {
-    conditions.push(`alumno.id_alumno IS NOT NULL`);
-  }
+    }
+    // 3. Filtros por Rol
+    if (String(esAlumno) === "true") {
+      conditions.push(`alumno.id_alumno IS NOT NULL`);
+    }
 
-  if (String(esTutor) === 'true') {
-    conditions.push(`es_alumno = 'N'`);
-  }
+    if (String(esTutor) === "true") {
+      conditions.push(`es_alumno = 'N'`);
+    }
 
-  // 4. Estado de Alumno (Comparamos con 'S' y 'N')
-  if (String(esAlumno) === 'true' && estado === 'activo') {
-    conditions.push(`alumno.regular = 'S'`);
-  } else if (String(esAlumno) === 'true' && estado === 'pasivo') {
-    conditions.push(`alumno.regular = 'N'`);
-  }
-  // Unimos todas las condiciones con AND
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    // 4. Estado de Alumno (Comparamos con 'S' y 'N')
+    if (String(esAlumno) === "true" && estado === "activo") {
+      conditions.push(`alumno.regular = 'S'`);
+    } else if (String(esAlumno) === "true" && estado === "pasivo") {
+      conditions.push(`alumno.regular = 'N'`);
+    }
+    // Unimos todas las condiciones con AND
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  try {
-    const query = `
+    try {
+      const query = `
      SELECT * FROM (
             SELECT DISTINCT ON (persona.id_persona) 
                 persona.*, 
@@ -157,130 +176,149 @@ async getAllWithFilters(filtros = {}) {
         ORDER BY apellidos ASC, nombres ASC; 
     `;
 
-    const objetoBuscado = await pool.query(query, params);
-    return objetoBuscado.rows;
-
-  } catch (error) {
-    console.error("Error en getAllWithFilters:", error);
-    throw error;
+      const objetoBuscado = await pool.query(query, params);
+      return objetoBuscado.rows;
+    } catch (error) {
+      console.error("Error en getAllWithFilters:", error);
+      throw error;
+    }
   }
-}
 
-    async getLocalidades(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from localidad`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getLocalidades() {
+    try {
+      const objetoBuscado = await pool.query(`select * from localidad`);
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-        async getDesercion(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from motivo_desercion`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getDesercion() {
+    try {
+      const objetoBuscado = await pool.query(`select * from motivo_desercion`);
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
-    
-        async getNacionalidades(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from nacionalidad`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-     }
+  }
 
-      async getDocumentos(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from tipo_documento order by jerarquia`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-     }
+  async getNacionalidades() {
+    try {
+      const objetoBuscado = await pool.query(`select * from nacionalidad`);
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
 
-    async getOcupaciones(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from ocupacion order by id_ocupacion`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-     }
+  async getDocumentos() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from tipo_documento order by jerarquia`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
 
-    async getEstudios(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from estudio_alcanzado order by id_estudio_alcanzado`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-     }
+  async getOcupaciones() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from ocupacion order by id_ocupacion`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getEstudios() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from estudio_alcanzado order by id_estudio_alcanzado`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getTiposAllegado() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from tipo_allegado order by id_tipo_allegado`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getDocumentosPersona(id) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from persona_tipo_documento where id_persona = $1`,
+        [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+    async getMarcadores() {
+    try {
+      const objetoBuscado = await pool.query(`select * from marcadoresmapa`);
+      console.log(objetoBuscado)
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
 
 
-    async getTiposAllegado(){
-        try {
-            const objetoBuscado = (await pool.query(`select * from tipo_allegado order by id_tipo_allegado`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-     }
+  async actualizarDocumentoPersona(objeto) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `update persona_tipo_documento set id_tipo_documento = $2, numero = $3, activo = $4 where id_persona_tipo_documento=$1`,
+        [
+          objeto.id_persona_tipo_documento,
+          objeto.id_tipo_documento,
+          objeto.numero,
+          objeto.activo,
+        ],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
 
-     
-    async getDocumentosPersona(id){
-        try {
-            const objetoBuscado = (await pool.query(`select * from persona_tipo_documento where id_persona = $1`, [id]))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
-     }
+  async eliminarDocumentoPersona(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from persona_tipo_documento where id_persona_tipo_documento=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
 
-    async actualizarDocumentoPersona(objeto){
-        try {
-            await pool.query('BEGIN'); 
-            const objetoBuscado = (await pool.query(`update persona_tipo_documento set id_tipo_documento = $2, numero = $3, activo = $4 where id_persona_tipo_documento=$1`, [objeto.id_persona_tipo_documento, objeto.id_tipo_documento, objeto.numero, objeto.activo]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
+  async registrarDocumentoPersona(objeto) {
+    // Formato estándar de base de datos sin offset de zona horaria
+    const fecha_alta = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    // Resultado: "2026-05-25 14:20:00"
 
-    async eliminarDocumentoPersona(id){
-        try {
-            await pool.query('BEGIN'); 
-            const objetoBuscado = (await pool.query(`delete from persona_tipo_documento where id_persona_tipo_documento=$1`, [id]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
-
-    async registrarDocumentoPersona(objeto){
-
-        // Formato estándar de base de datos sin offset de zona horaria
-        const fecha_alta = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-        // Resultado: "2026-05-25 14:20:00"
-    
-        const query = `
+    const query = `
         INSERT INTO persona_tipo_documento (
             id_persona, id_tipo_documento, numero, activo, 
             fecha_alta, usuario_alta
@@ -289,36 +327,33 @@ async getAllWithFilters(filtros = {}) {
         RETURNING *;
         `;
 
-       const valores = [
-        objeto.id_persona, 
-        objeto.id_tipo_documento, 
-        objeto.numero, 
-        objeto.activo, 
-        fecha_alta,  //LOCALTIMESTAMP,                  // Fecha alta
-        objeto.usuario_sistema              // Usuario alta
-       ];
+    const valores = [
+      objeto.id_persona,
+      objeto.id_tipo_documento,
+      objeto.numero,
+      objeto.activo,
+      fecha_alta, //LOCALTIMESTAMP,                  // Fecha alta
+      objeto.usuario_sistema, // Usuario alta
+    ];
 
+    try {
+      await pool.query("BEGIN");
+      const resultado = await pool.query(query, valores);
+      await pool.query("COMMIT");
+      return resultado.rows;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
 
-        try {
-            await pool.query('BEGIN'); 
-            const resultado = await pool.query(query, valores); 
-            await pool.query('COMMIT'); 
-            return resultado.rows;
+  //ALTA
+  async createPerson(objeto) {
+    // Formato estándar de base de datos sin offset de zona horaria
+    const fechaActual = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+    // Resultado: "2026-05-25 14:20:00"
 
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
-
-        //ALTA
-    async createPerson(objeto){
-        // Formato estándar de base de datos sin offset de zona horaria
-        const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-        // Resultado: "2026-05-25 14:20:00"
-    
-        const query = `
+    const query = `
         INSERT INTO persona (
             apellidos, nombres, fecha_nacimiento, id_localidad_nacimiento, 
             id_localidad_residencia, id_nacionalidad, correo_electronico, activo, 
@@ -329,7 +364,7 @@ async getAllWithFilters(filtros = {}) {
         RETURNING *;
         `;
 
-        const querysexo = `
+    const querysexo = `
         INSERT INTO persona_sexo (
             id_persona, id_sexo, activo, 
             fecha_alta, usuario_alta, fecha_ultima_modificacion, usuario_ultima_modificacion
@@ -338,78 +373,71 @@ async getAllWithFilters(filtros = {}) {
         RETURNING *;
         `;
 
-        
-        const valores = [
-        objeto.apellidos, 
-        objeto.nombres, 
-        objeto.fecha_nacimiento, 
-        parseInt(objeto.id_localidad_nacimiento), 
-        parseInt(objeto.id_localidad_residencia), 
-        parseInt(objeto.id_nacionalidad), 
-        objeto.correo_electronico, 
-        objeto.activo, 
-        objeto.es_alumno, 
-        objeto.usuario, 
-        objeto.recibe_notif_x_correo, 
-        objeto.telefono, 
-        fechaActual,  //LOCALTIMESTAMP,                  // Fecha alta
-        objeto.usuario_sistema,              // Usuario alta
-        fechaActual, //LOCALTIMESTAMP,                  // Fecha modif
-        objeto.usuario_sistema               // Usuario modif
-        ];
+    const valores = [
+      objeto.apellidos,
+      objeto.nombres,
+      objeto.fecha_nacimiento,
+      parseInt(objeto.id_localidad_nacimiento),
+      parseInt(objeto.id_localidad_residencia),
+      parseInt(objeto.id_nacionalidad),
+      objeto.correo_electronico,
+      objeto.activo,
+      objeto.es_alumno,
+      objeto.usuario,
+      objeto.recibe_notif_x_correo,
+      objeto.telefono,
+      fechaActual, //LOCALTIMESTAMP,                  // Fecha alta
+      objeto.usuario_sistema, // Usuario alta
+      fechaActual, //LOCALTIMESTAMP,                  // Fecha modif
+      objeto.usuario_sistema, // Usuario modif
+    ];
 
-try {
-    console.log("Intentando ejecutar la consulta con los valores:", valores);
-    
-    await pool.query('BEGIN'); 
-    
-    // 1. Insertar la persona
-    const resultado = await pool.query(query, valores); 
-    const personaCreada = resultado.rows[0]; // Aquí está el id_persona generado
+    try {
+      console.log("Intentando ejecutar la consulta con los valores:", valores);
 
-    // 2. Preparar valores e insertar el sexo usando el id recién obtenido
-    const valoressexo = [
+      await pool.query("BEGIN");
+
+      // 1. Insertar la persona
+      const resultado = await pool.query(query, valores);
+      const personaCreada = resultado.rows[0]; // Aquí está el id_persona generado
+
+      // 2. Preparar valores e insertar el sexo usando el id recién obtenido
+      const valoressexo = [
         personaCreada.id_persona, // 🌟 Id correcto obtenido del RETURNING *
-        objeto.id_sexo, 
-        'S', 
+        objeto.id_sexo,
+        "S",
         fechaActual,
         objeto.usuario_sistema,
         fechaActual,
-        objeto.usuario_sistema 
-    ];
+        objeto.usuario_sistema,
+      ];
 
-    const resultadosexo = await pool.query(querysexo, valoressexo); 
-    
-    await pool.query('COMMIT'); 
+      const resultadosexo = await pool.query(querysexo, valoressexo);
 
-    console.log("Datos que Postgres dice haber guardado:", personaCreada);
-    
-    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
-    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
-    return personaCreada; 
+      await pool.query("COMMIT");
 
-} catch (error) {
-    await pool.query('ROLLBACK'); 
-    console.error("❌ Error al insertar en Postgres:", error);
-    throw error; 
-}
+      console.log("Datos que Postgres dice haber guardado:", personaCreada);
 
-   }  
+      // 🌟 CORREGIDO: Devolvemos la fila completa de la persona.
+      // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+      return personaCreada;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error("❌ Error al insertar en Postgres:", error);
+      throw error;
+    }
+  }
 
+  //ALTA
+  async createAlumno(objeto) {
+    // Formato estándar de base de datos sin offset de zona horaria
+    // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+    // Resultado: "2026-05-25 14:20:00"
 
-        //ALTA
-    async createAlumno(objeto){
-        // Formato estándar de base de datos sin offset de zona horaria
-       // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-        // Resultado: "2026-05-25 14:20:00"
+    if (objeto.regular === "S") objeto.id_motivo_desercion = null;
+    else objeto.id_motivo_desercion = parseInt(objeto.id_motivo_desercion);
 
-        if (objeto.regular === "S")
-            objeto.id_motivo_desercion = null
-        else
-            objeto.id_motivo_desercion = parseInt(objeto.id_motivo_desercion)
-
-
-       const query = `
+    const query = `
         INSERT INTO alumno (
             id_persona, legajo, extranjero, regular, 
             id_motivo_desercion, es_celiaco, direccion_calle, direccion_numero, 
@@ -420,84 +448,91 @@ try {
         RETURNING *;
         `;
 
-       
-        const valores = [
-        objeto.id_persona, 
-        objeto.legajo, 
-        objeto.extranjero, 
-        objeto.regular,
-        objeto.id_motivo_desercion, 
-        objeto.es_celiaco,
-        objeto.direccion_calle, 
-        objeto.direccion_numero, 
-        objeto.direccion_piso, 
-        objeto.direccion_depto, 
-        null, //parseInt(objeto.id_medio_pago_inscripcion), 
-        'N', //objeto.paga_inscripcion_en_cuotas, 
-        parseInt(objeto.id_establecimiento)
-        ];
+    const valores = [
+      objeto.id_persona,
+      objeto.legajo,
+      objeto.extranjero,
+      objeto.regular,
+      objeto.id_motivo_desercion,
+      objeto.es_celiaco,
+      objeto.direccion_calle,
+      objeto.direccion_numero,
+      objeto.direccion_piso,
+      objeto.direccion_depto,
+      null, //parseInt(objeto.id_medio_pago_inscripcion),
+      "N", //objeto.paga_inscripcion_en_cuotas,
+      parseInt(objeto.id_establecimiento),
+    ];
 
-try {
-    console.log("Intentando ejecutar la consulta con los valores:", valores);
-    
-    await pool.query('BEGIN'); 
-    
-    // 1. Insertar el alumno
-    const resultado = await pool.query(query, valores); 
-    const alumnoCreado = resultado.rows[0]; // Aquí está el id_alumno generado
-  
-    await pool.query('COMMIT'); 
+    try {
+      console.log("Intentando ejecutar la consulta con los valores:", valores);
 
-    console.log("Datos que Postgres dice haber guardado:", alumnoCreado);
-    
-    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
-    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
-    return alumnoCreado; 
+      await pool.query("BEGIN");
 
-} catch (error) {
-    await pool.query('ROLLBACK'); 
-    console.error("❌ Error al insertar en Postgres:", error);
-    throw error; 
-}
+      // 1. Insertar el alumno
+      const resultado = await pool.query(query, valores);
+      const alumnoCreado = resultado.rows[0]; // Aquí está el id_alumno generado
 
-   }  
-   
+      await pool.query("COMMIT");
 
-       //ACTUALIZA DATOS DE UNA PERSONA 
-    async updateAlumnos(objeto){
+      console.log("Datos que Postgres dice haber guardado:", alumnoCreado);
 
-          if (objeto.regular === "S")
-            objeto.id_motivo_desercion = null
-
-        try {
-            await pool.query('BEGIN'); 
-           // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const resultadoBusqueda = (await pool.query(`select id_alumno from alumno where id_persona=$1 and id_establecimiento=$2`, [objeto.id_persona, objeto.id_establecimiento]))
-
-            // Verificamos si el alumno existe antes de continuar
-        if (resultadoBusqueda.rows.length === 0) {
-            console.log("No se encontró el alumno. Cancelando operación.");
-            await pool.query('ROLLBACK'); // Cancelamos la transacción
-            return null;
-        }
-
-            const id_alumno = resultadoBusqueda.rows[0].id_alumno;
-            
-            const objetoBuscado = (await pool.query(`update alumno set legajo = $2, extranjero = $3, regular = $4, id_motivo_desercion = $5, es_celiaco = $6, direccion_calle = $7, direccion_numero = $8, direccion_piso = $9, direccion_depto = $10 where id_alumno=$1`, [id_alumno, objeto.legajo, objeto.extranjero, objeto.regular, objeto.id_motivo_desercion, objeto.es_celiaco, objeto.direccion_calle, objeto.direccion_numero, objeto.direccion_piso, objeto.direccion_depto ]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
+      // 🌟 CORREGIDO: Devolvemos la fila completa de la persona.
+      // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+      return alumnoCreado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error("❌ Error al insertar en Postgres:", error);
+      throw error;
     }
+  }
 
+  //ACTUALIZA DATOS DE UNA PERSONA
+  async updateAlumnos(objeto) {
+    if (objeto.regular === "S") objeto.id_motivo_desercion = null;
 
+    try {
+      await pool.query("BEGIN");
+      // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+      const resultadoBusqueda = await pool.query(
+        `select id_alumno from alumno where id_persona=$1 and id_establecimiento=$2`,
+        [objeto.id_persona, objeto.id_establecimiento],
+      );
+
+      // Verificamos si el alumno existe antes de continuar
+      if (resultadoBusqueda.rows.length === 0) {
+        console.log("No se encontró el alumno. Cancelando operación.");
+        await pool.query("ROLLBACK"); // Cancelamos la transacción
+        return null;
+      }
+
+      const id_alumno = resultadoBusqueda.rows[0].id_alumno;
+
+      const objetoBuscado = await pool.query(
+        `update alumno set legajo = $2, extranjero = $3, regular = $4, id_motivo_desercion = $5, es_celiaco = $6, direccion_calle = $7, direccion_numero = $8, direccion_piso = $9, direccion_depto = $10 where id_alumno=$1`,
+        [
+          id_alumno,
+          objeto.legajo,
+          objeto.extranjero,
+          objeto.regular,
+          objeto.id_motivo_desercion,
+          objeto.es_celiaco,
+          objeto.direccion_calle,
+          objeto.direccion_numero,
+          objeto.direccion_piso,
+          objeto.direccion_depto,
+        ],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
 
   async getAlumnosPorUsuario(usuario) {
     try {
-        
       const objetoBuscado = await pool.query(
         `SELECT  P.id_persona, 
             CONCAT(P.apellidos, ' ', P.nombres) AS Tutor,  P.usuario,
@@ -547,7 +582,6 @@ try {
       throw error;
     }
   }
-
 
   async getSaldosPorAlumno(id) {
     try {
@@ -708,9 +742,8 @@ ORDER BY
     }
   }
 
-    async getAlumnosPorId(id, id_establecimiento) {
+  async getAlumnosPorId(id, id_establecimiento) {
     try {
-        
       const objetoBuscado = await pool.query(
         `WITH AlumnoDocumentosPriorizados AS (
             SELECT  
@@ -769,17 +802,18 @@ ORDER BY
       );
       return objetoBuscado.rows;
     } catch (error) {
-// 🌟 INTERCEPTAMOS EL ERROR DE NODE: Creamos un error de texto plano estático
+      // 🌟 INTERCEPTAMOS EL ERROR DE NODE: Creamos un error de texto plano estático
       // Esto evita que pg-pool intente leer el stack trace roto de la librería
-      const mensajeSeguro = error && error.message ? error.message : "Error inesperado en consulta SQL";
+      const mensajeSeguro =
+        error && error.message
+          ? error.message
+          : "Error inesperado en consulta SQL";
       throw new Error(`[DB Error] ${mensajeSeguro}`);
     }
   }
 
-
-     async getTutoresPorId(id) {
+  async getTutoresPorId(id) {
     try {
-        
       const objetoBuscado = await pool.query(
         `WITH AlumnoDocumentosPriorizados AS (
             SELECT  
@@ -847,23 +881,24 @@ ORDER BY
       );
       return objetoBuscado.rows;
     } catch (error) {
-// 🌟 INTERCEPTAMOS EL ERROR DE NODE: Creamos un error de texto plano estático
+      // 🌟 INTERCEPTAMOS EL ERROR DE NODE: Creamos un error de texto plano estático
       // Esto evita que pg-pool intente leer el stack trace roto de la librería
-      const mensajeSeguro = error && error.message ? error.message : "Error inesperado en consulta SQL";
+      const mensajeSeguro =
+        error && error.message
+          ? error.message
+          : "Error inesperado en consulta SQL";
       throw new Error(`[DB Error] ${mensajeSeguro}`);
     }
   }
 
+  async getAllByApellidosDocumento(apellidodocumento) {
+    const comodin = `${apellidodocumento}%`;
 
+    try {
+      //const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))
 
-async getAllByApellidosDocumento(apellidodocumento){
-        const comodin = `${apellidodocumento}%`
-
-        try {
-
-            //const objetoBuscado = (await pool.query(`select * from persona where activo <> 'B' and apellidos ILIKE $1`, [apellidosconcomodin]))   
-
-            const objetoBuscado = (await pool.query(`  SELECT * FROM (
+      const objetoBuscado = await pool.query(
+        `  SELECT * FROM (
             SELECT DISTINCT ON (persona.id_persona) 
                 persona.*, 
                 persona_tipo_documento.id_tipo_documento, 
@@ -883,24 +918,25 @@ async getAllByApellidosDocumento(apellidodocumento){
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
                 persona_tipo_documento.fecha_alta ASC
         ) subconsulta 
-        ORDER BY apellidos ASC, nombres ASC;  `, [comodin]));   
+        ORDER BY apellidos ASC, nombres ASC;  `,
+        [comodin],
+      );
 
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-        //ALTA
-    async createPersonaAllegada(objeto){
-        // Formato estándar de base de datos sin offset de zona horaria
-       // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-        // Resultado: "2026-05-25 14:20:00"
-//console.log("este es el DAO"  + objeto.usuario)
-       const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+  //ALTA
+  async createPersonaAllegada(objeto) {
+    // Formato estándar de base de datos sin offset de zona horaria
+    // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
+    // Resultado: "2026-05-25 14:20:00"
+    //console.log("este es el DAO"  + objeto.usuario)
+    const fechaActual = format(new Date(), "yyyy-MM-dd HH:mm:ss");
 
-       const query = `
+    const query = `
         INSERT INTO persona_allegado (
             id_persona, id_alumno, id_tipo_allegado, id_estudio_alcanzado, 
             id_ocupacion, tutor, activo, 
@@ -911,156 +947,164 @@ async getAllByApellidosDocumento(apellidodocumento){
         RETURNING *;
         `;
 
-        const valores = [
-        objeto.id_persona, 
-        objeto.id_alumno, 
-        objeto.id_tipo_allegado, 
-        objeto.id_estudio_alcanzado,
-        objeto.id_ocupacion, 
-        objeto.tutor,
-        objeto.activo, 
-        fechaActual, 
-        objeto.usuario_sistema, 
-        fechaActual, 
-        objeto.usuario_sistema
-        ];
+    const valores = [
+      objeto.id_persona,
+      objeto.id_alumno,
+      objeto.id_tipo_allegado,
+      objeto.id_estudio_alcanzado,
+      objeto.id_ocupacion,
+      objeto.tutor,
+      objeto.activo,
+      fechaActual,
+      objeto.usuario_sistema,
+      fechaActual,
+      objeto.usuario_sistema,
+    ];
 
-try {
-    console.log("Intentando ejecutar la consulta con los valores:", valores);
-    
-    await pool.query('BEGIN'); 
-    
-    // 1. Insertar el alumno
-    const resultado = await pool.query(query, valores); 
-    const allegadosCreado = resultado.rows[0]; // Aquí está el id_alumno generado
-  
-    await pool.query('COMMIT'); 
+    try {
+      console.log("Intentando ejecutar la consulta con los valores:", valores);
 
-    console.log("Datos que Postgres dice haber guardado:", allegadosCreado);
-    
-    // 🌟 CORREGIDO: Devolvemos la fila completa de la persona. 
-    // Al llevar 'id_persona', el frontend lo leerá automáticamente.
-    return allegadosCreado; 
+      await pool.query("BEGIN");
 
-} catch (error) {
-    await pool.query('ROLLBACK'); 
-    console.error("❌ Error al insertar en Postgres:", error);
-    throw error; 
-}
+      // 1. Insertar el alumno
+      const resultado = await pool.query(query, valores);
+      const allegadosCreado = resultado.rows[0]; // Aquí está el id_alumno generado
 
-   }  
+      await pool.query("COMMIT");
 
+      console.log("Datos que Postgres dice haber guardado:", allegadosCreado);
 
-       async eliminarAllegado(id){
-        try {
-            await pool.query('BEGIN'); 
-            const objetoBuscado = (await pool.query(`delete from persona_allegado where id_persona_allegado=$1`, [id]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
+      // 🌟 CORREGIDO: Devolvemos la fila completa de la persona.
+      // Al llevar 'id_persona', el frontend lo leerá automáticamente.
+      return allegadosCreado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error("❌ Error al insertar en Postgres:", error);
+      throw error;
+    }
+  }
 
+  async eliminarAllegado(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from persona_allegado where id_persona_allegado=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
 
-    async ExistePersona(tipo, numero){
+  async ExistePersona(tipo, numero) {
+    try {
+      if (!tipo || !numero) {
+        return "Faltan parámetros de búsqueda";
+      }
 
-        try {
-      
-            if (!tipo || !numero) {
-            return  'Faltan parámetros de búsqueda' ;
-            }
-
-            // Consulta en la tabla que relaciona personas con documentos
-            const query = `
+      // Consulta en la tabla que relaciona personas con documentos
+      const query = `
             SELECT id_persona 
             FROM persona_tipo_documento 
             WHERE id_tipo_documento = $1 AND numero = $2 
             LIMIT 1
             `;
-            const result = await pool.query(query, [tipo, numero]);
+      const result = await pool.query(query, [tipo, numero]);
 
-            if(result.rows.length > 0)
-              return true
-            else
-              return false
-            
-        } catch (error) {
-            console.error('Error al validar documento:', error);
-            return  'Error interno del servidor';
-        }
-
-    }  
-
-
-
-        //ACTUALIZA DATOS DE UNA PERSONA ALLEGADA 
-    async updatePersonaAllegada(objeto, id){
-
-         try {
-            await pool.query('BEGIN'); 
-            const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-            const objetoBuscado = (await pool.query(`update persona_allegado set id_persona = $2, id_alumno = $3, id_tipo_allegado = $4, id_estudio_alcanzado = $5, id_ocupacion = $6, tutor = $7, activo = $8, fecha_alta = $9, usuario_alta = $10, fecha_ultima_modificacion = $11, usuario_ultima_modificacion = $12 where id_persona_allegado=$1`, [id, objeto.id_persona, objeto.id_alumno, objeto.id_tipo_allegado, objeto.id_estudio_alcanzado, objeto.id_ocupacion, objeto.tutor, objeto.activo, fechaActual, objeto.usuario_sistema, fechaActual, objeto.usuario_sistema ]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
+      if (result.rows.length > 0) return true;
+      else return false;
+    } catch (error) {
+      console.error("Error al validar documento:", error);
+      return "Error interno del servidor";
     }
+  }
 
-
-    async getGrado(id_establecimiento){
-        try {
-            const objetoBuscado = (await pool.query(`select id_grado, nombre from grado where id_establecimiento = $1 order by id_grado`, [id_establecimiento] ))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  //ACTUALIZA DATOS DE UNA PERSONA ALLEGADA
+  async updatePersonaAllegada(objeto, id) {
+    try {
+      await pool.query("BEGIN");
+      const fechaActual = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+      const objetoBuscado = await pool.query(
+        `update persona_allegado set id_persona = $2, id_alumno = $3, id_tipo_allegado = $4, id_estudio_alcanzado = $5, id_ocupacion = $6, tutor = $7, activo = $8, fecha_alta = $9, usuario_alta = $10, fecha_ultima_modificacion = $11, usuario_ultima_modificacion = $12 where id_persona_allegado=$1`,
+        [
+          id,
+          objeto.id_persona,
+          objeto.id_alumno,
+          objeto.id_tipo_allegado,
+          objeto.id_estudio_alcanzado,
+          objeto.id_ocupacion,
+          objeto.tutor,
+          objeto.activo,
+          fechaActual,
+          objeto.usuario_sistema,
+          fechaActual,
+          objeto.usuario_sistema,
+        ],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
     }
+  }
 
-    async getDivision(id_establecimiento){
-        try {
-            const objetoBuscado = (await pool.query(`select id_division, division from divisiones where id_establecimiento = $1 order by id_division`, [id_establecimiento] ))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getGrado(id_establecimiento) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_grado, nombre from grado where id_establecimiento = $1 order by id_grado`,
+        [id_establecimiento],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-    
-    async getAnioCursado(){
-        try {
-            const objetoBuscado = (await pool.query(`select id_anio, anio from anio order by anio desc`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getDivision(id_establecimiento) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_division, division from divisiones where id_establecimiento = $1 order by id_division`,
+        [id_establecimiento],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-    async getListado(id, id_establecimiento){
-        try {
-            const objetoBuscado = (await pool.query(`select dc.*, g.*, a.*, d.* from alumno_datos_cursada dc, grado g, anio a, divisiones d, alumno alu
+  async getAnioCursado() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_anio, anio from anio order by anio desc`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getListado(id, id_establecimiento) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select dc.*, g.*, a.*, d.* from alumno_datos_cursada dc, grado g, anio a, divisiones d, alumno alu
                 where dc.id_grado = g.id_grado and dc.anio_cursada = a.id_anio and dc.id_division = d.id_division and
                 alu.id_alumno = dc.id_alumno and alu.id_establecimiento = $2 and
                 dc.id_alumno = $1
-                order by a.anio DESC`, [id, id_establecimiento] ))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+                order by a.anio DESC`,
+        [id, id_establecimiento],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-
-// ALTA MÚLTIPLE
-async createAcademica(objeto) {
+  // ALTA MÚLTIPLE
+  async createAcademica(objeto) {
     const query = `
     INSERT INTO alumno_datos_cursada (
         id_alumno, id_grado, division, genero_costo_inscripcion, 
@@ -1074,69 +1118,76 @@ async createAcademica(objeto) {
     const resultadosInsertados = [];
 
     try {
-        await pool.query('BEGIN'); 
+      await pool.query("BEGIN");
 
-        // 🌟 RECORREMOS todo el historial académico que viene del frontend
-        for (const item of objeto.historialAcademico) {
-            
-            const valores = [
-                item.id_alumno, 
-                parseInt(item.id_grado), 
-                item.division, 
-                item.genero_cargo,
-                item.pago_cargo, 
-                item.anio_cursada,
-                parseInt(item.id_division)
-            ];
+      // 🌟 RECORREMOS todo el historial académico que viene del frontend
+      for (const item of objeto.historialAcademico) {
+        const valores = [
+          item.id_alumno,
+          parseInt(item.id_grado),
+          item.division,
+          item.genero_cargo,
+          item.pago_cargo,
+          item.anio_cursada,
+          parseInt(item.id_division),
+        ];
 
-            console.log("Intentando insertar registro con los valores:", valores);
-            
-            const resultado = await pool.query(query, valores); 
-            resultadosInsertados.push(resultado.rows[0]);
-        }
-      
-        await pool.query('COMMIT'); 
-        console.log("Todos los registros se guardaron correctamente. Cantidad:", resultadosInsertados.length);
-        
-        // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
-        return resultadosInsertados; 
+        console.log("Intentando insertar registro con los valores:", valores);
 
+        const resultado = await pool.query(query, valores);
+        resultadosInsertados.push(resultado.rows[0]);
+      }
+
+      await pool.query("COMMIT");
+      console.log(
+        "Todos los registros se guardaron correctamente. Cantidad:",
+        resultadosInsertados.length,
+      );
+
+      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+      return resultadosInsertados;
     } catch (error) {
-        await pool.query('ROLLBACK'); 
-        console.error("❌ Error al insertar múltiples registros en Postgres:", error);
-        throw error; 
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar múltiples registros en Postgres:",
+        error,
+      );
+      throw error;
     }
-}
+  }
 
-
-    async deleteAcademica(id){
-        try {
-            await pool.query('BEGIN'); 
-            const objetoBuscado = (await pool.query(`delete from alumno_datos_cursada where id_alumno_dato_cursada=$1`, [id]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
-
-
-
-async updateAcademica(objeto) {
-  try {
-    const resultados = [];
-
-    // 1. Validamos que exista el historial y sea un array recorrible
-    if (!objeto || !objeto.historialAcademico || !Array.isArray(objeto.historialAcademico)) {
-      return null;
+  async deleteAcademica(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from alumno_datos_cursada where id_alumno_dato_cursada=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
     }
+  }
 
-    // 2. Definimos el bucle para iterar sobre cada registro utilizando 'item'
-    for (const item of objeto.historialAcademico) {
-      // ¡Acá agregamos el UPDATE que faltaba al principio!
-      const queryText = `
+  async updateAcademica(objeto) {
+    try {
+      const resultados = [];
+
+      // 1. Validamos que exista el historial y sea un array recorrible
+      if (
+        !objeto ||
+        !objeto.historialAcademico ||
+        !Array.isArray(objeto.historialAcademico)
+      ) {
+        return null;
+      }
+
+      // 2. Definimos el bucle para iterar sobre cada registro utilizando 'item'
+      for (const item of objeto.historialAcademico) {
+        // ¡Acá agregamos el UPDATE que faltaba al principio!
+        const queryText = `
         UPDATE alumno_datos_cursada 
         SET id_alumno = $2, 
             id_grado = $3, 
@@ -1149,69 +1200,70 @@ async updateAcademica(objeto) {
         RETURNING *;
       `;
 
-      const queryValues = [
-        parseInt(item.id_alumno_dato_cursada),                // $1
-        parseInt(item.id_alumno),                             // $2
-        parseInt(item.id_grado),                              // $3
-        item.division,                                        // $4
-        item.genero_costo_inscripcion,   // $5
-        item.pago_inscripcion,             // $6
-        parseInt(item.anio_cursada),          // $7
-        parseInt(item.id_division)                            // $8
-      ];
+        const queryValues = [
+          parseInt(item.id_alumno_dato_cursada), // $1
+          parseInt(item.id_alumno), // $2
+          parseInt(item.id_grado), // $3
+          item.division, // $4
+          item.genero_costo_inscripcion, // $5
+          item.pago_inscripcion, // $6
+          parseInt(item.anio_cursada), // $7
+          parseInt(item.id_division), // $8
+        ];
 
-      // 3. Ejecutamos la consulta en tu pool de base de datos
-      const resQuery = await pool.query(queryText, queryValues); 
-      // Nota: Si usás "this.pool" o "pool" directo, adaptalo según cómo esté instanciado en tu clase ContainerPg
-      
-      if (resQuery.rows.length > 0) {
-        resultados.push(resQuery.rows[0]);
+        // 3. Ejecutamos la consulta en tu pool de base de datos
+        const resQuery = await pool.query(queryText, queryValues);
+        // Nota: Si usás "this.pool" o "pool" directo, adaptalo según cómo esté instanciado en tu clase ContainerPg
+
+        if (resQuery.rows.length > 0) {
+          resultados.push(resQuery.rows[0]);
+        }
       }
+
+      return resultados;
+    } catch (error) {
+      console.error("Error en ContainerPg.updateAcademica:", error);
+      throw error;
     }
-
-    return resultados;
-
-  } catch (error) {
-    console.error("Error en ContainerPg.updateAcademica:", error);
-    throw error;
   }
-}
 
-
-    async getMedios(){
-        try {
-            const objetoBuscado = (await pool.query(`select id_medio_pago, nombre from medio_pago order by jerarquia`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getMedios() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_medio_pago, nombre from medio_pago order by jerarquia`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-    async getMarcas(){
-        try {
-            const objetoBuscado = (await pool.query(`select id_marca_tarjeta, nombre from marca_tarjeta order by jerarquia`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getMarcas() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_marca_tarjeta, nombre from marca_tarjeta order by jerarquia`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-    async getEntidades(){
-        try {
-            const objetoBuscado = (await pool.query(`select id_entidad_bancaria, nombre from entidad_bancaria order by id_entidad_bancaria`))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  async getEntidades() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_entidad_bancaria, nombre from entidad_bancaria order by id_entidad_bancaria`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-        
-    async getListadoPagos(id, id_establecimiento){
-        try {
-            const objetoBuscado = (await pool.query(`SELECT 
+  async getListadoPagos(id, id_establecimiento) {
+    try {
+      const objetoBuscado = await pool.query(
+        `SELECT 
     at.id_alumno_tarjeta, 
     at.id_alumno, 
     at.id_medio_pago, 
@@ -1230,19 +1282,17 @@ JOIN medio_pago mp ON at.id_medio_pago = mp.id_medio_pago
 LEFT JOIN marca_tarjeta mt ON at.id_marca_tarjeta = mt.id_marca_tarjeta
 LEFT JOIN entidad_bancaria eb ON at.id_entidad_bancaria = eb.id_entidad_bancaria
 WHERE a.id_alumno = $1
-  AND a.id_establecimiento = $2;`, [id, id_establecimiento] ))
-            return objetoBuscado.rows;
-        }
-        catch(error){
-            return error
-        } 
+  AND a.id_establecimiento = $2;`,
+        [id, id_establecimiento],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
+  }
 
-
-    
-// ALTA MÚLTIPLE
-async createPago(objeto) {
-   
+  // ALTA MÚLTIPLE
+  async createPago(objeto) {
     const query = `
     INSERT INTO alumno_tarjeta (
         id_alumno, id_medio_pago, id_marca_tarjeta, id_entidad_bancaria, 
@@ -1253,67 +1303,112 @@ async createPago(objeto) {
     `;
 
     try {
-        await pool.query('BEGIN'); 
+      await pool.query("BEGIN");
 
-        if(Number(objeto.id_medio_pago) === 1 || Number(objeto.id_medio_pago) === 2 || Number(objeto.id_medio_pago) === 5 || Number(objeto.id_medio_pago) === 6) {
-            objeto.id_marca_tarjeta = null
-            objeto.id_entidad_bancaria = null
-            objeto.numero_tarjeta = null
-            objeto.activo = null
-            objeto.nombre_titular = null
-        }
-            
-            const valores = [
-                objeto.id_alumno, 
-                objeto.id_medio_pago, 
-                objeto.id_marca_tarjeta, 
-                objeto.id_entidad_bancaria,
-                objeto.numero_tarjeta, 
-                objeto.activo,
-                objeto.nombre_titular
-            ];
+      if (
+        Number(objeto.id_medio_pago) === 1 ||
+        Number(objeto.id_medio_pago) === 2 ||
+        Number(objeto.id_medio_pago) === 5 ||
+        Number(objeto.id_medio_pago) === 6
+      ) {
+        objeto.id_marca_tarjeta = null;
+        objeto.id_entidad_bancaria = null;
+        objeto.numero_tarjeta = null;
+        objeto.activo = null;
+        objeto.nombre_titular = null;
+      }
 
-            console.log("Intentando insertar registro con los valores:", valores);
-            
-            const resultado = await pool.query(query, valores); 
-      
-        await pool.query('COMMIT'); 
-        
-        return resultado; 
+      const valores = [
+        objeto.id_alumno,
+        objeto.id_medio_pago,
+        objeto.id_marca_tarjeta,
+        objeto.id_entidad_bancaria,
+        objeto.numero_tarjeta,
+        objeto.activo,
+        objeto.nombre_titular,
+      ];
 
+      console.log("Intentando insertar registro con los valores:", valores);
+
+      const resultado = await pool.query(query, valores);
+
+      await pool.query("COMMIT");
+
+      return resultado;
     } catch (error) {
-        await pool.query('ROLLBACK'); 
-        console.error("❌ Error al insertar múltiples registros en Postgres:", error);
-        throw error; 
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar múltiples registros en Postgres:",
+        error,
+      );
+      throw error;
     }
+  }
+
+  async deletePago(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from alumno_tarjeta where id_alumno_tarjeta=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
+
+async generarArchivoDebito() {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const resultado = await client.query(
+      `SELECT * FROM spcreacionarchivodebitobuffers()`
+    );
+
+    await client.query("COMMIT");
+
+    const archivos = resultado.rows[0];
+
+    return {
+      archivo_visa_debito:
+        archivos.archivo_visa_debito?.toString("utf8"),
+
+      archivo_visa_credito:
+        archivos.archivo_visa_credito?.toString("utf8"),
+
+      archivo_mastercard_credito:
+        archivos.archivo_mastercard_credito?.toString("utf8"),
+    };
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 
-    async deletePago(id){
-        try {
-            await pool.query('BEGIN'); 
-            const objetoBuscado = (await pool.query(`delete from alumno_tarjeta where id_alumno_tarjeta=$1`, [id]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado;
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
 
-
-
-async updatePago(objeto) {
-  try {
-
-        if(Number(objeto.id_medio_pago) === 1 || Number(objeto.id_medio_pago) === 2 || Number(objeto.id_medio_pago) === 5 || Number(objeto.id_medio_pago) === 6) {
-            objeto.id_marca_tarjeta = null
-            objeto.id_entidad_bancaria = null
-            objeto.numero_tarjeta = null
-            objeto.activo = null
-            objeto.nombre_titular = null
-        }
+  async updatePago(objeto) {
+    try {
+      if (
+        Number(objeto.id_medio_pago) === 1 ||
+        Number(objeto.id_medio_pago) === 2 ||
+        Number(objeto.id_medio_pago) === 5 ||
+        Number(objeto.id_medio_pago) === 6
+      ) {
+        objeto.id_marca_tarjeta = null;
+        objeto.id_entidad_bancaria = null;
+        objeto.numero_tarjeta = null;
+        objeto.activo = null;
+        objeto.nombre_titular = null;
+      }
 
       const queryText = `
         UPDATE alumno_tarjeta 
@@ -1329,14 +1424,14 @@ async updatePago(objeto) {
       `;
 
       const queryValues = [
-        objeto.id_alumno_tarjeta,                // $1
-        objeto.id_alumno,                             // $2
-        objeto.id_medio_pago,                              // $3
-        objeto.id_marca_tarjeta,                                        // $4
-        objeto.id_entidad_bancaria,   // $5
-        objeto.numero_tarjeta,             // $6
-        objeto.activo,          // $7
-        objeto.nombre_titular                            // $8
+        objeto.id_alumno_tarjeta, // $1
+        objeto.id_alumno, // $2
+        objeto.id_medio_pago, // $3
+        objeto.id_marca_tarjeta, // $4
+        objeto.id_entidad_bancaria, // $5
+        objeto.numero_tarjeta, // $6
+        objeto.activo, // $7
+        objeto.nombre_titular, // $8
       ];
 
       // 3. Ejecutamos la consulta en tu pool de base de datos
@@ -1350,23 +1445,6 @@ async updatePago(objeto) {
   }
 }
 
-
-    async getEscuela(id){
-        try {
-            await pool.query('BEGIN'); 
-            const objetoBuscado = (await pool.query(`select * from entidades_educativas where identidadeducativa=$1`, [id]))
-            await pool.query('COMMIT'); 
-            return objetoBuscado.rows[0];
-        }
-        catch(error){
-            await pool.query('ROLLBACK'); 
-            return error
-        } 
-     }
-
 }
 
-
-
-
- export {ContainerPg} ;
+export { ContainerPg };

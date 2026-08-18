@@ -7,6 +7,7 @@ import { controllerUpdate } from '../controllers/controllerPagos.js';
 import { controllerCreate } from '../controllers/controllerPagos.js';
 import { controllerDelete } from '../controllers/controllerPagos.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
+import {controllerArchivoDebito} from '../controllers/controllerPagos.js';
 
 
 const routerApiPagos = express.Router();
@@ -17,6 +18,7 @@ routerApiPagos.get('/entidades', autenticacion, controllerEntidades);
 routerApiPagos.get('/:id', autenticacion, controllerListado); 
 routerApiPagos.post('/', autenticacion, controllerCreate); 
 routerApiPagos.put('/', autenticacion, controllerUpdate); 
+routerApiPagos.put('/archivoDebito', autenticacion, controllerArchivoDebito); 
 routerApiPagos.delete('/:id', autenticacion, controllerDelete); 
 
 export default routerApiPagos;

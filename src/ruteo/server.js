@@ -13,10 +13,10 @@ import routerApiEstudio from './routers/routerApiEstudio.js';
 import routerApiTipoAllegado from './routers/routerApiTipoAllegado.js';
 import routerApiAcademica from './routers/routerApiAcademica.js';
 import routerApiPagos from './routers/routerApiPagos.js';
-import routerApiEscuela from './routers/routerApiEscuela.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
+import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import cors from 'cors'
 
 
@@ -71,8 +71,8 @@ servidor.use('/api/personsconfiltro', routerApiPersons)
 servidor.use('/api/alumnos', routerApiAlumnos)
 servidor.use('/api/academica', routerApiAcademica)
 servidor.use('/api/pagos', routerApiPagos)
-servidor.use('/api/escuela', routerApiEscuela)
 servidor.use(express.static('public/img'))
+servidor.use("/api/archivos-debito", archivoDebitoRoutes);
 
 //multer
 multer_function()
