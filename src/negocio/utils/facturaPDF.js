@@ -4,6 +4,8 @@ import { Page, Text, View, Document, StyleSheet, Image, Link } from '@react-pdf/
 const formatMoneda = (val) => {
   const num = Number(val) || 0;
   return num.toLocaleString('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
@@ -18,119 +20,176 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column'
   },
-  borderBox: { border: '1px solid #000', marginBottom: 5, padding: 5 },
-  headerContainer: { flexDirection: 'row', border: '1px solid #000', marginBottom: 5, minHeight: 110 },
-  headerLeft: { width: '46%', padding: 8, flexDirection: 'row' },
+  // Bloque datos cliente (marco exterior firme 1.2pt)
+  borderBox: { 
+    borderWidth: 1.2, 
+    borderColor: '#000', 
+    marginBottom: 5, 
+    padding: 5 
+  },
+  // Encabezado emisor (marco exterior firme 1.2pt)
+  headerContainer: { 
+    flexDirection: 'row', 
+    borderWidth: 1.2, 
+    borderColor: '#000', 
+    marginBottom: 5, 
+    minHeight: 110 
+  },
+  headerLeft: { 
+    width: '46%', 
+    padding: 8, 
+    flexDirection: 'row',
+    alignItems: 'center' 
+  },
   logoStyle: { width: 65, height: 65, marginRight: 8 },
   headerLeftText: { flex: 1 },
-  headerCenter: { width: '8%', borderLeft: '1px solid #000', borderRight: '1px solid #000', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 5 },
+  headerCenter: { 
+    width: '8%', 
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.7,
+    borderColor: '#000', 
+    alignItems: 'center', 
+    justifyContent: 'flex-start', 
+    paddingTop: 5 
+  },
   headerRight: { width: '46%', padding: 8 },
   typeLetter: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' },
   typeCode: { fontSize: 7, textAlign: 'center' },
   title: { fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
   subtitle: { fontSize: 8, marginBottom: 2 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
   
-  // Estructura principal de la tabla
-  tableContainer: { 
+  // TABLA: Marco exterior firme (1.2pt)
+  unifiedTableContainer: { 
     flex: 1, 
     display: 'flex',
     flexDirection: 'column',
-    border: '1px solid #000',
+    borderWidth: 1.2,
+    borderColor: '#000',
     marginBottom: 5
   },
-  
-  // Encabezado de la tabla
-  tableHeader: { 
-    flexDirection: 'row', 
-    backgroundColor: '#eee', 
-    fontWeight: 'bold', 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#000', 
-    height: 20, 
-    alignItems: 'center' 
+
+  // Período Facturado: borde inferior ancho (1.2pt)
+  periodHeaderRow: {
+    padding: 5,
+    borderBottomWidth: 0.8, // <--- Borde ancho inferior
+    //borderTopWidth: 0.1,    // <--- AGREGA ESTA LÍNEA (Ajusta el grosor aquí, ej: 1.2 o 1.5)
+    borderBottomColor: '#000',
+    backgroundColor: '#F2F2F2'
   },
-  
-  // Área principal de columnas dinámicas
-  tableColumnsContainer: {
+
+  // ENCABEZADO DE TABLA (Código / Descripción / Total): borde inferior ancho (1.2pt)
+  tableHeaderRow: {
+    flexDirection: 'row',
+    height: 20,
+    backgroundColor: '#E0E0E0',
+    borderBottomWidth: 0.6, // <--- Borde ancho inferior debajo de los títulos
+    borderBottomColor: '#000'
+  },
+  headerCellCode: {
+    width: '15%',
+    borderRightWidth: 0.4,
+    borderRightColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  headerCellDesc: {
+    width: '65%',
+    borderRightWidth: 0.4,
+    borderRightColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  headerCellTotal: {
+    width: '20%',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  columnHeaderText: {
+    fontWeight: 'bold',
+    fontSize: 8
+  },
+
+  // CUERPO DE LA TABLA
+  tableColumnsRow: {
     flex: 1,
     flexDirection: 'row'
   },
-
-  // Columnas verticales continuas
-  colCodeContainer: { 
-    width: '15%', 
-    borderRightWidth: 1, 
-    borderRightColor: '#000' 
+  colCodeBlock: {
+    width: '15%',
+    borderRightWidth: 0.4,
+    borderRightColor: '#000',
+    display: 'flex',
+    flexDirection: 'column'
   },
-  colDescContainer: { 
-    width: '65%', 
-    borderRightWidth: 1, 
-    borderRightColor: '#000' 
+  colDescBlock: {
+    width: '65%',
+    borderRightWidth: 0.4,
+    borderRightColor: '#000',
+    display: 'flex',
+    flexDirection: 'column'
   },
-  colTotalContainer: { 
-    width: '20%' 
-  },
-
-  // Celdas individuales
-  headerCell: {
-    height: '100%',
-    justify: 'center',
-    alignItems: 'center',
-    fontWeight: 'bold'
-  },
-  cellItem: {
-    height: 20,
-    justify: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingLeft: 4,
-    paddingRight: 4
+  colTotalBlock: {
+    width: '20%',
+    display: 'flex',
+    flexDirection: 'column'
   },
 
-  // Filas del pie de tabla
+  // Renglones de los ítems
+  cellContent: {
+    height: 24,
+    paddingTop: 6,
+    paddingLeft: 6,
+    paddingRight: 6,
+    borderBottomWidth: 0.3,
+    borderBottomColor: '#D0D0D0'
+  },
+
+  // Filas del pie
   sonRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
+    borderTopWidth: 1.0, // <--- Borde ancho para separar del cuerpo de la tabla
     borderTopColor: '#000',
-    padding: 4,
-    minHeight: 18,
+    paddingLeft: 6,
+    paddingRight: 6,
+    height: 22,
     alignItems: 'center'
   },
   totalRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
+    borderTopWidth: 0.5,
     borderTopColor: '#000',
-    minHeight: 22,
+    height: 22,
     alignItems: 'center'
   },
   colTotalLabel: {
     width: '80%',
     fontWeight: 'bold',
-    fontSize: 10,
-    paddingLeft: 4,
-    borderRightWidth: 1,
+    fontSize: 9,
+    paddingLeft: 6,
+    borderRightWidth: 0.5,
     borderRightColor: '#000',
     height: '100%',
-    justify: 'center'
+    justifyContent: 'center'
   },
   colTotalValue: {
     width: '20%',
     fontWeight: 'bold',
-    fontSize: 10,
-    textAlign: 'right',
-    paddingRight: 4,
+    fontSize: 9,
+    paddingRight: 6,
     height: '100%',
-    justify: 'center'
+    justifyContent: 'center',
+    alignItems: 'flex-end'
   },
 
   // Pie ARCA / AFIP
   footerBox: {
-    border: '1px solid #000',
+    borderWidth: 1.2,
+    borderColor: '#000',
     padding: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    justify: 'space-between'
+    justifyContent: 'space-between'
   },
   footerCenter: {
     flex: 1,
@@ -140,59 +199,36 @@ const styles = StyleSheet.create({
   arcaHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 4
-  },
-  arcaTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    marginRight: 4
-  },
-  arcaSubtitle: {
-    fontSize: 6,
-    color: '#333'
+    marginBottom: 3
   },
   legalText: {
-    fontSize: 6,
+    fontSize: 5.5,
     color: '#444',
-    marginTop: 4
+    marginTop: 3
   },
   caeBox: {
     textAlign: 'right',
-    justify: 'center'
+    justifyContent: 'center'
   },
   pageNumber: {
     fontSize: 7,
     textAlign: 'right',
-    marginBottom: 6
+    marginBottom: 4
   },
   bold: { fontWeight: 'bold' }
 });
+
 
 export const FacturaPDF = ({ data }) => {
   if (!data) return null;
 
   const { emisor, periodo, receptor, items, totales, afip } = data;
-
   const nombreArchivo = `Factura_${emisor?.puntoVenta || '0003'}-${emisor?.numeroComprobante || '0001'}`;
 
   return React.createElement(Document, { title: nombreArchivo },
     React.createElement(Page, { size: "A4", style: styles.page },
       
-      // 1. Periodo Facturado
-      React.createElement(View, { style: styles.borderBox },
-        React.createElement(View, { style: styles.row },
-          React.createElement(Text, null,
-            React.createElement(Text, { style: styles.bold }, "Período facturado: "),
-            `${periodo?.desde || ''} al ${periodo?.hasta || ''}`
-          ),
-          React.createElement(Text, null,
-            React.createElement(Text, { style: styles.bold }, "Concepto: "),
-            periodo?.concepto || 'Cuota'
-          )
-        )
-      ),
-
-      // 2. Cabecera Emisor
+      // 1. Cabecera Emisor
       React.createElement(View, { style: styles.headerContainer },
         React.createElement(View, { style: styles.headerLeft },
           emisor?.logoUrl ? React.createElement(Image, { src: emisor.logoUrl, style: styles.logoStyle }) : null,
@@ -235,60 +271,81 @@ export const FacturaPDF = ({ data }) => {
         )
       ),
 
-      // 3. Receptor
+      // 2. Receptor
       React.createElement(View, { style: styles.borderBox },
         React.createElement(View, { style: styles.row },
           React.createElement(Text, null, React.createElement(Text, { style: styles.bold }, "Señores: "), receptor?.razonSocial),
           React.createElement(Text, null, React.createElement(Text, { style: styles.bold }, "DNI/CUIT: "), receptor?.cuil)
         ),
-        React.createElement(View, { style: styles.row },
+        React.createElement(View, { style: [styles.row, { marginTop: 3 }] },
           React.createElement(Text, null, React.createElement(Text, { style: styles.bold }, "Domicilio: "), receptor?.domicilio || ''),
           React.createElement(Text, null, React.createElement(Text, { style: styles.bold }, "Condición frente al IVA: "), receptor?.condicionIva)
         ),
-        React.createElement(View, { style: styles.row },
+        React.createElement(View, { style: [styles.row, { marginTop: 3 }] },
           React.createElement(Text, null, React.createElement(Text, { style: styles.bold }, "Condición de venta: "), receptor?.condicionVenta)
         )
       ),
 
-      // 4. Tabla de items
-      React.createElement(View, { style: styles.tableContainer },
+      // 3. Bloque Unificado: Período Facturado + Tabla de Ítems
+      React.createElement(View, { style: styles.unifiedTableContainer },
         
-        // Encabezado
-        React.createElement(View, { style: styles.tableHeader },
-          React.createElement(View, { style: [styles.colCodeContainer, styles.headerCell] }, React.createElement(Text, null, "Código")),
-          React.createElement(View, { style: [styles.colDescContainer, styles.headerCell] }, React.createElement(Text, null, "Descripción")),
-          React.createElement(View, { style: [styles.colTotalContainer, styles.headerCell] }, React.createElement(Text, null, "Total"))
+        // Período Facturado
+        React.createElement(View, { style: styles.periodHeaderRow },
+          React.createElement(View, { style: styles.row },
+            React.createElement(Text, null,
+              React.createElement(Text, { style: styles.bold }, "Período facturado: "),
+              `${periodo?.desde || ''} al ${periodo?.hasta || ''}`
+            ),
+            React.createElement(Text, null,
+              React.createElement(Text, { style: styles.bold }, "Concepto: "),
+              periodo?.concepto || 'Cuota'
+            )
+          )
         ),
-        
-        // Cuerpo
-        React.createElement(View, { style: styles.tableColumnsContainer },
+
+        // Fila de Encabezados (Título)
+        React.createElement(View, { style: styles.tableHeaderRow },
+          React.createElement(View, { style: styles.headerCellCode },
+            React.createElement(Text, { style: styles.columnHeaderText }, "Código")
+          ),
+          React.createElement(View, { style: styles.headerCellDesc },
+            React.createElement(Text, { style: styles.columnHeaderText }, "Descripción")
+          ),
+          React.createElement(View, { style: styles.headerCellTotal },
+            React.createElement(Text, { style: styles.columnHeaderText }, "Total")
+          )
+        ),
+
+        // Columnas del Cuerpo (Datos)
+        React.createElement(View, { style: styles.tableColumnsRow },
           
-          // Columna 1: Código
-          React.createElement(View, { style: styles.colCodeContainer },
+          // CÓDIGO
+          React.createElement(View, { style: styles.colCodeBlock },
             (items || []).map((item, index) =>
-              React.createElement(View, { style: [styles.cellItem, { alignItems: 'center' }], key: index },
+              React.createElement(View, { style: [styles.cellContent, { alignItems: 'center' }], key: index },
                 React.createElement(Text, null, item.codigo || '1')
               )
             )
           ),
 
-          // Columna 2: Descripción
-          React.createElement(View, { style: styles.colDescContainer },
+          // DESCRIPCIÓN
+          React.createElement(View, { style: styles.colDescBlock },
             (items || []).map((item, index) =>
-              React.createElement(View, { style: styles.cellItem, key: index },
+              React.createElement(View, { style: styles.cellContent, key: index },
                 React.createElement(Text, null, item.descripcion)
               )
             )
           ),
 
-          // Columna 3: Total
-          React.createElement(View, { style: styles.colTotalContainer },
+          // TOTAL
+          React.createElement(View, { style: styles.colTotalBlock },
             (items || []).map((item, index) =>
-              React.createElement(View, { style: [styles.cellItem, { alignItems: 'flex-end' }], key: index },
+              React.createElement(View, { style: [styles.cellContent, { alignItems: 'flex-end' }], key: index },
                 React.createElement(Text, null, formatMoneda(item.importe))
               )
             )
           )
+
         ),
 
         // Texto "Son: ..."
@@ -301,61 +358,62 @@ export const FacturaPDF = ({ data }) => {
 
         // Total
         React.createElement(View, { style: styles.totalRow },
-          React.createElement(View, { style: styles.colTotalLabel }, React.createElement(Text, null, "TOTAL")),
-          React.createElement(View, { style: styles.colTotalValue }, React.createElement(Text, null, formatMoneda(totales?.total)))
+          React.createElement(View, { style: styles.colTotalLabel }, 
+            React.createElement(Text, null, "TOTAL")
+          ),
+          React.createElement(View, { style: styles.colTotalValue }, 
+            React.createElement(Text, null, formatMoneda(totales?.total))
+          )
         )
       ),
 
-// 5. Pie Oficial ARCA / AFIP
-React.createElement(View, { style: styles.footerBox },
-  
-  // QR Limpio: escaneable por celular, clickable en Navegador y Acrobat
-  afip?.qrDataUrl ? (
-    afip?.qrUrl ? (
-      React.createElement(Link, {
-        src: afip.qrUrl,
-        style: { width: 75, height: 75, marginRight: 6 }
-      },
-        React.createElement(Image, {
-          src: afip.qrDataUrl,
-          style: { width: 75, height: 75 }
-        })
+      // 4. Pie Oficial ARCA / AFIP
+      React.createElement(View, { style: styles.footerBox },
+        
+        afip?.qrDataUrl ? (
+          afip?.qrUrl ? (
+            React.createElement(Link, {
+              src: afip.qrUrl,
+              style: { width: 75, height: 75, marginRight: 6 }
+            },
+              React.createElement(Image, {
+                src: afip.qrDataUrl,
+                style: { width: 75, height: 75 }
+              })
+            )
+          ) : (
+            React.createElement(Image, {
+              src: afip.qrDataUrl,
+              style: { width: 65, height: 65, marginRight: 6 }
+            })
+          )
+        ) : null,
+
+        React.createElement(View, { style: styles.footerCenter },
+          React.createElement(View, { style: styles.arcaHeader },
+            React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold', marginRight: 4 } }, "ARCA"),
+            React.createElement(Text, { style: { fontSize: 6, color: '#333' } }, "AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO")
+          ),
+          React.createElement(Text, { style: [styles.bold, { fontSize: 8 }] }, "Comprobante Autorizado"),
+          
+          afip?.qrUrl ? (
+            React.createElement(Link, {
+              src: afip.qrUrl,
+              style: { fontSize: 6.5, color: '#0055BB', textDecoration: 'underline', marginTop: 2, marginBottom: 2 }
+            },
+              React.createElement(Text, null, "Ver comprobante en AFIP / ARCA")
+            )
+          ) : null,
+
+          React.createElement(Text, { style: styles.legalText }, "Esta Administración Federal no se responsabiliza por los datos ingresados en el detalle de la operación")
+        ),
+
+        React.createElement(View, { style: styles.caeBox },
+          React.createElement(Text, { style: styles.pageNumber }, "Página 1/1"),
+          React.createElement(Text, { style: styles.bold }, `CAE N°: ${afip?.cae || ''}`),
+          React.createElement(Text, { style: styles.bold }, `FECHA DE VTO: ${afip?.vencimientoCae || ''}`)
+        )
       )
-    ) : (
-      React.createElement(Image, {
-        src: afip.qrDataUrl,
-        style: { width: 65, height: 65, marginRight: 6 }
-      })
-    )
-  ) : null,
-
-  // Centro con enlace textual de respaldo
-  React.createElement(View, { style: styles.footerCenter },
-    React.createElement(View, { style: styles.arcaHeader },
-      React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold', marginRight: 4 } }, "ARCA"),
-      React.createElement(Text, { style: { fontSize: 6, color: '#333' } }, "AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO")
-    ),
-    React.createElement(Text, { style: [styles.bold, { fontSize: 8 }] }, "Comprobante Autorizado"),
-    
-    afip?.qrUrl ? (
-      React.createElement(Link, {
-        src: afip.qrUrl,
-        style: { fontSize: 6.5, color: '#0055BB', textDecoration: 'underline', marginTop: 2, marginBottom: 2 }
-      },
-        React.createElement(Text, null, "Ver comprobante en AFIP / ARCA")
-      )
-    ) : null,
-
-    React.createElement(Text, { style: styles.legalText }, "Esta Administración Federal no se responsabiliza por los datos ingresados en el detalle de la operación")
-  ),
-
-  // Lado derecho (CAE y Vencimiento)
-  React.createElement(View, { style: styles.caeBox },
-    React.createElement(Text, { style: styles.pageNumber }, "Página 1/1"),
-    React.createElement(Text, { style: styles.bold }, `CAE N°: ${afip?.cae || ''}`),
-    React.createElement(Text, { style: styles.bold }, `FECHA DE VTO: ${afip?.vencimientoCae || ''}`)
-  )
-)
 
     )
   );
