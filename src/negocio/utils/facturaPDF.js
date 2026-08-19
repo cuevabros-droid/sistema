@@ -3,12 +3,7 @@ import { Page, Text, View, Document, StyleSheet, Image, Link } from '@react-pdf/
 
 const formatMoneda = (val) => {
   const num = Number(val) || 0;
-  return num.toLocaleString('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  return Number(num.toFixed(2));
 };
 
 const styles = StyleSheet.create({
@@ -222,6 +217,7 @@ const styles = StyleSheet.create({
 export const FacturaPDF = ({ data }) => {
   if (!data) return null;
 
+  console.log(data)
   const { emisor, periodo, receptor, items, totales, afip } = data;
   const nombreArchivo = `Factura_${emisor?.puntoVenta || '0003'}-${emisor?.numeroComprobante || '0001'}`;
 
@@ -341,7 +337,7 @@ export const FacturaPDF = ({ data }) => {
           React.createElement(View, { style: styles.colTotalBlock },
             (items || []).map((item, index) =>
               React.createElement(View, { style: [styles.cellContent, { alignItems: 'flex-end' }], key: index },
-                React.createElement(Text, null, formatMoneda(item.importe))
+                React.createElement(Text, null, `$ ${Number(item.importe).toFixed(2)}`)
               )
             )
           )
@@ -362,7 +358,7 @@ export const FacturaPDF = ({ data }) => {
             React.createElement(Text, null, "TOTAL")
           ),
           React.createElement(View, { style: styles.colTotalValue }, 
-            React.createElement(Text, null, formatMoneda(totales?.total))
+            React.createElement(Text, null, `$ ${Number(totales?.total).toFixed(2)}`)
           )
         )
       ),
