@@ -19,5 +19,5 @@ jobs:
             git checkout main
             git pull origin main
             npm install --production
-            pm2 restart sistemaescuelas-backend || pm2 start index.js --name "sistemaescuelas-backend"
+            PORT=8080 pm2 restart sistemaescuelas-backend || PORT=8080 pm2 start src/main.js --name "sistemaescuelas-backend"
             pm2 save
