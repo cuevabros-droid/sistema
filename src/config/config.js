@@ -1,6 +1,9 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
+let MONGOCONECTIONSEGUNENVIRONMENT
+if(process.env.ENVIRONMENT === 'prod')
+    MONGOCONECTIONSEGUNENVIRONMENT = process.env.MONGOCONECTIONPROD
 
 export const DBNAME=process.env.DBNAME
 export const USERDB=process.env.USERDB
