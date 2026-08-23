@@ -15,46 +15,78 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column'
   },
-  // Bloque datos cliente (marco exterior firme 1.2pt)
   borderBox: { 
     borderWidth: 1.2, 
     borderColor: '#000', 
     marginBottom: 5, 
     padding: 5 
   },
-  // Encabezado emisor (marco exterior firme 1.2pt)
   headerContainer: { 
     flexDirection: 'row', 
     borderWidth: 1.2, 
     borderColor: '#000', 
     marginBottom: 5, 
-    minHeight: 110 
+    minHeight: 110,
+    position: 'relative'
   },
   headerLeft: { 
-    width: '46%', 
+    width: '45%', 
     padding: 8, 
     flexDirection: 'row',
     alignItems: 'center' 
   },
   logoStyle: { width: 65, height: 65, marginRight: 8 },
   headerLeftText: { flex: 1 },
+
+  // --- RECUADRO CÓDIGO + LÍNEA DIVISORA INFERIOR (AFIP / ARCA) ---
+  centerWrapper: {
+    position: 'absolute',
+    left: '50%',
+    top: 5,
+    marginLeft: -19,
+    width: 38,
+    bottom: 0,
+    //height: '100%',
+    alignItems: 'center',
+    zIndex: 10
+  },
   headerCenter: { 
-    width: '8%', 
-    borderLeftWidth: 0.5,
-    borderRightWidth: 0.7,
+    width: 38,
+    height: 48,
+    borderWidth: 1,
     borderColor: '#000', 
     alignItems: 'center', 
-    justifyContent: 'flex-start', 
-    paddingTop: 5 
+    justifyContent: 'center', 
+    backgroundColor: '#FFF'
   },
-  headerRight: { width: '46%', padding: 8 },
-  typeLetter: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' },
-  typeCode: { fontSize: 7, textAlign: 'center' },
-  title: { fontSize: 13, fontWeight: 'bold', marginBottom: 4 },
+  centerDivider: {
+    width: 1,
+    flex: 1,
+    backgroundColor: '#000'
+  },
+  typeLetter: { 
+    fontSize: 22, 
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center',
+    lineHeight: 1
+  },
+  typeCodeLabel: { 
+    fontSize: 6, 
+    textAlign: 'center',
+    marginTop: 2
+  },
+  typeCodeNum: { 
+    fontSize: 7, 
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center'
+  },
+  // ------------------------------------
+
+  headerRight: { width: '45%', padding: 8, marginLeft: 'auto' },
+  title: { fontSize: 13, fontFamily: 'Helvetica-Bold', marginBottom: 4 },
   subtitle: { fontSize: 8, marginBottom: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   
-  // TABLA: Marco exterior firme (1.2pt)
   unifiedTableContainer: { 
     flex: 1, 
     display: 'flex',
@@ -63,22 +95,17 @@ const styles = StyleSheet.create({
     borderColor: '#000',
     marginBottom: 5
   },
-
-  // Período Facturado: borde inferior ancho (1.2pt)
   periodHeaderRow: {
     padding: 5,
-    borderBottomWidth: 0.8, // <--- Borde ancho inferior
-    //borderTopWidth: 0.1,    // <--- AGREGA ESTA LÍNEA (Ajusta el grosor aquí, ej: 1.2 o 1.5)
+    borderBottomWidth: 0.8,
     borderBottomColor: '#000',
     backgroundColor: '#F2F2F2'
   },
-
-  // ENCABEZADO DE TABLA (Código / Descripción / Total): borde inferior ancho (1.2pt)
   tableHeaderRow: {
     flexDirection: 'row',
     height: 20,
     backgroundColor: '#E0E0E0',
-    borderBottomWidth: 0.6, // <--- Borde ancho inferior debajo de los títulos
+    borderBottomWidth: 0.6,
     borderBottomColor: '#000'
   },
   headerCellCode: {
@@ -101,11 +128,9 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   columnHeaderText: {
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 8
   },
-
-  // CUERPO DE LA TABLA
   tableColumnsRow: {
     flex: 1,
     flexDirection: 'row'
@@ -129,8 +154,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column'
   },
-
-  // Renglones de los ítems
   cellContent: {
     height: 24,
     paddingTop: 6,
@@ -139,11 +162,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.3,
     borderBottomColor: '#D0D0D0'
   },
-
-  // Filas del pie
   sonRow: {
     flexDirection: 'row',
-    borderTopWidth: 1.0, // <--- Borde ancho para separar del cuerpo de la tabla
+    borderTopWidth: 1.0,
     borderTopColor: '#000',
     paddingLeft: 6,
     paddingRight: 6,
@@ -159,7 +180,7 @@ const styles = StyleSheet.create({
   },
   colTotalLabel: {
     width: '80%',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 9,
     paddingLeft: 6,
     borderRightWidth: 0.5,
@@ -169,15 +190,13 @@ const styles = StyleSheet.create({
   },
   colTotalValue: {
     width: '20%',
-    fontWeight: 'bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 9,
     paddingRight: 6,
     height: '100%',
     justifyContent: 'center',
     alignItems: 'flex-end'
   },
-
-  // Pie ARCA / AFIP
   footerBox: {
     borderWidth: 1.2,
     borderColor: '#000',
@@ -210,14 +229,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: 4
   },
-  bold: { fontWeight: 'bold' }
+  bold: { fontFamily: 'Helvetica-Bold' }
 });
-
 
 export const FacturaPDF = ({ data }) => {
   if (!data) return null;
 
-  console.log(data)
   const { emisor, periodo, receptor, items, totales, afip } = data;
   const nombreArchivo = `Factura_${emisor?.puntoVenta || '0003'}-${emisor?.numeroComprobante || '0001'}`;
 
@@ -238,10 +255,17 @@ export const FacturaPDF = ({ data }) => {
             )
           )
         ),
-        React.createElement(View, { style: styles.headerCenter },
-          React.createElement(Text, { style: styles.typeLetter }, emisor?.tipoComprobante || 'C'),
-          React.createElement(Text, { style: styles.typeCode }, `Código\n${emisor?.codigoComprobante || '11'}`)
+
+        // BLOQUE CENTRAL TIPO C + LÍNEA VERTICAL CONECTORA
+        React.createElement(View, { style: styles.centerWrapper },
+          React.createElement(View, { style: styles.headerCenter },
+            React.createElement(Text, { style: styles.typeLetter }, emisor?.tipoComprobante || 'C'),
+            React.createElement(Text, { style: styles.typeCodeLabel }, "Código"),
+            React.createElement(Text, { style: styles.typeCodeNum }, emisor?.codigoComprobante || '11')
+          ),
+          React.createElement(View, { style: styles.centerDivider })
         ),
+
         React.createElement(View, { style: styles.headerRight },
           React.createElement(Text, { style: styles.title }, "Factura"),
           React.createElement(Text, { style: styles.subtitle },
@@ -282,10 +306,8 @@ export const FacturaPDF = ({ data }) => {
         )
       ),
 
-      // 3. Bloque Unificado: Período Facturado + Tabla de Ítems
+      // 3. Período Facturado + Tabla
       React.createElement(View, { style: styles.unifiedTableContainer },
-        
-        // Período Facturado
         React.createElement(View, { style: styles.periodHeaderRow },
           React.createElement(View, { style: styles.row },
             React.createElement(Text, null,
@@ -299,7 +321,6 @@ export const FacturaPDF = ({ data }) => {
           )
         ),
 
-        // Fila de Encabezados (Título)
         React.createElement(View, { style: styles.tableHeaderRow },
           React.createElement(View, { style: styles.headerCellCode },
             React.createElement(Text, { style: styles.columnHeaderText }, "Código")
@@ -312,10 +333,7 @@ export const FacturaPDF = ({ data }) => {
           )
         ),
 
-        // Columnas del Cuerpo (Datos)
         React.createElement(View, { style: styles.tableColumnsRow },
-          
-          // CÓDIGO
           React.createElement(View, { style: styles.colCodeBlock },
             (items || []).map((item, index) =>
               React.createElement(View, { style: [styles.cellContent, { alignItems: 'center' }], key: index },
@@ -323,8 +341,6 @@ export const FacturaPDF = ({ data }) => {
               )
             )
           ),
-
-          // DESCRIPCIÓN
           React.createElement(View, { style: styles.colDescBlock },
             (items || []).map((item, index) =>
               React.createElement(View, { style: styles.cellContent, key: index },
@@ -332,8 +348,6 @@ export const FacturaPDF = ({ data }) => {
               )
             )
           ),
-
-          // TOTAL
           React.createElement(View, { style: styles.colTotalBlock },
             (items || []).map((item, index) =>
               React.createElement(View, { style: [styles.cellContent, { alignItems: 'flex-end' }], key: index },
@@ -341,10 +355,8 @@ export const FacturaPDF = ({ data }) => {
               )
             )
           )
-
         ),
 
-        // Texto "Son: ..."
         React.createElement(View, { style: styles.sonRow },
           React.createElement(Text, null,
             React.createElement(Text, { style: styles.bold }, "Son: "),
@@ -352,7 +364,6 @@ export const FacturaPDF = ({ data }) => {
           )
         ),
 
-        // Total
         React.createElement(View, { style: styles.totalRow },
           React.createElement(View, { style: styles.colTotalLabel }, 
             React.createElement(Text, null, "TOTAL")
@@ -365,7 +376,6 @@ export const FacturaPDF = ({ data }) => {
 
       // 4. Pie Oficial ARCA / AFIP
       React.createElement(View, { style: styles.footerBox },
-        
         afip?.qrDataUrl ? (
           afip?.qrUrl ? (
             React.createElement(Link, {
@@ -387,7 +397,7 @@ export const FacturaPDF = ({ data }) => {
 
         React.createElement(View, { style: styles.footerCenter },
           React.createElement(View, { style: styles.arcaHeader },
-            React.createElement(Text, { style: { fontSize: 11, fontWeight: 'bold', marginRight: 4 } }, "ARCA"),
+            React.createElement(Text, { style: { fontSize: 11, fontFamily: 'Helvetica-Bold', marginRight: 4 } }, "ARCA"),
             React.createElement(Text, { style: { fontSize: 6, color: '#333' } }, "AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO")
           ),
           React.createElement(Text, { style: [styles.bold, { fontSize: 8 }] }, "Comprobante Autorizado"),
