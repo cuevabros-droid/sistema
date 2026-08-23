@@ -16,8 +16,8 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /var/www/sistemaescuelas-backend
-            git checkout main
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
             npm install --production
             PORT=8080 pm2 restart sistemaescuelas-backend || PORT=8080 pm2 start src/main.js --name "sistemaescuelas-backend"
             pm2 save
