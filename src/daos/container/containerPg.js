@@ -1445,6 +1445,19 @@ async generarArchivoDebito() {
   }
 }
 
+
+  async getEscuela(id) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from entidades_educativas where identidadeducativa=$1`,[id],
+      );
+      return objetoBuscado.rows[0];
+    } catch (error) {
+      return error;
+    }
+  }
+
+
 }
 
 export { ContainerPg };
