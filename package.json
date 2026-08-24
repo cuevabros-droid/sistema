@@ -18,7 +18,10 @@
   },
   "homepage": "https://github.com/cuevagit/backend#readme",
   "dependencies": {
+    "@arcasdk/core": "^2.0.0",
     "@react-pdf/renderer": "^4.5.1",
+    "afip-apis": "^0.5.5",
+    "afipjs": "^1.1.5",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.3",
     "cluster": "^0.7.7",

@@ -260,16 +260,21 @@ async function controllerFacturaPDF({ user, body }, res) {
     const { FacturaPDF } = await import('../../negocio/utils/facturaPDF.js'); // Revisa la ruta de tu componente
     const { renderToBuffer } = await import('@react-pdf/renderer');
 
-    // 1. Generar la imagen Base64 del QR antes de armar el PDF
-    if (body.afip && body.afip.qrUrl) {
-      body.afip.qrDataUrl = await QRCode.toDataURL(body.afip.qrUrl, {
-          errorCorrectionLevel: 'L', // 'L' (Low 7%) genera la menor cantidad de cuadritos posibles. ¡Súper escaneable!
-          margin: 2,                 // Crea el borde blanco indispensable alrededor para que el celular reconozca el QR
-          scale: 6,                  // Le da buena nitidez de definición
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
+// 1. Generar la imagen Base64 del QR antes de armar el PDF
+    if (body.afip) {
+      // Validar que qrUrl sea una cadena de texto real no vacía
+      const urlValida = (typeof body.afip.qrUrl === 'string' && body.afip.qrUrl.trim().length > 0)
+        ? body.afip.qrUrl
+        : 'https://www.afip.gob.ar/fe/qr/';
+
+      body.afip.qrDataUrl = await QRCode.toDataURL(urlValida, {
+        errorCorrectionLevel: 'L',
+        margin: 2,
+        scale: 6,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
       });
     }
     
