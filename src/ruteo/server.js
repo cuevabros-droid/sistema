@@ -14,6 +14,7 @@ import routerApiTipoAllegado from './routers/routerApiTipoAllegado.js';
 import routerApiAcademica from './routers/routerApiAcademica.js';
 import routerApiPagos from './routers/routerApiPagos.js';
 import routerApiEscuela from './routers/routerApiEscuela.js';
+import routerApiAfip from './routers/RouterApiAfip.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
@@ -73,8 +74,10 @@ servidor.use('/api/alumnos', routerApiAlumnos)
 servidor.use('/api/academica', routerApiAcademica)
 servidor.use('/api/pagos', routerApiPagos)
 servidor.use('/api/escuela', routerApiEscuela)
+servidor.use('/api/', routerApiAfip)
 servidor.use(express.static('public/img'))
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
+
 
 //multer
 multer_function()
