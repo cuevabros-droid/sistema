@@ -57362,6 +57362,7 @@
 {"level":40,"time":1786995359409,"pid":16592,"hostname":"German","msg":"Le queda (215992) segundos para que la sesion se expire"}
 {"level":40,"time":1786995385188,"pid":16592,"hostname":"German","msg":"Le queda (215966) segundos para que la sesion se expire"}
 {"level":40,"time":1786995385589,"pid":16592,"hostname":"German","msg":"Le queda (215966) segundos para que la sesion se expire"}
+<<<<<<< HEAD
 >>>>>>> 762419c64d609b83f43105d0c206fe2fecaacdc1
 {"level":40,"time":1787013475880,"pid":13184,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215998) segundos para que la sesion se expire"}
 {"level":40,"time":1787013476109,"pid":13184,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215997) segundos para que la sesion se expire"}
@@ -57710,3 +57711,5 @@
 {"level":40,"time":1787539146462,"pid":10364,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215998) segundos para que la sesion se expire"}
 {"level":40,"time":1787539146707,"pid":10364,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215998) segundos para que la sesion se expire"}
 {"level":40,"time":1787539157030,"pid":10364,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215987) segundos para que la sesion se expire"}
+=======
+>>>>>>> c040e6a55e8043e5860ae2e00bbeb303989b7542
