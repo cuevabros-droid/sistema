@@ -624,6 +624,7 @@ max(persona_allegada) as persona_allegada,
 max(loc.nombre) as localidad_nombre,
 max(prov.nombre) as provincia_nombre,
 max(cuit_tutor) as cuil_tutor, 		
+max(id_tipo_documento_tutor) as id_tipo_documento_tutor, -- <--- AGREGAR AQUÍ
 max(ingresos_brutos) as ingresos_brutos,
 max(condicion_iva) as condicion_iva,
 max(inicio_actividades) as inicio_actividades,
@@ -679,6 +680,7 @@ INNER JOIN (
         pa.id_alumno,
         per.apellidos || ', ' || per.nombres AS persona_allegada,
         tipdoc.numero AS cuit_tutor,
+        tipdoc.id_tipo_documento AS id_tipo_documento_tutor, -- <--- AGREGAR AQUÍ
         ROW_NUMBER() OVER (
             PARTITION BY pa.id_alumno 
             ORDER BY 
@@ -1457,6 +1459,102 @@ async generarArchivoDebito() {
     }
   }
 
+
+    async parametros(id) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from parametros_sistema where id_establecimiento=$1`,[id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+async createPagoCuota(objeto) {
+    const query = `
+INSERT INTO transaccion_cuenta_corriente (
+    id_alumno_cc,
+    fecha_transaccion,
+    id_estado_cuota,
+    importe,
+    fecha_pago,
+    fecha_respuesta_prisma,
+    usuario_ultima_modificacion,
+    fecha_ultima_modificacion,
+    numero_comprobante,
+    numero_lote,
+    numero_autorizacion,
+    id_medio_pago,
+    id_marca_tarjeta,
+    id_motivo_rechazo1,
+    id_motivo_rechazo2,
+    codigo_error_debito,
+    descripcion_error_debito,
+    punto_venta,
+    comprobante_tipo,
+    comprobante_numero,
+    importe_actualizado,
+    fecha_actualizacion_importe,
+    cae
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
+    $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
+    $21, $22, $23
+) 
+RETURNING id_transaccion_cc;
+    `;
+
+    try {
+      await pool.query("BEGIN");
+
+      // $9: Comprobante Manual del Formulario
+      const nroComprobanteManual = objeto.nroComprobante || objeto.numero_comprobante;
+
+      // $20: Factura Electrónica de AFIP
+      const nroFacturaAfip = objeto.comprobante_numero;
+
+      const valoresBrutos = [
+        objeto.id_alumno_cc,
+        objeto.fecha_transaccion,
+        objeto.id_estado_cuota,
+        objeto.importe,
+        objeto.fechaPago,
+        null,
+        objeto.usuario,
+        objeto.fecha_ultima_modificacion,
+        nroComprobanteManual, // $9: numero_comprobante (Manual)
+        objeto.nroLote,
+        objeto.nroAutorizacion,
+        objeto.id_medio_pago,
+        objeto.id_marca_tarjeta,
+        null,
+        null,
+        null,
+        null,
+        objeto.punto_venta || objeto.puntoVenta,
+        objeto.comprobante_tipo || objeto.tipoComprobante,   
+        nroFacturaAfip,       // $20: comprobante_numero (AFIP)
+        false,
+        objeto.fecha_ultima_modificacion,
+        objeto.cae
+      ];
+
+      const valores = valoresBrutos.map((val) => (val === "" || val === undefined ? null : val));
+
+      console.log("Intentando insertar registro con los valores:", valores);
+
+      const resultado = await pool.query(query, valores);
+
+      await pool.query("COMMIT");
+
+      return resultado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error("❌ Error al insertar múltiples registros en Postgres:", error);
+      throw error;
+    }
+  }
 
 }
 

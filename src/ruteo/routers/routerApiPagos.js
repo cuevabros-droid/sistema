@@ -6,6 +6,7 @@ import { controllerListado } from '../controllers/controllerPagos.js';
 import { controllerUpdate } from '../controllers/controllerPagos.js';
 import { controllerCreate } from '../controllers/controllerPagos.js';
 import { controllerDelete } from '../controllers/controllerPagos.js';
+import { controllerCreatePago } from '../controllers/controllerPagos.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 import {controllerArchivoDebito} from '../controllers/controllerPagos.js';
 
@@ -20,6 +21,7 @@ routerApiPagos.post('/', autenticacion, controllerCreate);
 routerApiPagos.put('/', autenticacion, controllerUpdate); 
 routerApiPagos.put('/archivoDebito', autenticacion, controllerArchivoDebito); 
 routerApiPagos.delete('/:id', autenticacion, controllerDelete); 
+routerApiPagos.post('/guardarpago', autenticacion, controllerCreatePago); 
 
 export default routerApiPagos;
 

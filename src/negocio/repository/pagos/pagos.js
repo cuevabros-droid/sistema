@@ -92,3 +92,18 @@ export async function generarArchivoDebito() {
         return error;
     }
 }
+
+export async function createPagoCuota(objeto) {
+    try {
+        const resul = await pg.createPagoCuota(objeto);
+
+        // Si es un array vacío, devuelve null
+        if (Array.isArray(resul) && resul.length === 0) {
+            return null;
+        }
+
+        return resul;
+    } catch (error) {
+        return error;
+    }
+}
