@@ -1520,7 +1520,7 @@ RETURNING id_transaccion_cc;
         objeto.id_estado_cuota,
         objeto.importe,
         objeto.fechaPago,
-        null,
+        objeto.fecha_respuesta_prisma,
         objeto.usuario,
         objeto.fecha_ultima_modificacion,
         nroComprobanteManual, // $9: numero_comprobante (Manual)
