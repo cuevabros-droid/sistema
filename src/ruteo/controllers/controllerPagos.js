@@ -4,7 +4,6 @@ import { emitirFacturaAFIP } from '../../negocio/utils/afip.js'; // Ajusta la ru
 import { ContainerPg } from '../../daos/container/containerPg.js';
 
 
-
 async function controllerMedios({ user }, res) {
     try {
         const resul = await pagosService.listarMedios();
@@ -37,6 +36,15 @@ async function controllerEntidades(req, res) {
     }
 }
 
+async function controllerCargos(req, res) {
+    try {
+        const resul = await pagosService.listarCargos();
+        res.status(201).json(resul);
+    } catch (error) {
+        loggerError(error.message);
+        res.status(404).json({ error: error.message });
+    }
+}
 
 async function controllerListado({ params: { id }, user }, res) {
     try {
@@ -194,14 +202,36 @@ try {
 }
 
 
+async function controllerGenerarPagos({ user, body }, res) {
+  //const [envia_notif_al_generar_cargo, setValor_envia_notif_al_generar_cargo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
+  //const [envia_detalle_deuda_en_correo, setValor_envia_detalle_deuda_en_correo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
+  //const [envia_forma_pago_en_correo, setValor_envia_forma_pago_en_correo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
+
+    try {
+        body.usuario_sistema = user.usuario;
+        body.id_establecimiento = user.identidadeducativa;
+
+        const resul = await pagosService.GenerarPagos(body);
+
+        res.status(201).json(resul);
+    } catch (error) {
+        loggerError(error.message);
+        res.status(404).json({ error: error.message });
+    }
+}
+
+
+
 export {
     controllerMarcas,
     controllerMedios,
     controllerEntidades,
+    controllerCargos,
     controllerListado,
     controllerUpdate,
     controllerCreate,
     controllerDelete,
     controllerArchivoDebito,
-    controllerCreatePago
+    controllerCreatePago,
+    controllerGenerarPagos
 };

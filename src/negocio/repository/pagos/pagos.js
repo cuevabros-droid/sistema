@@ -29,6 +29,15 @@ export async function listarEntidades() {
     }
 }
 
+export async function listarCargos() {
+    try {
+        const resul = await pg.getCargos();
+        return resul;
+    } catch (error) {
+        return error;
+    }
+}
+
 export async function listado(id, id_establecimiento) {
     try {
         const resul = await pg.getListadoPagos(id, id_establecimiento);
@@ -96,6 +105,21 @@ export async function generarArchivoDebito() {
 export async function createPagoCuota(objeto) {
     try {
         const resul = await pg.createPagoCuota(objeto);
+
+        // Si es un array vacío, devuelve null
+        if (Array.isArray(resul) && resul.length === 0) {
+            return null;
+        }
+
+        return resul;
+    } catch (error) {
+        return error;
+    }
+}
+
+export async function GenerarPagos(objeto) {
+    try {
+        const resul = await pg.GenerarPagos(objeto);
 
         // Si es un array vacío, devuelve null
         if (Array.isArray(resul) && resul.length === 0) {

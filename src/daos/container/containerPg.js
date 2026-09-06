@@ -69,13 +69,20 @@ class ContainerPg {
                 td.nombre_corto,
                 alumno.id_alumno,
                 regular,
-                motivo_desercion.nombre AS motivo_desercion -- <-- Se agrega el campo nombre asignándole un alias claro
+                motivo_desercion.nombre AS motivo_desercion, -- <-- Se agrega el campo nombre asignándole un alias claro
+	            alumno_datos_cursada.id_grado as id_grado,
+	            grado.nombre as grado,
+	            grado.id_nivel as id_nivel,
+	            nivel.nombre as nivel	       
             FROM persona 
             INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
             INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
             LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
             LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
-            WHERE persona.activo <> 'B' 
+            LEFT JOIN alumno_datos_cursada ON alumno_datos_cursada.id_alumno = alumno.id_alumno
+	        LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
+	        LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
+		WHERE persona.activo <> 'B' 
             ORDER BY 
                 persona.id_persona, 
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
@@ -584,7 +591,15 @@ class ContainerPg {
   }
 
   async getSaldosPorAlumno(id) {
+
     try {
+
+  /*        const parametro = 'fecha_desde_listado_cuenta_corriente';
+          const getStartOfYear = (fecha) => `${fecha}-01-01 00:00:00`;
+          const fecha = await pool.query(`select valor from parametros_sistema where parametro = $valor`, [parametro])
+          const fecha_incio = getStartOfYear(fecha);*/
+
+
       const objetoBuscado = await pool.query(
         `SELECT  
     tcc.id_transaccion_cc, 
@@ -656,7 +671,7 @@ max(inicio_actividades) as inicio_actividades,
 
 FROM transaccion_cuenta_corriente tcc
 INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
-INNER JOIN alumno a ON a.id_alumno = acc.id_alumno AND a.regular = 'S'
+INNER JOIN alumno a ON a.id_alumno = acc.id_alumno --AND a.regular = 'S'
 LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
 LEFT JOIN marca_tarjeta mt ON tcc.id_marca_tarjeta = mt.id_marca_tarjeta
 LEFT JOIN public.medio_pago mp ON tcc.id_medio_pago = mp.id_medio_pago
@@ -699,22 +714,23 @@ INNER JOIN
      FROM transaccion_cuenta_corriente tc
      INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
      GROUP BY id_alumno
-     HAVING SUM(tc.importe) > 0
+     --HAVING SUM(tc.importe) > 0
     ) AS R1 ON R1.id_alumno = a.id_alumno
 INNER JOIN
     (SELECT id_alumno, SUM(tc.importe) AS SaldoTotal 
      FROM transaccion_cuenta_corriente tc
      INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
-     GROUP BY id_alumno
-     HAVING SUM(tc.importe) > 0) AS r2 ON r2.id_alumno = a.id_alumno
+     GROUP BY id_alumno)
+     --HAVING SUM(tc.importe) > 0) 
+     AS r2 ON r2.id_alumno = a.id_alumno
 INNER JOIN
      (SELECT id_alumno, MAX(id_grado) AS ultGrado
       FROM alumno_datos_cursada
       GROUP BY id_alumno) AS adc ON adc.id_alumno = r1.id_alumno
 INNER JOIN grado g ON g.id_grado = adc.ultGrado
 
-WHERE a.id_alumno = $1
-
+WHERE a.id_alumno = $1 
+    
 GROUP BY 
     tcc.id_transaccion_cc, 
     tcc.fecha_transaccion, 
@@ -1262,6 +1278,17 @@ ORDER BY
     }
   }
 
+    async getCargos() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_cargo_cuenta_corriente, nombre from cargo_cuenta_corriente order by nombre`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getListadoPagos(id, id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
@@ -1552,6 +1579,63 @@ RETURNING id_transaccion_cc;
     } catch (error) {
       await pool.query("ROLLBACK");
       console.error("❌ Error al insertar múltiples registros en Postgres:", error);
+      throw error;
+    }
+  }
+
+
+  
+  // ALTA MÚLTIPLE
+async GenerarPagos(objeto) {
+
+  console.log(objeto)
+    const query = `
+    INSERT INTO alumno_datos_cursada (
+        id_alumno, id_grado, division, genero_costo_inscripcion, 
+        pago_inscripcion, anio_cursada, id_division
+    ) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+    `;
+
+    // Array para guardar los resultados de cada inserción
+    const resultadosInsertados = [];
+
+    try {
+      await pool.query("BEGIN");
+
+      // 🌟 RECORREMOS todo el historial académico que viene del frontend
+      for (const item of objeto.historialAcademico) {
+        const valores = [
+          item.id_alumno,
+          parseInt(item.id_grado),
+          item.division,
+          item.genero_cargo,
+          item.pago_cargo,
+          item.anio_cursada,
+          parseInt(item.id_division),
+        ];
+
+        console.log("Intentando insertar registro con los valores:", valores);
+
+        const resultado = await pool.query(query, valores);
+        resultadosInsertados.push(resultado.rows[0]);
+      }
+
+      await pool.query("COMMIT");
+      console.log(
+        "Todos los registros se guardaron correctamente. Cantidad:",
+        resultadosInsertados.length,
+      );
+
+      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+      return resultadosInsertados;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar múltiples registros en Postgres:",
+        error,
+      );
       throw error;
     }
   }
