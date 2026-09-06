@@ -2,6 +2,8 @@ import Express from 'express';
 import { Arca } from '@arcasdk/core';
 import fs from 'fs';
 import path from 'path';
+import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
+import { ContainerPg } from '../../daos/container/containerPg.js';
 
 const router = Express.Router();
 
@@ -9,14 +11,23 @@ const router = Express.Router();
 const certPath = path.resolve('src/afip_certs/certificado.crt');
 const keyPath = path.resolve('src/afip_certs/clave.key');
 
-const arca = new Arca({
-  cuit: 30670917688,
+
+
+router.get('/consultar-factura-directa', autenticacion, async (req, res) => {
+
+  const containerPg = new ContainerPg();
+  const parametros = await containerPg.parametros(req.user.identidadeducativa); // Nombre de tu parámetro
+  const cuit_institucion = parametros.find(
+    p => p.parametro === 'cuit_institucion' 
+    );
+
+  const arca = new Arca({
+  cuit: cuit_institucion.valor, //30670917688,
   cert: fs.readFileSync(certPath, 'utf8'),
   key: fs.readFileSync(keyPath, 'utf8'),
   production: true
 });
 
-router.get('/consultar-factura-directa', async (req, res) => {
   try {
     const { ptoVta, tipoCmp, nroCmp } = req.query;
 
@@ -38,7 +49,8 @@ router.get('/consultar-factura-directa', async (req, res) => {
       fechaEmision: String(voucherInfo.cbteFch || voucherInfo.CbteFch),
       importeTotal: Number(voucherInfo.impTotal || voucherInfo.ImpTotal),
       docNro: voucherInfo.docNro,
-      docTipo: Number(voucherInfo.docTipo || voucherInfo.DocTipo) // <--- Agregamos este campo
+      docTipo: Number(voucherInfo.docTipo || voucherInfo.DocTipo), // <--- Agregamos este campo
+      CbteTipo: Number(tCmp)
     });
 
   } catch (error) {
