@@ -7,6 +7,7 @@ import loggerInfo from './negocio/utils/pinoInfo.js';
 import loggerError from './negocio/utils/pinoError.js';
 
 
+
 cluster.schedulingPolicy = cluster.SCHED_RR;
 
 const numCPUs = os.cpus().length

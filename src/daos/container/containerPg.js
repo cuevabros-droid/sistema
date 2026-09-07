@@ -1703,6 +1703,29 @@ const obtenerParametroDeudaQuery = `
       }
 
 
+      // 1. Validar si ya existe la cuota/cargo para el alumno
+    const existeCargo = await client.query(checkExistenciaQuery, [
+        item.id_alumno,
+        Number(item.id_cargo_cuenta_corriente),
+        item.cuota || null,
+        item.descripcion || null
+    ]);
+
+    if (existeCargo.rows.length > 0) {
+        noGenerados++;
+
+        // Obtener datos personales del alumno omitido
+        const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+        if (datosAlumno.rows.length > 0) {
+            detallesNoGenerados.push({
+                ...datosAlumno.rows[0],
+                motivo: 'Ya tiene el cargo o cuota generada'
+            });
+        }
+        continue;
+    }
+
+    
       if (validaParametroDeuda && Number(item.id_cargo_cuenta_corriente) === 1) {
         const tieneDeuda = await client.query(checkDeudaQuery, [item.id_alumno]);
         if (tieneDeuda.rows.length > 0) {
@@ -1719,23 +1742,7 @@ const obtenerParametroDeudaQuery = `
     }
 
 
-          // 1. Validar si ya existe la cuota/cargo para el alumno
-      const existeCargo = await client.query(checkExistenciaQuery, [
-        item.id_alumno,
-        item.id_cargo_cuenta_corriente,
-        item.cuota,
-        item.descripcion
-      ]);
 
-      if (existeCargo.rows.length > 0) {
-        noGenerados++;
-
-        // Obtener datos personales del alumno omitido
-        const datosAlumno = await pool.query(obtenerAlumnoQuery, [item.id_alumno]);
-        if (datosAlumno.rows.length > 0) {
-          detallesNoGenerados.push(datosAlumno.rows[0]);
-        }
-      } else {
         // 2. Insertar en alumno_cuenta_corriente
         const valores1 = [
           item.id_alumno,
@@ -1761,7 +1768,7 @@ const obtenerParametroDeudaQuery = `
 
         generados++;
       }
-    }
+    
 
     await client.query("COMMIT");
 
