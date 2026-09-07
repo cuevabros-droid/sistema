@@ -1,4 +1,3 @@
-//import { pgDatabase } from '../db/pgClient.js';
 import { pool } from "../../daos/db/pgClient.js";
 import { format } from "date-fns";
 
@@ -69,13 +68,20 @@ class ContainerPg {
                 td.nombre_corto,
                 alumno.id_alumno,
                 regular,
-                motivo_desercion.nombre AS motivo_desercion -- <-- Se agrega el campo nombre asignándole un alias claro
+                motivo_desercion.nombre AS motivo_desercion, -- <-- Se agrega el campo nombre asignándole un alias claro
+	            alumno_datos_cursada.id_grado as id_grado,
+	            grado.nombre as grado,
+	            grado.id_nivel as id_nivel,
+	            nivel.nombre as nivel	       
             FROM persona 
             INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
             INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
             LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
             LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
-            WHERE persona.activo <> 'B' 
+            LEFT JOIN alumno_datos_cursada ON alumno_datos_cursada.id_alumno = alumno.id_alumno
+	        LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
+	        LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
+		WHERE persona.activo <> 'B' 
             ORDER BY 
                 persona.id_persona, 
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
@@ -270,7 +276,6 @@ class ContainerPg {
     async getMarcadores() {
     try {
       const objetoBuscado = await pool.query(`select * from marcadoresmapa`);
-      console.log(objetoBuscado)
       return objetoBuscado.rows;
     } catch (error) {
       return error;
@@ -584,7 +589,15 @@ class ContainerPg {
   }
 
   async getSaldosPorAlumno(id) {
+
+    const parametro = 'fecha_desde_listado_cuenta_corriente';
+    const fecha = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
+    const getStartOfYear = (fecha) => `${fecha}-01-01 00:00:00`;
+    const fecha_incio = getStartOfYear(fecha.rows[0].valor);
+
+
     try {
+
       const objetoBuscado = await pool.query(
         `SELECT  
     tcc.id_transaccion_cc, 
@@ -656,7 +669,7 @@ max(inicio_actividades) as inicio_actividades,
 
 FROM transaccion_cuenta_corriente tcc
 INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
-INNER JOIN alumno a ON a.id_alumno = acc.id_alumno AND a.regular = 'S'
+INNER JOIN alumno a ON a.id_alumno = acc.id_alumno --AND a.regular = 'S'
 LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
 LEFT JOIN marca_tarjeta mt ON tcc.id_marca_tarjeta = mt.id_marca_tarjeta
 LEFT JOIN public.medio_pago mp ON tcc.id_medio_pago = mp.id_medio_pago
@@ -699,22 +712,24 @@ INNER JOIN
      FROM transaccion_cuenta_corriente tc
      INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
      GROUP BY id_alumno
-     HAVING SUM(tc.importe) > 0
+     --HAVING SUM(tc.importe) > 0
     ) AS R1 ON R1.id_alumno = a.id_alumno
 INNER JOIN
     (SELECT id_alumno, SUM(tc.importe) AS SaldoTotal 
      FROM transaccion_cuenta_corriente tc
      INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
-     GROUP BY id_alumno
-     HAVING SUM(tc.importe) > 0) AS r2 ON r2.id_alumno = a.id_alumno
+     GROUP BY id_alumno)
+     --HAVING SUM(tc.importe) > 0) 
+     AS r2 ON r2.id_alumno = a.id_alumno
 INNER JOIN
      (SELECT id_alumno, MAX(id_grado) AS ultGrado
       FROM alumno_datos_cursada
       GROUP BY id_alumno) AS adc ON adc.id_alumno = r1.id_alumno
 INNER JOIN grado g ON g.id_grado = adc.ultGrado
 
-WHERE a.id_alumno = $1
-
+WHERE a.id_alumno = $1 
+  AND tcc.fecha_transaccion >= $2::timestamp -- <--- FILTRO AGREGADO
+    
 GROUP BY 
     tcc.id_transaccion_cc, 
     tcc.fecha_transaccion, 
@@ -736,7 +751,7 @@ ORDER BY
 
 
         `,
-        [id],
+       [id, fecha_incio],
       );
       return objetoBuscado.rows;
     } catch (error) {
@@ -1262,6 +1277,17 @@ ORDER BY
     }
   }
 
+    async getCargos() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_cargo_cuenta_corriente, nombre from cargo_cuenta_corriente order by nombre`,
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getListadoPagos(id, id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
@@ -1496,11 +1522,17 @@ INSERT INTO transaccion_cuenta_corriente (
     comprobante_numero,
     importe_actualizado,
     fecha_actualizacion_importe,
-    cae
+    cae,
+    notificado_rechazo,
+    fecha_notificacion_rechazo,
+    notificado_whatsapp,
+    fecha_notificacion_whatsapp,
+    notificado_mail,
+    fecha_notificacion_mail
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
     $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-    $21, $22, $23
+    $21, $22, $23, $24, $25, $26, $27, $28, $29
 ) 
 RETURNING id_transaccion_cc;
     `;
@@ -1537,7 +1569,13 @@ RETURNING id_transaccion_cc;
         nroFacturaAfip,       // $20: comprobante_numero (AFIP)
         false,
         objeto.fecha_ultima_modificacion,
-        objeto.cae
+        objeto.cae,
+        false,
+        null,
+        false,
+        null,
+        false,
+        null
       ];
 
       const valores = valoresBrutos.map((val) => (val === "" || val === undefined ? null : val));
@@ -1552,6 +1590,240 @@ RETURNING id_transaccion_cc;
     } catch (error) {
       await pool.query("ROLLBACK");
       console.error("❌ Error al insertar múltiples registros en Postgres:", error);
+      throw error;
+    }
+  }
+
+
+  
+  // ALTA MÚLTIPLE
+async GenerarPagos(objeto) {
+  const client = await pool.connect();
+console.log(objeto)
+const checkExistenciaQuery = `
+  SELECT 1 
+  FROM alumno_cuenta_corriente 
+  WHERE id_alumno = $1 
+    AND id_cargo_cuenta_corriente = $2 
+    AND (
+      ($2 = 3 AND descripcion = $4) -- Materiales: valida por descripción
+      OR 
+      ($2 <> 3 AND cuota = $3)      -- Inscripción / Cuotas: valida por cuota
+    )
+  LIMIT 1;
+`;
+
+ // Consulta para verificar si el alumno registra deuda impaga (saldo acumulado > 0)
+const checkDeudaQuery = `
+  SELECT 1 
+  FROM transaccion_cuenta_corriente tcc
+  INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
+  WHERE acc.id_alumno = $1
+  GROUP BY acc.id_alumno
+  HAVING SUM(tcc.importe) > 0
+  LIMIT 1;
+`;
+
+// Consulta para verificar el parámetro de validación de deuda en inscripción
+const obtenerParametroDeudaQuery = `
+  SELECT valor 
+  FROM parametros_sistema 
+  WHERE parametro = 'valida_cuotas_impagas_pago_inscripcion'
+  LIMIT 1;
+`;
+
+  const obtenerAlumnoQuery = `
+    SELECT 
+      p.apellidos, 
+      p.nombres, 
+      COALESCE(td.nombre_corto, 'DNI') AS tipo_documento, 
+      ptd.numero AS numero_documento
+    FROM alumno a
+    INNER JOIN persona p ON p.id_persona = a.id_persona
+    LEFT JOIN persona_tipo_documento ptd ON ptd.id_persona = p.id_persona
+    LEFT JOIN tipo_documento td ON td.id_tipo_documento = ptd.id_tipo_documento
+    WHERE a.id_alumno = $1
+    LIMIT 1;
+  `;
+
+  const query1 = `
+    INSERT INTO alumno_cuenta_corriente (
+        id_alumno, usuario_alta, fecha_generacion_cc, cuota, 
+        descripcion, id_cargo_cuenta_corriente, importe, numero_cuota
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id_alumno_cc;
+  `;
+
+  const query2 = `
+    INSERT INTO transaccion_cuenta_corriente (
+        id_alumno_cc, fecha_transaccion, id_estado_cuota, importe, fecha_pago,
+        fecha_respuesta_prisma, usuario_ultima_modificacion, fecha_ultima_modificacion,
+        numero_comprobante, numero_lote, numero_autorizacion, id_medio_pago,
+        id_marca_tarjeta, id_motivo_rechazo1, id_motivo_rechazo2, codigo_error_debito,
+        descripcion_error_debito, punto_venta, comprobante_tipo, comprobante_numero,
+        importe_actualizado, fecha_actualizacion_importe, cae,
+        notificado_rechazo, fecha_notificacion_rechazo, notificado_whatsapp, 
+        fecha_notificacion_whatsapp, notificado_mail, fecha_notificacion_mail
+    ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25, $26, $27, $28, $29
+    )
+    RETURNING *;
+  `;
+
+  const listaItems = Array.isArray(objeto) ? objeto : (objeto.items || []);
+  const usuarioSistema = objeto.usuario_sistema;
+
+  let generados = 0;
+  let noGenerados = 0;
+  const detallesNoGenerados = [];
+
+  try {
+    await client.query("BEGIN");
+
+    const resParam = await client.query(obtenerParametroDeudaQuery);
+    const validaParametroDeuda = resParam.rows.length > 0 && 
+  ['S', 'SI', 'TRUE', '1'].includes(String(resParam.rows[0].valor).toUpperCase());
+
+    for (const item of listaItems) {
+
+      // Validar que el cargo de Materiales (id_cargo = 3) solo se aplique a Nivel Inicial (id_nivel = 1)
+      if (Number(item.id_cargo_cuenta_corriente) === 3 && Number(item.id_nivel) !== 1) {
+        //console.log(`[RECHAZADO - PASO 1] Alumno ${item.id_alumno} no es Nivel Inicial (Nivel actual: ${item.id_nivel})`);
+          noGenerados++;
+          const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+          if (datosAlumno.rows.length > 0) {
+              detallesNoGenerados.push({
+                  ...datosAlumno.rows[0],
+                  motivo: 'El cargo de Materiales solo aplica a Nivel Inicial'
+              });
+          }
+          continue;
+      }
+
+
+      if (validaParametroDeuda && Number(item.id_cargo_cuenta_corriente) === 1) {
+        const tieneDeuda = await client.query(checkDeudaQuery, [item.id_alumno]);
+        if (tieneDeuda.rows.length > 0) {
+            noGenerados++;
+            const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+            if (datosAlumno.rows.length > 0) {
+                detallesNoGenerados.push({
+                    ...datosAlumno.rows[0],
+                    motivo: 'Posee cuotas impagas'
+                });
+            }
+            continue;
+        }
+    }
+
+
+          // 1. Validar si ya existe la cuota/cargo para el alumno
+      const existeCargo = await client.query(checkExistenciaQuery, [
+        item.id_alumno,
+        item.id_cargo_cuenta_corriente,
+        item.cuota,
+        item.descripcion
+      ]);
+
+      if (existeCargo.rows.length > 0) {
+        noGenerados++;
+
+        // Obtener datos personales del alumno omitido
+        const datosAlumno = await pool.query(obtenerAlumnoQuery, [item.id_alumno]);
+        if (datosAlumno.rows.length > 0) {
+          detallesNoGenerados.push(datosAlumno.rows[0]);
+        }
+      } else {
+        // 2. Insertar en alumno_cuenta_corriente
+        const valores1 = [
+          item.id_alumno,
+          usuarioSistema,
+          item.fecha,
+          item.cuota,
+          item.descripcion,
+          item.id_cargo_cuenta_corriente,
+          null,
+          null
+        ];
+        const res1 = await client.query(query1, valores1);
+        const idAlumnoCc = res1.rows[0].id_alumno_cc;
+
+        // 3. Insertar en transaccion_cuenta_corriente
+        const valores2 = [
+          idAlumnoCc, item.fecha, 1, item.importe, null, null,
+          usuarioSistema, item.fecha, null, null, null, null, null,
+          null, null, null, null, null, null, null, false, null, null,
+          false, null, false, null, false, null
+        ];
+        await client.query(query2, valores2);
+
+        generados++;
+      }
+    }
+
+    await client.query("COMMIT");
+
+    return {
+      exito: true,
+      resumen: {
+        generados,
+        noGenerados
+      },
+      detallesNoGenerados
+    };
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release(); // Liberar el cliente al pool
+  }
+}
+
+
+  async getEstadoDeuda(id) {
+
+
+    try {
+
+      const objetoBuscado = await pool.query(
+        `SELECT  
+    a.id_alumno,
+    a.legajo,
+    CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno,
+    g.nombre AS Grado, 
+    COUNT(DISTINCT acc.id_alumno_cc) AS cantidad_cuotas_adeudadas,
+    SUM(tcc.importe) AS SaldoTotal
+
+FROM transaccion_cuenta_corriente tcc
+INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
+INNER JOIN alumno a ON a.id_alumno = acc.id_alumno
+INNER JOIN persona p ON p.id_persona = a.id_persona
+INNER JOIN (
+    SELECT id_alumno, MAX(id_grado) AS ultGrado
+    FROM alumno_datos_cursada
+    GROUP BY id_alumno
+) AS adc ON adc.id_alumno = a.id_alumno
+INNER JOIN grado g ON g.id_grado = adc.ultGrado
+
+WHERE a.id_alumno = $1 
+
+GROUP BY 
+    a.id_alumno,
+    a.legajo,
+    p.apellidos,
+    p.nombres,
+    g.nombre
+HAVING SUM(tcc.importe) > 0;
+
+
+        `,
+       [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
       throw error;
     }
   }
