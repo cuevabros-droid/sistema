@@ -9,6 +9,7 @@ import { controllerCreate } from '../controllers/controllerPagos.js';
 import { controllerDelete } from '../controllers/controllerPagos.js';
 import { controllerCreatePago } from '../controllers/controllerPagos.js';
 import { controllerGenerarPagos } from '../controllers/controllerPagos.js';
+import { controllerEstadoDeuda } from '../controllers/controllerPagos.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 import {controllerArchivoDebito} from '../controllers/controllerPagos.js';
 
@@ -26,6 +27,7 @@ routerApiPagos.put('/archivoDebito', autenticacion, controllerArchivoDebito);
 routerApiPagos.delete('/:id', autenticacion, controllerDelete); 
 routerApiPagos.post('/guardarpago', autenticacion, controllerCreatePago); 
 routerApiPagos.post('/generar-cargos', autenticacion, controllerGenerarPagos); 
+routerApiPagos.get('/estado-deuda/:id', autenticacion, controllerEstadoDeuda); 
 
 
 export default routerApiPagos;

@@ -205,7 +205,7 @@ try {
 async function controllerGenerarPagos({ user, body }, res) {
   //const [envia_notif_al_generar_cargo, setValor_envia_notif_al_generar_cargo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
   //const [envia_detalle_deuda_en_correo, setValor_envia_detalle_deuda_en_correo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
-  //const [envia_forma_pago_en_correo, setValor_envia_forma_pago_en_correo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
+  //const [envia_forma_pago_en_correo, setValor_envia_notif_al_generar_cargo] = useState(null); EN BACKEND NOTIFICACIONES CORREO
 
     try {
         body.usuario_sistema = user.usuario;
@@ -220,6 +220,19 @@ async function controllerGenerarPagos({ user, body }, res) {
     }
 }
 
+async function controllerEstadoDeuda({ params: { id }, user, body} , res) {
+ 
+    try {
+        body.usuario_sistema = user.usuario;
+        body.id_establecimiento = user.identidadeducativa;
+
+        const resul = await pagosService.EstadoDeuda(id);
+        res.status(201).json(resul);
+    } catch (error) {
+        loggerError(error.message);
+        res.status(404).json({ error: error.message });
+    }
+}
 
 
 export {
@@ -233,5 +246,6 @@ export {
     controllerDelete,
     controllerArchivoDebito,
     controllerCreatePago,
-    controllerGenerarPagos
+    controllerGenerarPagos,
+    controllerEstadoDeuda
 };

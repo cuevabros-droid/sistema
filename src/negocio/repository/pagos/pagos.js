@@ -131,3 +131,18 @@ export async function GenerarPagos(objeto) {
         return error;
     }
 }
+
+export async function EstadoDeuda(objeto) {
+    try {
+        const resul = await pg.getEstadoDeuda(objeto);
+
+        // Si es un array vacío, devuelve null
+        if (Array.isArray(resul) && resul.length === 0) {
+            return null;
+        }
+
+        return resul;
+    } catch (error) {
+        return error;
+    }
+}

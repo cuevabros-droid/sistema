@@ -8,6 +8,7 @@ import { updatePago } from "../repository/pagos/pagos.js";
 import { deletePago } from "../repository/pagos/pagos.js";
 import { createPagoCuota } from "../repository/pagos/pagos.js";
 import { GenerarPagos } from "../repository/pagos/pagos.js";
+import { EstadoDeuda } from "../repository/pagos/pagos.js";
 import { generarArchivoDebito } from "../repository/pagos/pagos.js";
 
 class PagosService {
@@ -85,6 +86,15 @@ class PagosService {
   async GenerarPagos(objeto) {
     try {
       const resul = await GenerarPagos(objeto);
+      return resul;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async EstadoDeuda(objeto) {
+    try {
+      const resul = await EstadoDeuda(objeto);
       return resul;
     } catch (error) {
       return error;

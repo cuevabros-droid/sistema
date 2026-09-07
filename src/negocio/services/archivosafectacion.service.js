@@ -2,12 +2,13 @@ import fs from "fs";
 import readline from "readline";
 
 import { pool } from "../../daos/db/pgClient.js";
-import ContainerPg from "../../daos/container/containerPg.js";
+import { ContainerPg } from "../../daos/container/containerPg.js";
 
 
 // IMPORTAR TU FUNCIÓN REAL DE ARCA
 // Ajustar el path según dónde esté ubicada
-import { emitirFacturaAFIP } from "../../services/afip/afipService.js";
+import { emitirFacturaAFIP } from "../utils/afip.js";
+
 
 
 // ======================================================
@@ -15,6 +16,7 @@ import { emitirFacturaAFIP } from "../../services/afip/afipService.js";
 // ======================================================
 
 const obtenerTabla = (nombreArchivo) => {
+    
   const nombre = nombreArchivo.toUpperCase();
 
   if (nombre.startsWith("LDEBLIQD")) {
@@ -40,6 +42,7 @@ const obtenerConfiguracionFacturacion = async (
   identidadEducativa
 ) => {
   const containerPg = new ContainerPg();
+  
 
   const parametros = await containerPg.parametros(
     identidadEducativa
@@ -60,7 +63,7 @@ const obtenerConfiguracionFacturacion = async (
   );
 
   const debeFacturar =
-    String(generaAfip).toUpperCase() === "SI";
+    String(generaAfip.valor).toUpperCase() === "SI";
 
   // ------------------------------------------
   // CONDICIÓN IVA DEL CLIENTE
@@ -72,32 +75,16 @@ const obtenerConfiguracionFacturacion = async (
 
   let condicionIvaReceptorId = null;
 
-  switch (
-    String(condicionIva).trim().toUpperCase()
-  ) {
-    case "CONSUMIDOR FINAL":
-      condicionIvaReceptorId = 5;
-      break;
-
-    case "RESPONSABLE INSCRIPTO":
-      condicionIvaReceptorId = 1;
-      break;
-
-    case "MONOTRIBUTISTA":
-      condicionIvaReceptorId = 6;
-      break;
-
-    default:
-      condicionIvaReceptorId = 5;
-      break;
-  }
+ 
+    String(condicionIva.valor).trim().toUpperCase()
+  
 
   // ------------------------------------------
   // PUNTO DE VENTA
   // ------------------------------------------
 
   const puntoVenta = Number(
-    obtenerParametro("punto_venta") || 1
+    obtenerParametro("punto_venta") 
   );
 
   // ------------------------------------------
@@ -114,7 +101,7 @@ const obtenerConfiguracionFacturacion = async (
   // ------------------------------------------
 
   const tipoComprobante = Number(
-    obtenerParametro("tipo_comprobante_arca") || 1
+    obtenerParametro("tipo_comprobante_arca") 
   );
 
   return {
