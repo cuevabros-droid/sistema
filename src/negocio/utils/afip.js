@@ -1,7 +1,8 @@
 // src/negocio/utils/afip.js
 import path from 'path';
 import fs from 'fs';
-import { Arca } from '@arcasdk/core';
+import { Arca, FileSystemTicketStorage } from '@arcasdk/core'; // <--- Se agrega FileSystemTicketStorage
+
 
 const esProduccion = process.env.ENVIRONMENT === 'produccion';
 const certFolder = esProduccion ? 'afip_certs' : 'afip_certs_homologacion';
@@ -14,12 +15,28 @@ const key = fs.readFileSync(keyPath, 'utf8');
 
 const cuit = Number(esProduccion ? process.env.AFIP_CUIT_PROD : process.env.AFIP_CUIT_TEST);
 
+
+// 1. Crear carpeta local para guardar los tickets de WSAA si no existe
+const ticketFolder = path.resolve('src/afip_tickets');
+if (!fs.existsSync(ticketFolder)) {
+  fs.mkdirSync(ticketFolder, { recursive: true });
+}
+
+// 2. Configurar la persistencia de tickets en disco
+const ticketStorage = new FileSystemTicketStorage({
+  ticketPath: ticketFolder,
+  cuit,
+  production: esProduccion
+});
+
+// 3. Pasar 'ticketStorage' a la instancia de Arca
 const arca = new Arca({
   cuit,
   cert,
   key,
   production: esProduccion,
-  useHttpsAgent: esProduccion
+  useHttpsAgent: esProduccion,
+  ticketStorage // <--- Se agrega aquí
 });
 
 export async function emitirFacturaAFIP(datosFactura) {
