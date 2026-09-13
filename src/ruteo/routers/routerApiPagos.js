@@ -22,7 +22,7 @@ routerApiPagos.get('/medios', autenticacion, controllerMedios);
 routerApiPagos.get('/marcas', autenticacion, controllerMarcas); 
 routerApiPagos.get('/entidades', autenticacion, controllerEntidades); 
 routerApiPagos.get('/cargos', autenticacion, controllerCargos); 
-routerApiPagos.get('/estado-deuda/:id', controllerEstadoDeuda); 
+routerApiPagos.get('/estado-deuda/:id', autenticacion, controllerEstadoDeuda); 
 routerApiPagos.get('/alumnos-pendientes', autenticacion, controllerAlumnosPendientes); 
 routerApiPagos.post('/actualizarimporte', autenticacion, controllerActualizarImporte); 
 routerApiPagos.get('/:id', autenticacion, controllerListado); 
