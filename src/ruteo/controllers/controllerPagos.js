@@ -235,6 +235,40 @@ async function controllerEstadoDeuda({ params: { id }, user, body} , res) {
 }
 
 
+async function controllerAlumnosPendientes(req, res) {
+   
+  try {
+    const resul = await pagosService.AlumnosPendientes(req.query);
+
+    return res.status(200).json(resul);
+  } catch (error) {
+    loggerError(error.message);
+
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+}
+
+async function controllerActualizarImporte({ user, body}, res) {
+   
+    body.usuario_sistema = user.usuario;
+    body.id_establecimiento = user.identidadeducativa;
+
+  try {
+    const resul = await pagosService.ActualizarImporte(body);
+
+    return res.status(200).json(resul);
+  } catch (error) {
+    loggerError(error.message);
+
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+}
+
+
 export {
     controllerMarcas,
     controllerMedios,
@@ -247,5 +281,7 @@ export {
     controllerArchivoDebito,
     controllerCreatePago,
     controllerGenerarPagos,
-    controllerEstadoDeuda
+    controllerEstadoDeuda,
+    controllerAlumnosPendientes,
+    controllerActualizarImporte
 };
