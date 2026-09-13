@@ -1,4 +1,5 @@
 import { listarGrado } from '../repository/academica/academica.js';
+import { listarNivel } from '../repository/academica/academica.js';
 import { listarDivision } from '../repository/academica/academica.js';
 import { listarAnioCursado } from '../repository/academica/academica.js';
 import { listado } from '../repository/academica/academica.js';
@@ -11,6 +12,11 @@ class AcademicaService {
 
     async listarGrado(id_establecimiento) {
             const lista = await listarGrado(id_establecimiento)
+            return lista
+    }
+
+    async listarNivel(id_establecimiento) {
+            const lista = await listarNivel(id_establecimiento)
             return lista
     }
 

@@ -223,8 +223,8 @@ async function controllerGenerarPagos({ user, body }, res) {
 async function controllerEstadoDeuda({ params: { id }, user, body} , res) {
  
     try {
-        body.usuario_sistema = user.usuario;
-        body.id_establecimiento = user.identidadeducativa;
+   //     body.usuario_sistema = user.usuario;
+    //    body.id_establecimiento = user.identidadeducativa;
 
         const resul = await pagosService.EstadoDeuda(id);
         res.status(201).json(resul);
