@@ -159,27 +159,44 @@ class ContainerPg {
 
     try {
       const query = `
-     SELECT * FROM (
-            SELECT DISTINCT ON (persona.id_persona) 
-                persona.*, 
-                persona_tipo_documento.id_tipo_documento, 
-                persona_tipo_documento.numero, 
-                td.nombre_corto,
-                alumno.id_alumno,
-                regular,
-                motivo_desercion.nombre AS motivo_desercion -- <-- Se agrega el campo nombre asignándole un alias claro
-            FROM persona 
-            INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
-            INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
-            LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
-            LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
-        ${whereClause}
-            ORDER BY 
-                persona.id_persona, 
-                CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
-                persona_tipo_documento.fecha_alta ASC
-        ) subconsulta 
-        ORDER BY apellidos ASC, nombres ASC; 
+      SELECT * FROM (
+          SELECT DISTINCT ON (persona.id_persona) 
+              persona.*, 
+              persona_tipo_documento.id_tipo_documento, 
+              persona_tipo_documento.numero, 
+              td.nombre_corto,
+              alumno.id_alumno,
+              regular,
+              motivo_desercion.nombre AS motivo_desercion,
+              alumno_datos_cursada.id_grado as id_grado,
+              grado.nombre as nombre_grado,
+              nivel.id_nivel as id_nivel,
+              nivel.nombre as nombre_nivel,
+              division as division
+          FROM persona 
+          INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+          INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+          LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+          LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion
+          
+          -- 🟢 Reemplazo de LEFT JOIN tradicional por LEFT JOIN LATERAL
+          LEFT JOIN LATERAL (
+              SELECT adc.*
+              FROM alumno_datos_cursada adc
+              WHERE adc.id_alumno = alumno.id_alumno
+              ORDER BY adc.anio_cursada DESC -- 👈 Reemplaza 'anio_cursado' por tu columna de año (o id_alumno_datos_cursada / fecha)
+              LIMIT 1
+          ) alumno_datos_cursada ON true
+
+          LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
+          LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
+      ${whereClause}
+          ORDER BY 
+              persona.id_persona, 
+              CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
+              persona_tipo_documento.fecha_alta ASC
+      ) subconsulta 
+      ORDER BY apellidos ASC, nombres ASC;
     `;
 
       const objetoBuscado = await pool.query(query, params);
@@ -1072,7 +1089,19 @@ ORDER BY
   async getGrado(id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
-        `select id_grado, nombre from grado where id_establecimiento = $1 order by id_grado`,
+        `select id_grado, nombre, id_nivel from grado where id_establecimiento = $1 order by id_grado`,
+        [id_establecimiento],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getNivel(id_establecimiento) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select id_nivel, nombre, id_establecimiento from nivel where id_establecimiento = $1 order by id_nivel`,
         [id_establecimiento],
       );
       return objetoBuscado.rows;
@@ -2012,7 +2041,7 @@ async ActualizarImporte(objeto) {
   } finally {
     client.release(); // Liberar la conexión
   }
-console.log(detallesGenerados)
+
   // 6. Retornar con las claves que espera el Frontend ('detallesGenerados')
   return {
     ok: true,
@@ -2022,6 +2051,51 @@ console.log(detallesGenerados)
     detallesNoGenerados
   };
 }
+
+
+  async getEstadoDeuda(id) {
+
+
+    try {
+
+      const objetoBuscado = await pool.query(
+        `SELECT  
+            a.id_alumno,
+            a.legajo,
+            CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno,
+            g.nombre AS Grado, 
+            COUNT(DISTINCT acc.id_alumno_cc) AS cantidad_cuotas_adeudadas,
+            SUM(tcc.importe) AS SaldoTotal
+
+        FROM transaccion_cuenta_corriente tcc
+        INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
+        INNER JOIN alumno a ON a.id_alumno = acc.id_alumno
+        INNER JOIN persona p ON p.id_persona = a.id_persona
+        INNER JOIN (
+            SELECT id_alumno, MAX(id_grado) AS ultGrado
+            FROM alumno_datos_cursada
+            GROUP BY id_alumno
+        ) AS adc ON adc.id_alumno = a.id_alumno
+        INNER JOIN grado g ON g.id_grado = adc.ultGrado
+
+        WHERE a.id_alumno = $1 
+
+        GROUP BY 
+            a.id_alumno,
+            a.legajo,
+            p.apellidos,
+            p.nombres,
+            g.nombre
+        HAVING SUM(tcc.importe) > 0;
+        `,
+       [id],
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 
 
 }

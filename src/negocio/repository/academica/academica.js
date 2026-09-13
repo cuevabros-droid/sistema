@@ -11,6 +11,15 @@ const pg = new ContainerPg
             return error
         }       
     }
+
+    export async function listarNivel(id_establecimiento) {
+        try {
+          const resul = await pg.getNivel(id_establecimiento)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
     
     export async function listarDivision(id_establecimiento) {
         try {
