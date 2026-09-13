@@ -8,7 +8,6 @@ import { ContainerPg } from "../../daos/container/containerPg.js";
 import { emitirFacturaAFIP } from "../utils/afip.js";
 
 
-
 // ======================================================
 // DETERMINAR TABLA
 // ======================================================
@@ -17,7 +16,6 @@ let id_medio_pago = 0;
 let id_marca_tarjeta = 0;
 
 const obtenerTabla = (nombreArchivo) => {
-    
   const nombre = nombreArchivo.toUpperCase();
 
   if (nombre.startsWith("LDEBLIQD")) {
@@ -72,7 +70,6 @@ const obtenerFechaPago = (nombreArchivo) => {
 
 const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
   const containerPg = new ContainerPg();
-  
 
   const resultado = await containerPg.parametros(identidadEducativa);
 
@@ -97,7 +94,9 @@ const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
   );
 
   const debeFacturar =
-    String(generaAfip).toUpperCase() === "SI";
+    String(generaAfip ?? "")
+      .trim()
+      .toUpperCase() === "SI";
 
   // ------------------------------------------------------
   // CONDICIÓN IVA
@@ -110,12 +109,10 @@ const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
   let condicionIvaReceptorId = 5;
 
   switch (
-    String(condicionIva).trim().toUpperCase()
+    String(condicionIva ?? "")
+      .trim()
+      .toUpperCase()
   ) {
-    case "CONSUMIDOR FINAL":
-      condicionIvaReceptorId = 5;
-      break;
-
     case "RESPONSABLE INSCRIPTO":
       condicionIvaReceptorId = 1;
       break;
@@ -124,6 +121,7 @@ const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
       condicionIvaReceptorId = 6;
       break;
 
+    case "CONSUMIDOR FINAL":
     default:
       condicionIvaReceptorId = 5;
       break;
@@ -134,7 +132,7 @@ const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
   // ------------------------------------------------------
 
   const puntoVenta = Number(
-    obtenerParametro("punto_venta") 
+    obtenerParametro("punto_venta") || 1
   );
 
   // ------------------------------------------------------
@@ -142,7 +140,7 @@ const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
   // ------------------------------------------------------
 
   const tipoComprobante = Number(
-    obtenerParametro("tipo_comprobante_arca") 
+    obtenerParametro("tipo_comprobante_arca") || 1
   );
 
   return {
