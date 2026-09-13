@@ -1568,7 +1568,7 @@ RETURNING id_transaccion_cc;
         objeto.comprobante_tipo || objeto.tipoComprobante,   
         nroFacturaAfip,       // $20: comprobante_numero (AFIP)
         false,
-        objeto.fecha_ultima_modificacion,
+        null,
         objeto.cae,
         false,
         null,
@@ -1916,17 +1916,33 @@ async ActualizarImporte(objeto) {
   try {
     await client.query("BEGIN");
 
+    function getFormattedDate() {
+        const now = new Date();
+        
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const ms = String(now.getMilliseconds()).padStart(3, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${ms}000`;
+      }
+
     for (const item of objeto.alumnos) {
       try {
         // 2. Ejecutar el UPDATE una sola vez usando 'client'
         await client.query(
           `UPDATE transaccion_cuenta_corriente 
-           SET importe = $1 
+           SET importe = $1, importe_actualizado = $4, fecha_actualizacion_importe = $5   
            WHERE id_alumno_cc = $2 AND importe = $3`,
           [
             objeto.valorCuotaAplicar,
             item.id_alumno_cc,
-            item.importeActualVal
+            item.importeActualVal,
+            true,
+            getFormattedDate()
           ]
         );
 

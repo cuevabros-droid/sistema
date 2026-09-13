@@ -7,9 +7,6 @@ import { ContainerPg } from "../../daos/container/containerPg.js";
 // FUNCIÓN REAL DE ARCA
 import { emitirFacturaAFIP } from "../utils/afip.js";
 
-// IMPORTAR TU FUNCIÓN REAL DE ARCA
-// Ajustar el path según dónde esté ubicada
-import { emitirFacturaAFIP } from "../../services/afip/afipService.js";
 
 
 // ======================================================
