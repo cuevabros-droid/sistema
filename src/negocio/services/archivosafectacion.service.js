@@ -2,30 +2,41 @@ import fs from "fs";
 import readline from "readline";
 
 import { pool } from "../../daos/db/pgClient.js";
-import ContainerPg from "../../daos/container/containerPg.js";
+import { ContainerPg } from "../../daos/container/containerPg.js";
 
+// FUNCIÓN REAL DE ARCA
+import { emitirFacturaAFIP } from "../utils/afip.js";
 
-// IMPORTAR TU FUNCIÓN REAL DE ARCA
-// Ajustar el path según dónde esté ubicada
-import { emitirFacturaAFIP } from "../../services/afip/afipService.js";
-
+import { pagosService } from "./pagos.service.js";
 
 // ======================================================
 // DETERMINAR TABLA
 // ======================================================
 
+let id_medio_pago = 0;
+let id_marca_tarjeta = 0;
+
 const obtenerTabla = (nombreArchivo) => {
   const nombre = nombreArchivo.toUpperCase();
 
   if (nombre.startsWith("LDEBLIQD")) {
+    id_marca_tarjeta = 1;
+    id_medio_pago = 3;
+
     return "tempArchivoLDEBLIQD";
   }
 
   if (nombre.startsWith("RDEBLIQC")) {
+    id_marca_tarjeta = 1;
+    id_medio_pago = 4;
+
     return "tempArchivoRDEBLIQC";
   }
 
   if (nombre.startsWith("RDEBLIMC")) {
+    id_marca_tarjeta = 2;
+    id_medio_pago = 4;
+
     return "tempArchivoRDEBLIMC";
   }
 
@@ -33,52 +44,76 @@ const obtenerTabla = (nombreArchivo) => {
 };
 
 // ======================================================
+// OBTENER FECHA DE PAGO
+// ======================================================
+
+const obtenerFechaPago = (nombreArchivo) => {
+  const match = nombreArchivo.match(/_(\d{8})\d{4}/);
+
+  if (!match) {
+    throw new Error(
+      `No se pudo obtener la fecha de pago del archivo: ${nombreArchivo}`
+    );
+  }
+
+  const fecha = match[1];
+
+  const anio = fecha.substring(0, 4);
+  const mes = fecha.substring(4, 6);
+  const dia = fecha.substring(6, 8);
+
+  return `${anio}-${mes}-${dia}`;
+};
+
+// ======================================================
 // OBTENER CONFIGURACIÓN DE FACTURACIÓN
 // ======================================================
 
-const obtenerConfiguracionFacturacion = async (
-  identidadEducativa
-) => {
+const obtenerConfiguracionFacturacion = async (identidadEducativa) => {
   const containerPg = new ContainerPg();
 
-  const parametros = await containerPg.parametros(
-    identidadEducativa
-  );
+  const resultado = await containerPg.parametros(identidadEducativa);
+
+  const parametros = Array.isArray(resultado)
+    ? resultado
+    : resultado?.rows || resultado?.data || [];
 
   const obtenerParametro = (nombre) => {
-    return parametros.find(
+    const parametro = parametros.find(
       (p) => p.parametro === nombre
-    )?.valor;
+    );
+
+    return parametro?.valor;
   };
 
-  // ------------------------------------------
-  // ¿DEBE FACTURAR?
-  // ------------------------------------------
+  // ------------------------------------------------------
+  // GENERA COMPROBANTE ARCA
+  // ------------------------------------------------------
 
   const generaAfip = obtenerParametro(
     "genera_comprobante_afip"
   );
 
   const debeFacturar =
-    String(generaAfip).toUpperCase() === "SI";
+    String(generaAfip ?? "")
+      .trim()
+      .toUpperCase() === "SI";
 
-  // ------------------------------------------
-  // CONDICIÓN IVA DEL CLIENTE
-  // ------------------------------------------
+  // ------------------------------------------------------
+  // CONDICIÓN IVA
+  // ------------------------------------------------------
 
   const condicionIva = obtenerParametro(
     "condicion_frente_iva_cliente"
   );
 
-  let condicionIvaReceptorId = null;
+  let condicionIvaReceptorId = 5;
 
   switch (
-    String(condicionIva).trim().toUpperCase()
+    String(condicionIva ?? "")
+      .trim()
+      .toUpperCase()
   ) {
-    case "CONSUMIDOR FINAL":
-      condicionIvaReceptorId = 5;
-      break;
-
     case "RESPONSABLE INSCRIPTO":
       condicionIvaReceptorId = 1;
       break;
@@ -87,31 +122,23 @@ const obtenerConfiguracionFacturacion = async (
       condicionIvaReceptorId = 6;
       break;
 
+    case "CONSUMIDOR FINAL":
     default:
       condicionIvaReceptorId = 5;
       break;
   }
 
-  // ------------------------------------------
+  // ------------------------------------------------------
   // PUNTO DE VENTA
-  // ------------------------------------------
+  // ------------------------------------------------------
 
   const puntoVenta = Number(
     obtenerParametro("punto_venta") || 1
   );
 
-  // ------------------------------------------
-  // TIPO DE COMPROBANTE
-  // ------------------------------------------
-  //
-  // Todavía no existe como parámetro en los datos
-  // que pasaste.
-  //
-  // TEMPORALMENTE:
-  // 1 = Factura A
-  //
-  // Esto lo cambiamos cuando definamos el tipo.
-  // ------------------------------------------
+  // ------------------------------------------------------
+  // TIPO COMPROBANTE
+  // ------------------------------------------------------
 
   const tipoComprobante = Number(
     obtenerParametro("tipo_comprobante_arca") || 1
@@ -126,23 +153,61 @@ const obtenerConfiguracionFacturacion = async (
 };
 
 // ======================================================
+// MAPEO DOCUMENTOS SISTEMA -> ARCA
+// ======================================================
+
+const MAP_DOC_AFIP = {
+  1: 90, // LC
+  2: 89, // LE
+  3: 94, // Pasaporte
+  4: 0,  // CI
+  6: 80, // CUIT
+  7: 86, // CUIL
+  8: 96, // DNI
+  9: 91, // NIF
+  10: 96 // DNI Temporario
+};
+
+// ======================================================
+// OBTENER CÓDIGO DOCUMENTO ARCA
+// ======================================================
+
+const obtenerDocTipoAfip = (idTipoDocumentoLocal) => {
+  return MAP_DOC_AFIP[idTipoDocumentoLocal] ?? 99;
+};
+
+// ======================================================
 // OBTENER DATOS DEL TUTOR
 // ======================================================
 
-const obtenerDatosTutor = async (
-  client,
-  idAlumno
-) => {
+const obtenerDatosTutor = async (client, idAlumno) => {
   const result = await client.query(
     `
-    SELECT
-        dp.tipo_de_documento_padre AS doc_tipo,
-        dp.numero_de_documento_padre AS doc_nro
-    FROM public.datos_alumnos da
-    INNER JOIN public.datos_padre dp
-        ON dp.numero_de_documento_padre =
-           da.nro_documento_tutor
-    WHERE da.id_alumno = $1
+      SELECT
+          p.id_persona,
+          ptd.numero,
+          ptd.id_tipo_documento,
+          td.nombre AS tipo_documento
+      FROM public.alumno a
+      INNER JOIN public.persona_allegado pa
+          ON pa.id_alumno = a.id_alumno
+      INNER JOIN public.persona p
+          ON p.id_persona = pa.id_persona
+      INNER JOIN public.persona_tipo_documento ptd
+          ON ptd.id_persona = p.id_persona
+      INNER JOIN public.tipo_documento td
+          ON td.id_tipo_documento = ptd.id_tipo_documento
+      WHERE a.id_alumno = $1
+        AND pa.tutor = 'S'
+        AND ptd.numero IS NOT NULL
+        AND TRIM(ptd.numero) <> ''
+      ORDER BY
+          CASE
+              WHEN ptd.id_tipo_documento = 7 THEN 1
+              WHEN ptd.id_tipo_documento = 8 THEN 2
+              ELSE 3
+          END
+      LIMIT 1
     `,
     [idAlumno]
   );
@@ -153,7 +218,18 @@ const obtenerDatosTutor = async (
     );
   }
 
-  return result.rows[0];
+  const documento = result.rows[0];
+
+  const docTipoAfip = obtenerDocTipoAfip(
+    documento.id_tipo_documento
+  );
+
+  return {
+    docTipoAfip,
+    docNro: documento.numero,
+    idTipoDocumentoLocal: documento.id_tipo_documento,
+    tipoDocumento: documento.tipo_documento,
+  };
 };
 
 // ======================================================
@@ -169,18 +245,17 @@ const convertirImporte = (valor) => {
     return 0;
   }
 
-  const importe = Number(
-    String(valor)
-      .trim()
-      .replace(",", ".")
-  );
+  const texto = String(valor)
+    .trim()
+    .replace(",", ".");
+
+  const importe = Number(texto);
 
   if (Number.isNaN(importe)) {
-    throw new Error(
-      `Importe inválido: ${valor}`
-    );
+    throw new Error(`Importe inválido: ${valor}`);
   }
 
+  // Siempre devuelve importe positivo
   return Math.abs(importe);
 };
 
@@ -209,25 +284,117 @@ const convertirNumero = (valor) => {
 };
 
 // ======================================================
+// CONVERTIR FECHA
+// ======================================================
+
+const convertirFecha = (valor) => {
+  if (
+    valor === null ||
+    valor === undefined
+  ) {
+    return null;
+  }
+
+  const texto = String(valor).trim();
+
+  if (texto === "") {
+    return null;
+  }
+
+  const fecha = new Date(texto);
+
+  if (Number.isNaN(fecha.getTime())) {
+    throw new Error(
+      `Fecha inválida recibida del archivo: "${valor}"`
+    );
+  }
+
+  return fecha;
+};
+
+// ======================================================
+// DETERMINAR SI TIENE RECHAZO
+// ======================================================
+
+const tieneValorRechazo = (valor) => {
+  if (
+    valor === null ||
+    valor === undefined
+  ) {
+    return false;
+  }
+
+  const texto = String(valor).trim();
+
+  return texto !== "" && texto !== "0";
+};
+
+const tieneRechazo = (detalle) => {
+  return (
+    tieneValorRechazo(detalle.rechazo1) ||
+    tieneValorRechazo(detalle.rechazo2) ||
+    tieneValorRechazo(
+      detalle.codigo_error_debito
+    )
+  );
+};
+
+// ======================================================
+// OBTENER CÓDIGO DE RECHAZO
+// ======================================================
+
+const obtenerCodigoRechazo = (detalle) => {
+  if (
+    tieneValorRechazo(detalle.rechazo1)
+  ) {
+    return String(
+      detalle.rechazo1
+    ).trim();
+  }
+
+  if (
+    tieneValorRechazo(detalle.rechazo2)
+  ) {
+    return String(
+      detalle.rechazo2
+    ).trim();
+  }
+
+  if (
+    tieneValorRechazo(
+      detalle.codigo_error_debito
+    )
+  ) {
+    return String(
+      detalle.codigo_error_debito
+    ).trim();
+  }
+
+  return null;
+};
+
+// ======================================================
 // PROCESAR ARCHIVO
 // ======================================================
 
 const procesarArchivo = async (archivo) => {
   const client = await pool.connect();
 
-  const nombreArchivo =
-    archivo.originalname;
-
-  const rutaArchivo =
-    archivo.path;
+  const nombreArchivo = archivo.originalname;
+  const rutaArchivo = archivo.path;
 
   try {
+    // ==================================================
+    // FECHA DE PAGO
+    // ==================================================
+
+    const fechaPago =
+      obtenerFechaPago(nombreArchivo);
 
     // ==================================================
     // IDENTIDAD EDUCATIVA
     // ==================================================
 
-    // TEMPORALMENTE
     const identidadEducativa = 1;
 
     // ==================================================
@@ -243,16 +410,8 @@ const procesarArchivo = async (archivo) => {
       );
     }
 
-    console.log(
-      `Procesando archivo: ${nombreArchivo}`
-    );
-
-    console.log(
-      `Tabla temporal: ${tabla}`
-    );
-
     // ==================================================
-    // OBTENER CONFIGURACIÓN
+    // CONFIGURACIÓN
     // ==================================================
 
     const configuracion =
@@ -260,13 +419,8 @@ const procesarArchivo = async (archivo) => {
         identidadEducativa
       );
 
-    console.log(
-      "Configuración facturación:",
-      configuracion
-    );
-
     // ==================================================
-    // INICIAR TRANSACCIÓN
+    // BEGIN
     // ==================================================
 
     await client.query("BEGIN");
@@ -300,24 +454,21 @@ const procesarArchivo = async (archivo) => {
     let cantidad = 0;
 
     // ==================================================
-    // INSERTAR ARCHIVO EN TABLA TEMPORAL
+    // CARGAR ARCHIVO
     // ==================================================
 
-    for await (
-      const linea of rl
-    ) {
-
+    for await (const linea of rl) {
       if (!linea.trim()) {
         continue;
       }
 
       await client.query(
         `
-        INSERT INTO ${tabla}
-        (
-          contenido
-        )
-        VALUES ($1)
+          INSERT INTO ${tabla}
+          (
+            contenido
+          )
+          VALUES ($1)
         `,
         [linea]
       );
@@ -325,48 +476,48 @@ const procesarArchivo = async (archivo) => {
       cantidad++;
     }
 
-    console.log(
-      `Registros cargados en ${tabla}: ${cantidad}`
-    );
-
     // ==================================================
     // EJECUTAR AFECTACIÓN
     // ==================================================
 
     await client.query(
       `
-      SELECT public.spafectacionarchivodebitorutaarchivo($1)
+        SELECT
+          public.spafectacionarchivodebitorutaarchivo($1)
       `,
       [nombreArchivo]
     );
 
-    console.log(
-      "Afectación del archivo finalizada"
-    );
+    // ==================================================
+    // NOMBRE SIN .TXT
+    // ==================================================
+
+    const nombreArchivoSinExtension =
+      nombreArchivo.replace(
+        /\.txt$/i,
+        ""
+      );
 
     // ==================================================
-    // OBTENER DETALLES GENERADOS
+    // OBTENER DETALLES
     // ==================================================
 
     const resultadoDetalles =
       await client.query(
         `
-        SELECT *
-        FROM public.archivo_respuesta_detalle
-        WHERE id_archivo_respuesta IN
-        (
-          SELECT id_archivo_respuesta
-          FROM public.archivo_respuesta
-          WHERE nombre_archivo = $1
-        )
-        ORDER BY id_archivo_respuesta_detalle
+          SELECT *
+          FROM public.archivo_respuesta_detalle
+          WHERE id_archivo_respuesta IN
+          (
+            SELECT id_archivo_respuesta
+            FROM public.archivo_respuesta
+            WHERE nombre_archivo = $1
+          )
+          ORDER BY
+            id_archivo_respuesta_detalle
         `,
-        [nombreArchivo]
+        [nombreArchivoSinExtension]
       );
-
-    console.log(
-      `Detalles encontrados: ${resultadoDetalles.rows.length}`
-    );
 
     // ==================================================
     // CONTADORES
@@ -374,74 +525,116 @@ const procesarArchivo = async (archivo) => {
 
     let cantidadTransacciones = 0;
     let cantidadFacturas = 0;
+    let cantidadRechazos = 0;
+
+    let afectadosExitosamente = 0;
+    let noAfectados = 0;
 
     // ==================================================
-    // PROCESAR CADA PAGO
+    // RESUMEN DE RECHAZOS
+    // ==================================================
+
+    const resumenRechazos = {};
+
+    // ==================================================
+    // PROCESAR DETALLES
     // ==================================================
 
     for (
       const detalle
       of resultadoDetalles.rows
     ) {
+      // ==================================================
+      // DETERMINAR RECHAZO
+      // ==================================================
 
-      console.log(
-        "----------------------------------------"
-      );
+      const rechazado =
+        tieneRechazo(detalle);
 
-      console.log(
-        "Procesando detalle:",
-        detalle.id_archivo_respuesta_detalle
-      );
+      const codigoError =
+        obtenerCodigoRechazo(
+          detalle
+        );
+
+      const descripcionError =
+        String(
+          detalle.descripcion_error_debito ?? ""
+        ).trim();
 
       // ==================================================
       // VALIDAR ALUMNO
       // ==================================================
 
       if (!detalle.id_alumno) {
-
         throw new Error(
           `El detalle ${detalle.id_archivo_respuesta_detalle} no tiene id_alumno`
         );
       }
 
       if (!detalle.id_alumno_cc) {
-
         throw new Error(
           `El detalle ${detalle.id_archivo_respuesta_detalle} no tiene id_alumno_cc`
         );
       }
 
       // ==================================================
-      // OBTENER DATOS DEL TUTOR
+      // CONTADOR DE RECHAZOS
       // ==================================================
 
-      const datosTutor =
-        await obtenerDatosTutor(
-          client,
-          detalle.id_alumno
-        );
+      if (rechazado) {
+        cantidadRechazos++;
+        noAfectados++;
 
-      console.log(
-        "Datos tutor:",
-        datosTutor
-      );
+        const codigo =
+          codigoError || "SIN_CODIGO";
+
+        const descripcion =
+          descripcionError ||
+          "Sin descripción";
+
+        const clave =
+          `${codigo}|${descripcion}`;
+
+        if (
+          !resumenRechazos[clave]
+        ) {
+          resumenRechazos[clave] = {
+            codigo,
+            descripcion,
+            cantidad: 0,
+          };
+        }
+
+        resumenRechazos[clave].cantidad++;
+      }
 
       // ==================================================
       // IMPORTE
       // ==================================================
 
       const importe =
-        convertirImporte(
-          detalle.importe
-        );
-
-      console.log(
-        "Importe:",
-        importe
-      );
+        rechazado
+          ? 0
+          : convertirImporte(
+              detalle.importe
+            );
 
       // ==================================================
-      // VARIABLES DE FACTURACIÓN
+      // CONVERTIR FECHAS
+      // ==================================================
+
+      const fechaPresentacion =
+        convertirFecha(
+          detalle.fecha_presentacion
+        );
+
+      const fechaRespuestaPrisma =
+        convertirFecha(
+          detalle.fecha_devolucion_respuesta
+        );
+
+      // ==================================================
+      // DATOS FACTURA
       // ==================================================
 
       let cae = null;
@@ -451,16 +644,26 @@ const procesarArchivo = async (archivo) => {
       let comprobanteTipo = null;
 
       // ==================================================
-      // FACTURAR
+      // FACTURAR SOLAMENTE ACEPTADOS
       // ==================================================
 
       if (
+        !rechazado &&
         configuracion.debeFacturar
       ) {
+        // ----------------------------------------------
+        // OBTENER TUTOR
+        // ----------------------------------------------
 
-        console.log(
-          "Generando factura ARCA..."
-        );
+        const datosTutor =
+          await obtenerDatosTutor(
+            client,
+            detalle.id_alumno
+          );
+
+        // ----------------------------------------------
+        // DATOS ARCA
+        // ----------------------------------------------
 
         puntoVenta =
           configuracion.puntoVenta;
@@ -473,10 +676,10 @@ const procesarArchivo = async (archivo) => {
         // ----------------------------------------------
 
         if (
-          !datosTutor.doc_tipo ||
-          !datosTutor.doc_nro
+          !datosTutor ||
+          !datosTutor.docTipoAfip ||
+          !datosTutor.docNro
         ) {
-
           throw new Error(
             `El tutor del alumno ${detalle.id_alumno} no tiene documento válido`
           );
@@ -488,20 +691,18 @@ const procesarArchivo = async (archivo) => {
 
         const datosAfip =
           await emitirFacturaAFIP({
-
             puntoVenta,
-
             tipoComprobante:
               comprobanteTipo,
 
             docTipo:
               Number(
-                datosTutor.doc_tipo
+                datosTutor.docTipoAfip
               ),
 
             docNro:
               Number(
-                datosTutor.doc_nro
+                datosTutor.docNro
               ),
 
             impTotal:
@@ -510,25 +711,19 @@ const procesarArchivo = async (archivo) => {
             impNeto:
               importe,
 
-            impIva:
-              0,
+            impIva: 0,
 
             condicionIvaReceptorId:
-              configuracion
-                .condicionIvaReceptorId,
+              configuracion.condicionIvaReceptorId,
           });
 
-        console.log(
-          "Respuesta ARCA:",
-          datosAfip
-        );
-
         // ----------------------------------------------
-        // DATOS DEVUELTOS POR ARCA
+        // DATOS ARCA
         // ----------------------------------------------
 
         cae =
-          datosAfip?.cae ?? null;
+          datosAfip?.cae ??
+          null;
 
         vencimientoCae =
           datosAfip?.vencimientoCae ??
@@ -543,125 +738,199 @@ const procesarArchivo = async (archivo) => {
           puntoVenta;
 
         cantidadFacturas++;
-
-        console.log(
-          "Factura generada:",
-          {
-            cae,
-            vencimientoCae,
-            comprobanteNumero,
-            puntoVenta,
-            comprobanteTipo,
-          }
-        );
       }
 
       // ==================================================
-      // INSERTAR TRANSACCIÓN
+      // ARMAR BODY
       // ==================================================
 
-      console.log(
-        "Insertando transacción..."
-      );
+      const importePago =
+        rechazado
+          ? 0
+          : -importe;
 
-      await client.query(
-        `
-        INSERT INTO public.transaccion_cuenta_corriente
-        (
-          id_alumno_cc,
-          fecha_transaccion,
-          id_estado_cuota,
-          importe,
-          fecha_pago,
-          fecha_respuesta_prisma,
-          usuario_ultima_modificacion,
-          fecha_ultima_modificacion,
-          numero_comprobante,
-          numero_lote,
-          numero_autorizacion,
-          id_medio_pago,
-          id_marca_tarjeta,
-          id_motivo_rechazo1,
-          id_motivo_rechazo2,
-          codigo_error_debito,
-          descripcion_error_debito,
-          punto_venta,
-          comprobante_tipo,
-          comprobante_numero,
-          importe_actualizado,
-          fecha_actualizacion_importe,
-          notificado_rechazo,
-          fecha_notificacion_rechazo,
-          notificado_whatsapp,
-          fecha_notificacion_whatsapp,
-          notificado_mail,
-          fecha_notificacion_mail
-        )
-        VALUES
-        (
-          $1,
-          CURRENT_TIMESTAMP,
-          NULL,
-          $2,
-          NULL,
-          $3,
-          '0',
-          CURRENT_TIMESTAMP,
-          0,
-          $4,
-          0,
-          NULL,
-          NULL,
-          0,
-          0,
-          $5,
-          $6,
-          $7,
-          $8,
-          $9,
-          false,
-          NULL,
-          false,
-          NULL,
-          false,
-          NULL,
-          false,
-          NULL
-        )
-        `,
-        [
-          // $1
+      const valorRechazo =
+        (valor, codigoError) => {
+          const v =
+            String(
+              valor ?? ""
+            ).trim();
+
+          if (
+            v !== "" &&
+            v !== "0"
+          ) {
+            return v;
+          }
+
+          const c =
+            String(
+              codigoError ?? ""
+            ).trim();
+
+          if (
+            c !== "" &&
+            c !== "0"
+          ) {
+            return c;
+          }
+
+          return 0;
+        };
+
+      const body = {
+        id_alumno_cc:
           detalle.id_alumno_cc,
 
-          // $2
-          importe,
+        id_alumno:
+          detalle.id_alumno,
 
-          // $3
-          detalle.fecha_devolucion_respuesta,
+        fecha_transaccion:
+          new Date(),
 
-          // $4
+        id_estado_cuota:
+          rechazado
+            ? 4
+            : 3,
+
+        // Aceptado: negativo
+        // Rechazado: 0
+        importe:
+          importePago,
+
+        fechaPago:
+          fechaPago,
+
+        fecha_ultima_modificacion:
+          new Date(),
+
+        fecha_respuesta_prisma:
+          detalle.fecha_respuesta_prisma ||
+          null,
+
+        usuario:
+          detalle.usuario_alta ||
+          null,
+
+        numero_comprobante:
+          convertirNumero(
+            detalle.numero_comprobante
+          ),
+
+        nroLote:
           convertirNumero(
             detalle.numero_lote
           ),
 
-          // $5
-          detalle.codigo_error_debito,
+        nroAutorizacion:
+          convertirNumero(
+            detalle.numero_codigo_banco_pagador
+          ),
 
-          // $6
-          detalle.descripcion_error_debito,
+        id_medio_pago:
+          id_medio_pago ||
+          null,
 
-          // $7
-          puntoVenta,
+        id_marca_tarjeta:
+          id_marca_tarjeta,
 
-          // $8
-          comprobanteTipo,
+        // ==========================================
+        // DATOS DEL RECHAZO
+        // ==========================================
 
-          // $9
-          comprobanteNumero,
-        ]
+        id_motivo_rechazo1:
+          rechazado
+            ? valorRechazo(
+                detalle.rechazo1,
+                codigoError
+              )
+            : 0,
+
+        id_motivo_rechazo2:
+          rechazado
+            ? valorRechazo(
+                detalle.rechazo2,
+                codigoError
+              )
+            : 0,
+
+        codigo_error_debito:
+          rechazado
+            ? detalle.codigo_error_debito
+            : null,
+
+        descripcion_error_debito:
+          rechazado
+            ? detalle.descripcion_error_debito
+            : null,
+
+        // ==========================================
+        // ARCA
+        // ==========================================
+
+        punto_venta:
+          rechazado
+            ? null
+            : puntoVenta,
+
+        comprobante_tipo:
+          rechazado
+            ? null
+            : comprobanteTipo,
+
+        comprobante_numero:
+          rechazado
+            ? null
+            : comprobanteNumero,
+
+        importe_actualizado:
+          false,
+
+        fecha_actualizacion_importe:
+          null,
+
+        notificado_rechazo:
+          false,
+
+        fecha_notificacion_rechazo:
+          null,
+
+        notificado_whatsapp:
+          false,
+
+        fecha_notificacion_whatsapp:
+          null,
+
+        notificado_mail:
+          false,
+
+        fecha_notificacion_mail:
+          null,
+
+        // ==========================================
+        // CAE
+        // ==========================================
+
+        cae: cae,
+      };
+
+      // ==================================================
+      // CREAR TRANSACCION
+      // ==================================================
+
+      await pagosService.createPagoCuota(
+        body
       );
 
       cantidadTransacciones++;
+
+      // ==================================================
+      // CONTAR AFECTACIÓN EXITOSA
+      // ==================================================
+
+      if (!rechazado) {
+        afectadosExitosamente++;
+      }
 
       // ==================================================
       // MARCAR COMO PROCESADO
@@ -669,17 +938,13 @@ const procesarArchivo = async (archivo) => {
 
       await client.query(
         `
-        UPDATE public.archivo_respuesta_detalle
-        SET procesado = 1
-        WHERE id_archivo_respuesta_detalle = $1
+          UPDATE public.archivo_respuesta_detalle
+          SET procesado = 1
+          WHERE id_archivo_respuesta_detalle = $1
         `,
         [
           detalle.id_archivo_respuesta_detalle,
         ]
-      );
-
-      console.log(
-        `Detalle ${detalle.id_archivo_respuesta_detalle} procesado correctamente`
       );
     }
 
@@ -689,27 +954,18 @@ const procesarArchivo = async (archivo) => {
 
     await client.query("COMMIT");
 
-    console.log(
-      "========================================"
-    );
+    // ==================================================
+    // ARMAR RESUMEN
+    // ==================================================
 
-    console.log(
-      "ARCHIVO PROCESADO CORRECTAMENTE"
-    );
+    const rechazos =
+      Object.values(
+        resumenRechazos
+      );
 
-    console.log(
-      "Transacciones:",
-      cantidadTransacciones
-    );
-
-    console.log(
-      "Facturas:",
-      cantidadFacturas
-    );
-
-    console.log(
-      "========================================"
-    );
+    // ==================================================
+    // RESPUESTA
+    // ==================================================
 
     return {
       ok: true,
@@ -731,15 +987,35 @@ const procesarArchivo = async (archivo) => {
       facturas:
         cantidadFacturas,
 
+      rechazos:
+        cantidadRechazos,
+
       debeFacturar:
         configuracion.debeFacturar,
 
       mensaje:
         "Archivo procesado correctamente",
+
+      // ==================================================
+      // RESUMEN PARA EL FRONTEND
+      // ==================================================
+
+      resumen: {
+        totalRegistros:
+          resultadoDetalles.rows.length,
+
+        afectadosExitosamente:
+          afectadosExitosamente,
+
+        noAfectados:
+          noAfectados,
+
+        rechazos:
+          rechazos,
+      },
     };
 
   } catch (error) {
-
     console.error(
       "Error procesando archivo:",
       error
@@ -750,7 +1026,6 @@ const procesarArchivo = async (archivo) => {
         "ROLLBACK"
       );
     } catch (rollbackError) {
-
       console.error(
         "Error ejecutando ROLLBACK:",
         rollbackError
@@ -760,7 +1035,6 @@ const procesarArchivo = async (archivo) => {
     throw error;
 
   } finally {
-
     client.release();
 
     // ==================================================
@@ -770,7 +1044,6 @@ const procesarArchivo = async (archivo) => {
     if (
       fs.existsSync(rutaArchivo)
     ) {
-
       fs.unlinkSync(
         rutaArchivo
       );
@@ -778,6 +1051,10 @@ const procesarArchivo = async (archivo) => {
   }
 };
 
+// ======================================================
+// EXPORT
+// ======================================================
+
 export {
-  procesarArchivo,
+  procesarArchivo
 };
