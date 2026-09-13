@@ -8,7 +8,11 @@ import { updatePago } from "../repository/pagos/pagos.js";
 import { deletePago } from "../repository/pagos/pagos.js";
 import { createPagoCuota } from "../repository/pagos/pagos.js";
 import { GenerarPagos } from "../repository/pagos/pagos.js";
+import { EstadoDeuda } from "../repository/pagos/pagos.js";
 import { generarArchivoDebito } from "../repository/pagos/pagos.js";
+import { AlumnosPendientes } from "../repository/pagos/pagos.js";
+import { ActualizarImporte } from "../repository/pagos/pagos.js";
+
 
 class PagosService {
   async listarMedios() {
@@ -89,6 +93,38 @@ class PagosService {
     } catch (error) {
       return error;
     }
+  }
+
+  async EstadoDeuda(objeto) {
+    try {
+      const resul = await EstadoDeuda(objeto);
+      return resul;
+    } catch (error) {
+      return error;
+    }
+  }
+
+  
+  async AlumnosPendientes(objeto) {
+
+    try {
+      const resul = await AlumnosPendientes(objeto);
+      return resul;
+    } catch (error) {
+      return error;
+    }
+
+  }
+
+  async ActualizarImporte(objeto) {
+
+    try {
+      const resul = await ActualizarImporte(objeto);
+      return resul;
+    } catch (error) {
+      return error;
+    }
+    
   }
 
 }

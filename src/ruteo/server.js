@@ -22,7 +22,6 @@ import { multer_function } from '../negocio/utils/multer.js'
 import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import cors from 'cors'
 
-
 const servidor = express()
 
 //Cors

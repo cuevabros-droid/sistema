@@ -1,4 +1,3 @@
-//import { pgDatabase } from '../db/pgClient.js';
 import { pool } from "../../daos/db/pgClient.js";
 import { format } from "date-fns";
 
@@ -277,7 +276,6 @@ class ContainerPg {
     async getMarcadores() {
     try {
       const objetoBuscado = await pool.query(`select * from marcadoresmapa`);
-      console.log(objetoBuscado)
       return objetoBuscado.rows;
     } catch (error) {
       return error;
@@ -592,13 +590,13 @@ class ContainerPg {
 
   async getSaldosPorAlumno(id) {
 
+    const parametro = 'fecha_desde_listado_cuenta_corriente';
+    const fecha = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
+    const getStartOfYear = (fecha) => `${fecha}-01-01 00:00:00`;
+    const fecha_incio = getStartOfYear(fecha.rows[0].valor);
+
+
     try {
-
-  /*        const parametro = 'fecha_desde_listado_cuenta_corriente';
-          const getStartOfYear = (fecha) => `${fecha}-01-01 00:00:00`;
-          const fecha = await pool.query(`select valor from parametros_sistema where parametro = $valor`, [parametro])
-          const fecha_incio = getStartOfYear(fecha);*/
-
 
       const objetoBuscado = await pool.query(
         `SELECT  
@@ -730,6 +728,7 @@ INNER JOIN
 INNER JOIN grado g ON g.id_grado = adc.ultGrado
 
 WHERE a.id_alumno = $1 
+  AND tcc.fecha_transaccion >= $2::timestamp -- <--- FILTRO AGREGADO
     
 GROUP BY 
     tcc.id_transaccion_cc, 
@@ -752,7 +751,7 @@ ORDER BY
 
 
         `,
-        [id],
+       [id, fecha_incio],
       );
       return objetoBuscado.rows;
     } catch (error) {
@@ -1523,11 +1522,17 @@ INSERT INTO transaccion_cuenta_corriente (
     comprobante_numero,
     importe_actualizado,
     fecha_actualizacion_importe,
-    cae
+    cae,
+    notificado_rechazo,
+    fecha_notificacion_rechazo,
+    notificado_whatsapp,
+    fecha_notificacion_whatsapp,
+    notificado_mail,
+    fecha_notificacion_mail
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 
     $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 
-    $21, $22, $23
+    $21, $22, $23, $24, $25, $26, $27, $28, $29
 ) 
 RETURNING id_transaccion_cc;
     `;
@@ -1564,7 +1569,13 @@ RETURNING id_transaccion_cc;
         nroFacturaAfip,       // $20: comprobante_numero (AFIP)
         false,
         objeto.fecha_ultima_modificacion,
-        objeto.cae
+        objeto.cae,
+        false,
+        null,
+        false,
+        null,
+        false,
+        null
       ];
 
       const valores = valoresBrutos.map((val) => (val === "" || val === undefined ? null : val));
@@ -1587,58 +1598,415 @@ RETURNING id_transaccion_cc;
   
   // ALTA MÚLTIPLE
 async GenerarPagos(objeto) {
+  const client = await pool.connect();
 
-  console.log(objeto)
-    const query = `
-    INSERT INTO alumno_datos_cursada (
-        id_alumno, id_grado, division, genero_costo_inscripcion, 
-        pago_inscripcion, anio_cursada, id_division
-    ) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+  const checkExistenciaQuery = `
+  SELECT 1 
+  FROM alumno_cuenta_corriente 
+  WHERE id_alumno = $1 
+    AND id_cargo_cuenta_corriente = $2 
+    AND (
+      ($2 = 3 AND descripcion = $4) -- Materiales: valida por descripción
+      OR 
+      ($2 <> 3 AND cuota = $3)      -- Inscripción / Cuotas: valida por cuota
+    )
+  LIMIT 1;
+`;
+
+ // Consulta para verificar si el alumno registra deuda impaga (saldo acumulado > 0)
+const checkDeudaQuery = `
+  SELECT 1 
+  FROM transaccion_cuenta_corriente tcc
+  INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
+  WHERE acc.id_alumno = $1
+  GROUP BY acc.id_alumno
+  HAVING SUM(tcc.importe) > 0
+  LIMIT 1;
+`;
+
+// Consulta para verificar el parámetro de validación de deuda en inscripción
+const obtenerParametroDeudaQuery = `
+  SELECT valor 
+  FROM parametros_sistema 
+  WHERE parametro = 'valida_cuotas_impagas_pago_inscripcion'
+  LIMIT 1;
+`;
+
+  const obtenerAlumnoQuery = `
+    SELECT 
+      p.apellidos, 
+      p.nombres, 
+      COALESCE(td.nombre_corto, 'DNI') AS tipo_documento, 
+      ptd.numero AS numero_documento
+    FROM alumno a
+    INNER JOIN persona p ON p.id_persona = a.id_persona
+    LEFT JOIN persona_tipo_documento ptd ON ptd.id_persona = p.id_persona
+    LEFT JOIN tipo_documento td ON td.id_tipo_documento = ptd.id_tipo_documento
+    WHERE a.id_alumno = $1
+    LIMIT 1;
+  `;
+
+  const query1 = `
+    INSERT INTO alumno_cuenta_corriente (
+        id_alumno, usuario_alta, fecha_generacion_cc, cuota, 
+        descripcion, id_cargo_cuenta_corriente, importe, numero_cuota
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id_alumno_cc;
+  `;
+
+  const query2 = `
+    INSERT INTO transaccion_cuenta_corriente (
+        id_alumno_cc, fecha_transaccion, id_estado_cuota, importe, fecha_pago,
+        fecha_respuesta_prisma, usuario_ultima_modificacion, fecha_ultima_modificacion,
+        numero_comprobante, numero_lote, numero_autorizacion, id_medio_pago,
+        id_marca_tarjeta, id_motivo_rechazo1, id_motivo_rechazo2, codigo_error_debito,
+        descripcion_error_debito, punto_venta, comprobante_tipo, comprobante_numero,
+        importe_actualizado, fecha_actualizacion_importe, cae,
+        notificado_rechazo, fecha_notificacion_rechazo, notificado_whatsapp, 
+        fecha_notificacion_whatsapp, notificado_mail, fecha_notificacion_mail
+    ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25, $26, $27, $28, $29
+    )
     RETURNING *;
-    `;
+  `;
 
-    // Array para guardar los resultados de cada inserción
-    const resultadosInsertados = [];
+  const listaItems = Array.isArray(objeto) ? objeto : (objeto.items || []);
+  const usuarioSistema = objeto.usuario_sistema;
 
-    try {
-      await pool.query("BEGIN");
+  let generados = 0;
+  let noGenerados = 0;
+  const detallesGenerados = [];   // <-- 1. Inicializamos el array
+  const detallesNoGenerados = [];
 
-      // 🌟 RECORREMOS todo el historial académico que viene del frontend
-      for (const item of objeto.historialAcademico) {
-        const valores = [
-          item.id_alumno,
-          parseInt(item.id_grado),
-          item.division,
-          item.genero_cargo,
-          item.pago_cargo,
-          item.anio_cursada,
-          parseInt(item.id_division),
-        ];
+  try {
+    await client.query("BEGIN");
 
-        console.log("Intentando insertar registro con los valores:", valores);
+    const resParam = await client.query(obtenerParametroDeudaQuery);
+    const validaParametroDeuda = resParam.rows.length > 0 && 
+  ['S', 'SI', 'TRUE', '1'].includes(String(resParam.rows[0].valor).toUpperCase());
 
-        const resultado = await pool.query(query, valores);
-        resultadosInsertados.push(resultado.rows[0]);
+    for (const item of listaItems) {
+
+      // Validar que el cargo de Materiales (id_cargo = 3) solo se aplique a Nivel Inicial (id_nivel = 1)
+      if (Number(item.id_cargo_cuenta_corriente) === 3 && Number(item.id_nivel) !== 1) {
+        //console.log(`[RECHAZADO - PASO 1] Alumno ${item.id_alumno} no es Nivel Inicial (Nivel actual: ${item.id_nivel})`);
+          noGenerados++;
+          const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+          if (datosAlumno.rows.length > 0) {
+              detallesNoGenerados.push({
+                  ...datosAlumno.rows[0],
+                  motivo: 'El cargo de Materiales solo aplica a Nivel Inicial'
+              });
+          }
+          continue;
       }
 
-      await pool.query("COMMIT");
-      console.log(
-        "Todos los registros se guardaron correctamente. Cantidad:",
-        resultadosInsertados.length,
-      );
 
-      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
-      return resultadosInsertados;
-    } catch (error) {
-      await pool.query("ROLLBACK");
-      console.error(
-        "❌ Error al insertar múltiples registros en Postgres:",
-        error,
-      );
-      throw error;
+      // 1. Validar si ya existe la cuota/cargo para el alumno
+    const existeCargo = await client.query(checkExistenciaQuery, [
+        item.id_alumno,
+        Number(item.id_cargo_cuenta_corriente),
+        item.cuota || null,
+        item.descripcion || null
+    ]);
+
+    if (existeCargo.rows.length > 0) {
+        noGenerados++;
+
+        // Obtener datos personales del alumno omitido
+        const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+        if (datosAlumno.rows.length > 0) {
+            detallesNoGenerados.push({
+                ...datosAlumno.rows[0],
+                motivo: 'Ya tiene el cargo o cuota generada'
+            });
+        }
+        continue;
     }
+
+    
+      if (validaParametroDeuda && Number(item.id_cargo_cuenta_corriente) === 1) {
+        const tieneDeuda = await client.query(checkDeudaQuery, [item.id_alumno]);
+        if (tieneDeuda.rows.length > 0) {
+            noGenerados++;
+            const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+            if (datosAlumno.rows.length > 0) {
+                detallesNoGenerados.push({
+                    ...datosAlumno.rows[0],
+                    motivo: 'Posee cuotas impagas'
+                });
+            }
+            continue;
+        }
+    }
+
+
+
+        // 2. Insertar en alumno_cuenta_corriente
+        const valores1 = [
+          item.id_alumno,
+          usuarioSistema,
+          item.fecha,
+          item.cuota,
+          item.descripcion,
+          item.id_cargo_cuenta_corriente,
+          null,
+          null
+        ];
+        const res1 = await client.query(query1, valores1);
+        const idAlumnoCc = res1.rows[0].id_alumno_cc;
+
+        // 3. Insertar en transaccion_cuenta_corriente
+        const valores2 = [
+          idAlumnoCc, item.fecha, 1, item.importe, null, null,
+          usuarioSistema, item.fecha, null, null, null, null, null,
+          null, null, null, null, null, null, null, false, null, null,
+          false, null, false, null, false, null
+        ];
+        await client.query(query2, valores2);
+
+
+        // <-- 2. Guardamos la información del alumno generado exitosamente
+      const datosAlumnoGenerado = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+      if (datosAlumnoGenerado.rows.length > 0) {
+        detallesGenerados.push(datosAlumnoGenerado.rows[0]);
+      }
+
+        generados++;
+      }
+    
+
+    await client.query("COMMIT");
+
+    return {
+      exito: true,
+      resumen: {
+        generados,
+        noGenerados
+      },
+      detallesGenerados, // <-- 3. Lo incluimos en el objeto de respuesta
+      detallesNoGenerados
+    };
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release(); // Liberar el cliente al pool
   }
+}
+
+
+async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
+
+    const parametro = 'importe_mensual_cuota';
+    const resultParam = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
+    const importeActualVal = Number(resultParam.rows[0]?.valor).toFixed(2);
+
+    let sql = `
+        WITH doc_priorizado AS (
+            SELECT 
+                persdoc.id_persona,
+                persdoc.numero,
+                tipdoc.nombre_corto AS tipo_documento,
+                ROW_NUMBER() OVER (
+                    PARTITION BY persdoc.id_persona 
+                    ORDER BY 
+                        CASE 
+                            WHEN UPPER(tipdoc.nombre) = 'DNI' THEN 1
+                            WHEN UPPER(tipdoc.nombre) = 'CUIL' THEN 2
+                            ELSE 3 
+                        END
+                ) AS orden_prioridad
+            FROM persona_tipo_documento persdoc
+            INNER JOIN tipo_documento tipdoc ON persdoc.id_tipo_documento = tipdoc.id_tipo_documento
+        )
+        SELECT 
+            acc.id_alumno_cc,
+            alu.id_alumno,
+            pers.apellidos AS apellido, 
+            pers.nombres AS nombre,
+            doc.tipo_documento AS tipo_documento,
+            doc.numero AS documento,
+            acc.descripcion AS cuota,
+            acc.cuota AS cuotaid,
+            tcc_pos.importe AS "importeActual"
+        FROM alumno_cuenta_corriente acc
+        INNER JOIN alumno alu ON acc.id_alumno = alu.id_alumno
+        INNER JOIN persona pers ON alu.id_persona = pers.id_persona
+        LEFT JOIN doc_priorizado doc ON pers.id_persona = doc.id_persona AND doc.orden_prioridad = 1
+        INNER JOIN transaccion_cuenta_corriente tcc_pos 
+            ON acc.id_alumno_cc = tcc_pos.id_alumno_cc 
+           AND tcc_pos.importe > 0
+        WHERE acc.id_cargo_cuenta_corriente = 2 
+          AND NOT EXISTS (
+            SELECT 1 
+            FROM transaccion_cuenta_corriente tcc 
+            WHERE tcc.id_alumno_cc = acc.id_alumno_cc 
+              AND (tcc.importe < 0 OR tcc.importe = ${importeActualVal})
+          )
+          AND UPPER(TRIM(pers.activo)) = 'S'
+    `;
+
+    const values = [];
+
+    // Filtro por alumnos regulares ('S')
+    if (incluirNoRegulares !== 'true' && incluirNoRegulares !== true) {
+        sql += ` AND UPPER(TRIM(alu.regular)) = 'S'`;
+    }
+
+    const strCuota = cuota ? String(cuota).trim() : '';
+    const strAnio = anio ? String(anio).trim() : '';
+
+    if (strCuota !== '' && strAnio !== '') {
+        const cuotaConCero = strCuota.padStart(2, '0');
+        const cuotaNum = Number(strCuota);
+        const codigoCuota = `${cuotaConCero}${strAnio}`;
+
+        values.push(codigoCuota);
+        const p1 = values.length;
+
+        values.push(`%${cuotaNum}%${strAnio}%`);
+        const p2 = values.length;
+
+        sql += ` AND (TRIM(acc.cuota) = $${p1} OR acc.descripcion ILIKE $${p2})`;
+
+    } else if (strCuota !== '') {
+        const cuotaConCero = strCuota.padStart(2, '0');
+        const cuotaNum = Number(strCuota);
+
+        values.push(`${cuotaConCero}%`);
+        const p1 = values.length;
+
+        values.push(`%${cuotaNum}%`);
+        const p2 = values.length;
+
+        sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p2})`;
+
+    } else if (strAnio !== '') {
+        values.push(`%${strAnio}%`);
+        const p1 = values.length;
+
+        sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p1})`;
+    }
+
+    // Agregar el ordenamiento por apellido, nombre y cuota
+    sql += ` ORDER BY pers.apellidos ASC, pers.nombres ASC, acc.cuota ASC`;
+
+    // Ejecución utilizando la conexión propia del ContainerPg (this.pool o pool)
+    const queryExec = this.pool ? this.pool : pool;
+    const result = await queryExec.query(sql, values);
+    
+    return result.rows;
+}
+
+
+
+async ActualizarImporte(objeto) {
+  console.log("Procesando actualización:", objeto);
+
+  // 1. Usar siempre 'client' para mantener la transacción
+  const client = await pool.connect();
+
+  const detallesGenerados = []; 
+  const detallesNoGenerados = []; 
+
+  try {
+    await client.query("BEGIN");
+
+    for (const item of objeto.alumnos) {
+      try {
+        // 2. Ejecutar el UPDATE una sola vez usando 'client'
+        await client.query(
+          `UPDATE transaccion_cuenta_corriente 
+           SET importe = $1 
+           WHERE id_alumno_cc = $2 AND importe = $3`,
+          [
+            objeto.valorCuotaAplicar,
+            item.id_alumno_cc,
+            item.importeActualVal
+          ]
+        );
+
+        // 3. Consulta de datos del alumno con la prioridad de documento
+        const resAlumno = await client.query(`
+          WITH doc_priorizado AS (
+              SELECT 
+                  ptd.id_persona,
+                  ptd.numero AS numero_documento,
+                  td.nombre AS tipo_documento_largo,
+                  td.nombre_corto AS tipo_documento,
+                  ROW_NUMBER() OVER (
+                      PARTITION BY ptd.id_persona 
+                      ORDER BY 
+                          CASE 
+                              WHEN UPPER(TRIM(td.nombre)) = 'DNI' OR UPPER(TRIM(td.nombre_corto)) = 'DNI' THEN 1
+                              WHEN UPPER(TRIM(td.nombre)) = 'CUIL' OR UPPER(TRIM(td.nombre_corto)) = 'CUIL' THEN 2
+                              ELSE 3
+                          END
+                  ) AS rn
+              FROM persona_tipo_documento ptd
+              INNER JOIN tipo_documento td ON ptd.id_tipo_documento = td.id_tipo_documento
+          )
+          SELECT 
+              a.*, 
+              p.*, 
+              dp.tipo_documento, 
+              dp.tipo_documento_largo,
+              dp.numero_documento
+          FROM alumno a
+          INNER JOIN persona p ON a.id_persona = p.id_persona
+          LEFT JOIN doc_priorizado dp ON p.id_persona = dp.id_persona AND dp.rn = 1
+          WHERE a.id_alumno = $1;
+        `, [item.id_alumno]);
+
+        const datosAlumno = resAlumno.rows[0];
+
+        if (datosAlumno) {
+          // 4. Mapear apellido/nombre singular que viene de la tabla persona
+          detallesGenerados.push({
+            apellidos: datosAlumno.apellidos || datosAlumno.apellidos,
+            nombres: datosAlumno.nombres || datosAlumno.nombres,
+            tipo_documento: datosAlumno.tipo_documento,
+            numero_documento: datosAlumno.numero_documento,
+            importeAnterior: item.importeActualVal,
+            nuevoImporte: objeto.valorCuotaAplicar
+          });
+        }
+
+      } catch (errItem) {
+        // 5. Si falla un alumno individual, se acumula en no generados y NO rompe el bucle
+        detallesNoGenerados.push({
+          apellidos: item.apellidos,
+          nombres: item.nombres,
+          tipo_documento: item.tipo_documento,
+          numero_documento: item.numero_documento,
+          motivo: errItem.message || 'Error al actualizar registro'
+        });
+      }
+    }
+
+    await client.query("COMMIT");
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release(); // Liberar la conexión
+  }
+console.log(detallesGenerados)
+  // 6. Retornar con las claves que espera el Frontend ('detallesGenerados')
+  return {
+    ok: true,
+    generados: detallesGenerados.length,
+    noGenerados: detallesNoGenerados.length,
+    detallesGenerados,
+    detallesNoGenerados
+  };
+}
+
 
 }
 

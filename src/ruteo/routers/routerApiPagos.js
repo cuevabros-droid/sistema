@@ -9,6 +9,9 @@ import { controllerCreate } from '../controllers/controllerPagos.js';
 import { controllerDelete } from '../controllers/controllerPagos.js';
 import { controllerCreatePago } from '../controllers/controllerPagos.js';
 import { controllerGenerarPagos } from '../controllers/controllerPagos.js';
+import { controllerEstadoDeuda } from '../controllers/controllerPagos.js';
+import { controllerAlumnosPendientes } from '../controllers/controllerPagos.js';
+import { controllerActualizarImporte } from '../controllers/controllerPagos.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 import {controllerArchivoDebito} from '../controllers/controllerPagos.js';
 
@@ -19,6 +22,9 @@ routerApiPagos.get('/medios', autenticacion, controllerMedios);
 routerApiPagos.get('/marcas', autenticacion, controllerMarcas); 
 routerApiPagos.get('/entidades', autenticacion, controllerEntidades); 
 routerApiPagos.get('/cargos', autenticacion, controllerCargos); 
+routerApiPagos.get('/estado-deuda/:id', autenticacion, controllerEstadoDeuda); 
+routerApiPagos.get('/alumnos-pendientes', autenticacion, controllerAlumnosPendientes); 
+routerApiPagos.post('/actualizarimporte', autenticacion, controllerActualizarImporte); 
 routerApiPagos.get('/:id', autenticacion, controllerListado); 
 routerApiPagos.post('/', autenticacion, controllerCreate); 
 routerApiPagos.put('/', autenticacion, controllerUpdate); 
@@ -26,6 +32,7 @@ routerApiPagos.put('/archivoDebito', autenticacion, controllerArchivoDebito);
 routerApiPagos.delete('/:id', autenticacion, controllerDelete); 
 routerApiPagos.post('/guardarpago', autenticacion, controllerCreatePago); 
 routerApiPagos.post('/generar-cargos', autenticacion, controllerGenerarPagos); 
+
 
 
 export default routerApiPagos;
