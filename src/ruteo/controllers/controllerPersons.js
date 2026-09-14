@@ -179,70 +179,159 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
   }
 
 
-  async function controllerPersonaExcel({ user, body }, res) {
-     const personas = Array.isArray(body) ? body : (body?.data || []);
- 
- // 2. Configuración para ExcelJS
+ async function controllerPersonaExcel({ user, body }, res) {
+  const listaElementos = Array.isArray(body) 
+    ? body 
+    : (body?.personas || body?.body || body?.data || []);
+
+  const tieneSaldoTotal = body?.tieneSaldoTotal === true || 
+    listaElementos.some(item => 
+      item.tieneSaldoTotal === true || 
+      (item.saldo_total !== undefined && item.saldo_total !== null && item.saldo_total !== '$ 0,00' && item.saldo_total !== 0)
+    );
+
+  const hayAlumnos = listaElementos.some(item => item.es_alumno === 'S' || item.es_alumno === 'Alumno');
+  const hayTutores = listaElementos.some(item => item.es_alumno === 'N' || item.es_alumno === 'Tutor');
+  const esSoloTutores = hayTutores && !hayAlumnos; // 🟢 TRUE si no hay ningún alumno
+
+  let tituloReporte = body?.titulo || listaElementos[0]?.titulo;
+
+  if (!tituloReporte) {
+    if (tieneSaldoTotal) {
+      tituloReporte = "Reporte de Alumnos - Estado de Cuenta";
+    } else if (hayAlumnos && hayTutores) {
+      tituloReporte = "Reporte de Alumnos/Tutores";
+    } else if (hayAlumnos) {
+      tituloReporte = "Reporte de Alumnos";
+    } else if (hayTutores) {
+      tituloReporte = "Reporte de Tutores";
+    } else {
+      tituloReporte = "Reporte de Personas";
+    }
+  }
+
+  // Columnas base
   const excelColumns = [
     { header: 'Apellido', key: 'apellidos', width: 35 },
     { header: 'Nombres', key: 'nombres', width: 35 },
-    { header: 'Tipo de Documento', key: 'nombre_corto', width: 16 },
+    { header: 'Tipo de Documento', key: 'nombre_corto', width: 18 },
     { header: 'Número', key: 'numero', width: 15 },
-    { header: 'Tipo de Usuario', key: 'es_alumno', width: 15, getValue: (row) => row.es_alumno === 'S' ? 'Alumno' : 'Tutor' },
+    { header: 'Tipo de Usuario', key: 'es_alumno', width: 15, getValue: (row) => row.es_alumno === 'S' ? 'Alumno' : (row.es_alumno === 'N' ? 'Tutor' : row.es_alumno) }
   ];
+
+  // 🟢 Agregamos 'Nivel' SOLO si NO es exclusivo de Tutores
+  if (!esSoloTutores) {
+    excelColumns.push({ header: 'Nivel', key: 'nivel', width: 25 });
+  }
+
+  // Agregamos 'Saldo Total' si corresponde
+  if (tieneSaldoTotal) {
+    excelColumns.push({ 
+      header: 'Saldo Total', 
+      key: 'saldo_total', 
+      width: 20,
+      style: { numFmt: '"$"#,##0.00' }
+    });
+  }
+
+  const dataFormateada = listaElementos.map(item => ({
+    ...item,
+    saldo_total: Number(item.saldo_total || 0)
+  }));
 
   try {
     const { exportToExcelCustom } = await import('../../negocio/utils/excel.js');
 
-    // Le pasamos `res` (la respuesta de Express/Node)
     await exportToExcelCustom({
       columnsConfig: excelColumns,
-      data: personas,
-      fileName: 'Reporte_Personas',
-      sheetName: 'Reporte de Personas',
-      res // <-- ¡IMPORTANTE! Agregar res aquí
+      data: dataFormateada,
+      fileName: tituloReporte,
+      sheetName: tituloReporte,
+      res
     });
   } catch (error) {
     console.error("Error al exportar Excel:", error);
-    res.status(500).json({ message: "Error al generar el Excel" });
+    return res.status(500).json({ message: "Error al generar el Excel" });
   }
+}
+
+async function controllerPersonaPDF({ user, body }, res) {
+  const listaElementos = Array.isArray(body) 
+    ? body 
+    : (body?.personas || body?.body || body?.data || []);
+
+  const tieneSaldoTotal = body?.tieneSaldoTotal === true || 
+    listaElementos.some(item => 
+      item.tieneSaldoTotal === true || 
+      (item.saldo_total !== undefined && item.saldo_total !== null && item.saldo_total !== '$ 0,00' && item.saldo_total !== 0)
+    );
+
+  // 1. Evaluamos la presencia de alumnos y tutores en la lista
+  const hayAlumnos = listaElementos.some(item => item.es_alumno === 'S' || item.es_alumno === 'Alumno');
+  const hayTutores = listaElementos.some(item => item.es_alumno === 'N' || item.es_alumno === 'Tutor');
+  const esSoloTutores = hayTutores && !hayAlumnos; // 🟢 TRUE si no hay ningún alumno
+
+  // 2. Determinamos el título dinámico
+  let tituloReporte = body?.titulo || listaElementos[0]?.titulo;
+
+  if (!tituloReporte) {
+    if (tieneSaldoTotal) {
+      tituloReporte = "Reporte de Alumnos - Estado de Cuenta";
+    } else if (hayAlumnos && hayTutores) {
+      tituloReporte = "Reporte de Alumnos/Tutores";
+    } else if (hayAlumnos) {
+      tituloReporte = "Reporte de Alumnos";
+    } else if (hayTutores) {
+      tituloReporte = "Reporte de Tutores";
+    } else {
+      tituloReporte = "Reporte de Personas";
+    }
   }
 
-
- async function controllerPersonaPDF({ user, body }, res) {
-
+  // 3. Columnas base (sin 'Nivel' de entrada)
   const pdfColumns = [
-    { header: 'Apellido', key: 'apellidos', width: '30%' },
-    { header: 'Nombres', key: 'nombres', width: '30%' },
+    { header: 'Apellido', key: 'apellidos', width: '25%' },
+    { header: 'Nombres', key: 'nombres', width: '25%' },
     { header: 'Tipo de Documento', key: 'nombre_corto', width: '16%' },
-    { header: 'Número', key: 'numero', width: '12%' },
-    { header: 'Tipo de Usuario', key: 'es_alumno', width: '15%' },
+    { header: 'Número', key: 'numero', width: '14%' },
+    { header: 'Tipo de Usuario', key: 'es_alumno', width: '20%' },
   ];
 
+  // 🟢 4. Agregamos 'Nivel' SOLO si NO es exclusivo de Tutores
+  if (!esSoloTutores) {
+    pdfColumns.push({ header: 'Nivel', key: 'nivel', width: '15%' });
+  }
+
+  // 5. Agregamos 'Saldo Total' si corresponde
+  if (tieneSaldoTotal) {
+    pdfColumns.push({ header: 'Saldo Total', key: 'saldo_total', width: '15%' });
+  }
+
+  const bodyFormateado = listaElementos.map(item => {
+    const monto = item.saldo_total ?? item.saldoTotal ?? 0;
+    return {
+      ...item,
+      es_alumno: item.es_alumno === 'S' ? 'Alumno' : (item.es_alumno === 'N' ? 'Tutor' : item.es_alumno),
+      saldo_total: `$ ${Number(monto).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    };
+  });
+
   try {
-    // 1. Cargar dependencias
     const React = (await import('react')).default;
     const { GenericPDFReport } = await import('../../negocio/utils/pdf.js');
-// 👈 IMPORTANTE: Importa renderToBuffer en lugar de pdf
     const { renderToBuffer } = await import('@react-pdf/renderer');
 
-  // 1. Instanciar el documento
-const doc = React.createElement(GenericPDFReport, {
-  data: body,
-  columns: pdfColumns,
-  title: "Reporte de Personas"
-});
+    const doc = React.createElement(GenericPDFReport, {
+      data: bodyFormateado,
+      columns: pdfColumns,
+      title: tituloReporte
+    });
 
-
-
-// 3. Generar el Buffer del PDF con renderToBuffer
     const buffer = await renderToBuffer(doc);
 
-    // 4. Configurar cabeceras HTTP
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="Reporte_Personas.pdf"');
+    res.setHeader('Content-Disposition', `inline; filename="${tituloReporte.replace(/[\/\s]+/g, '_')}.pdf"`);
 
-    // 5. Enviar el buffer compilado
     return res.end(buffer);
 
   } catch (error) {
