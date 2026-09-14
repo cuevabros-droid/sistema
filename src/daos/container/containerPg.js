@@ -119,93 +119,116 @@ class ContainerPg {
     }
   }
 
-  async getAllWithFilters(filtros = {}) {
-    const { search, esAlumno, esTutor, estado } = filtros;
+async getAllWithFilters(filtros = {}) {
+  //console.log("Filtros recibidos en Backend:", filtros);
 
-    // Condiciones base para el WHERE
-    const conditions = ["persona.activo <> 'B'"];
-    const params = [];
+  const { search, esAlumno, esTutor, estado, incluirSaldo } = filtros;
 
-    // 1. Filtro por Texto Libre (Búsqueda por Nombre, Apellido o Número de Documento)
-    if (search && search.trim() !== "") {
-      params.push(`%${search.trim()}%`);
-      const paramIndex = `$${params.length}`;
+  const conditions = ["persona.activo <> 'B'"];
+  const params = [];
 
-      // Busca concordancia en nombres, apellidos o número de documento
-      conditions.push(`(
+  if (search && search.trim() !== "") {
+    params.push(`%${search.trim()}%`);
+    const paramIndex = `$${params.length}`;
+
+    conditions.push(`(
       persona.apellidos ILIKE ${paramIndex} OR 
       persona.nombres ILIKE ${paramIndex} OR 
       persona_tipo_documento.numero ILIKE ${paramIndex}
     )`);
-    }
-    // 3. Filtros por Rol
-    if (String(esAlumno) === "true") {
-      conditions.push(`alumno.id_alumno IS NOT NULL`);
-    }
+  }
 
-    if (String(esTutor) === "true") {
-      conditions.push(`es_alumno = 'N'`);
-    }
+  if (String(esAlumno) === "true") {
+    conditions.push(`alumno.id_alumno IS NOT NULL`);
+  }
 
-    // 4. Estado de Alumno (Comparamos con 'S' y 'N')
-    if (String(esAlumno) === "true" && estado === "activo") {
-      conditions.push(`alumno.regular = 'S'`);
-    } else if (String(esAlumno) === "true" && estado === "pasivo") {
-      conditions.push(`alumno.regular = 'N'`);
-    }
-    // Unimos todas las condiciones con AND
-    const whereClause =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  if (String(esTutor) === "true") {
+    conditions.push(`es_alumno = 'N'`);
+  }
 
-    try {
-      const query = `
-      SELECT * FROM (
-          SELECT DISTINCT ON (persona.id_persona) 
-              persona.*, 
-              persona_tipo_documento.id_tipo_documento, 
-              persona_tipo_documento.numero, 
-              td.nombre_corto,
-              alumno.id_alumno,
-              regular,
-              motivo_desercion.nombre AS motivo_desercion,
-              alumno_datos_cursada.id_grado as id_grado,
-              grado.nombre as nombre_grado,
-              nivel.id_nivel as id_nivel,
-              nivel.nombre as nombre_nivel,
-              division as division
-          FROM persona 
-          INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
-          INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
-          LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
-          LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion
-          
-          -- 🟢 Reemplazo de LEFT JOIN tradicional por LEFT JOIN LATERAL
-          LEFT JOIN LATERAL (
-              SELECT adc.*
-              FROM alumno_datos_cursada adc
-              WHERE adc.id_alumno = alumno.id_alumno
-              ORDER BY adc.anio_cursada DESC -- 👈 Reemplaza 'anio_cursado' por tu columna de año (o id_alumno_datos_cursada / fecha)
-              LIMIT 1
-          ) alumno_datos_cursada ON true
+  if (String(esAlumno) === "true" && estado === "activo") {
+    conditions.push(`alumno.regular = 'S'`);
+  } else if (String(esAlumno) === "true" && estado === "pasivo") {
+    conditions.push(`alumno.regular = 'N'`);
+  }
 
-          LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
-          LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
-      ${whereClause}
-          ORDER BY 
-              persona.id_persona, 
-              CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
-              persona_tipo_documento.fecha_alta ASC
-      ) subconsulta 
-      ORDER BY apellidos ASC, nombres ASC;
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  // 🟢 Convertimos a String para asegurar que compare 'true' correctamente
+  const debeCalcularSaldo = String(incluirSaldo) === "true";
+
+  const selectDeudaFields = debeCalcularSaldo 
+    ? `, COALESCE(deuda.cantidad_cuotas_adeudadas, 0) AS cantidad_cuotas_adeudadas, COALESCE(deuda.saldo_total, 0) AS saldo_total`
+    : '';
+
+  const joinDeudaQuery = debeCalcularSaldo 
+    ? `
+        LEFT JOIN (
+            SELECT 
+                acc.id_alumno,
+                COUNT(DISTINCT acc.id_alumno_cc) AS cantidad_cuotas_adeudadas,
+                SUM(tcc.importe) AS saldo_total
+            FROM transaccion_cuenta_corriente tcc
+            INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
+            GROUP BY acc.id_alumno
+            HAVING SUM(tcc.importe) > 0
+        ) deuda ON deuda.id_alumno = alumno.id_alumno
+      `
+    : '';
+
+  try {
+    const query = `
+    SELECT * FROM (
+        SELECT DISTINCT ON (persona.id_persona) 
+            persona.*, 
+            persona_tipo_documento.id_tipo_documento, 
+            persona_tipo_documento.numero, 
+            td.nombre_corto,
+            alumno.id_alumno,
+            regular,
+            motivo_desercion.nombre AS motivo_desercion,
+            alumno_datos_cursada.id_grado as id_grado,
+            grado.nombre as nombre_grado,
+            nivel.id_nivel as id_nivel,
+            nivel.nombre as nombre_nivel,
+            division as division
+            ${selectDeudaFields}
+        FROM persona 
+        INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+        INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+        LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+        LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion
+        
+        LEFT JOIN LATERAL (
+            SELECT adc.*
+            FROM alumno_datos_cursada adc
+            WHERE adc.id_alumno = alumno.id_alumno
+            ORDER BY adc.anio_cursada DESC 
+            LIMIT 1
+        ) alumno_datos_cursada ON true
+
+        ${joinDeudaQuery}
+
+        LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
+        LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
+    ${whereClause}
+        ORDER BY 
+            persona.id_persona, 
+            CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
+            persona_tipo_documento.fecha_alta ASC
+    ) subconsulta 
+    ORDER BY apellidos ASC, nombres ASC;
     `;
 
-      const objetoBuscado = await pool.query(query, params);
-      return objetoBuscado.rows;
-    } catch (error) {
-      console.error("Error en getAllWithFilters:", error);
-      throw error;
-    }
+    const objetoBuscado = await pool.query(query, params);
+    //console.log("Fila de ejemplo devuelta por BD:", objetoBuscado.rows[0]);
+    return objetoBuscado.rows;
+  } catch (error) {
+    console.error("Error en getAllWithFilters:", error);
+    throw error;
   }
+}
 
   async getLocalidades() {
     try {
