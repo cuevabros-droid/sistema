@@ -210,19 +210,24 @@ async function controllerPersonsConFiltro({ params: { texto } }, res) {
     }
   }
 
-  // Columnas base
-  const excelColumns = [
-    { header: 'Apellido', key: 'apellidos', width: 35 },
-    { header: 'Nombres', key: 'nombres', width: 35 },
-    { header: 'Tipo de Documento', key: 'nombre_corto', width: 18 },
-    { header: 'Número', key: 'numero', width: 15 },
-    { header: 'Tipo de Usuario', key: 'es_alumno', width: 15, getValue: (row) => row.es_alumno === 'S' ? 'Alumno' : (row.es_alumno === 'N' ? 'Tutor' : row.es_alumno) }
-  ];
+// Columnas base
+const excelColumns = [
+  { header: 'Apellido', key: 'apellidos', width: 25, style: { alignment: { wrapText: true, vertical: 'middle' } } },
+  { header: 'Nombres', key: 'nombres', width: 25, style: { alignment: { wrapText: true, vertical: 'middle' } } },
+  { header: 'Tipo Doc.', key: 'nombre_corto', width: 10, style: { alignment: { wrapText: true } } },
+  { header: 'Número', key: 'numero', width: 15 },
+  { header: 'Alumno/Tutor', key: 'es_alumno', width: 15, getValue: (row) => row.es_alumno === 'S' ? 'Alumno' : 'Tutor' }
+];
 
-  // 🟢 Agregamos 'Nivel' SOLO si NO es exclusivo de Tutores
-  if (!esSoloTutores) {
-    excelColumns.push({ header: 'Nivel', key: 'nivel', width: 25 });
-  }
+// Agregamos 'Nivel' SOLO si NO es exclusivo de Tutores
+if (!esSoloTutores) {
+  excelColumns.push({ 
+    header: 'Nivel - Grado/Curso - División', 
+    key: 'nivel', 
+    width: 32, 
+    style: { alignment: { wrapText: true, vertical: 'middle' } } 
+  });
+}
 
   // Agregamos 'Saldo Total' si corresponde
   if (tieneSaldoTotal) {
@@ -292,19 +297,19 @@ async function controllerPersonaPDF({ user, body }, res) {
   const pdfColumns = [
     { header: 'Apellido', key: 'apellidos', width: '25%' },
     { header: 'Nombres', key: 'nombres', width: '25%' },
-    { header: 'Tipo de Documento', key: 'nombre_corto', width: '16%' },
+    { header: 'Tipo Doc.', key: 'nombre_corto', width: '10%' },
     { header: 'Número', key: 'numero', width: '14%' },
-    { header: 'Tipo de Usuario', key: 'es_alumno', width: '20%' },
+    { header: 'Alumno/Tutor', key: 'es_alumno', width: '15%' },
   ];
 
   // 🟢 4. Agregamos 'Nivel' SOLO si NO es exclusivo de Tutores
   if (!esSoloTutores) {
-    pdfColumns.push({ header: 'Nivel', key: 'nivel', width: '15%' });
+    pdfColumns.push({ header: 'Nivel - Grado/Curso - División', key: 'nivel', width: '40%' });
   }
 
   // 5. Agregamos 'Saldo Total' si corresponde
   if (tieneSaldoTotal) {
-    pdfColumns.push({ header: 'Saldo Total', key: 'saldo_total', width: '15%' });
+    pdfColumns.push({ header: 'Saldo Total', key: 'saldo_total', width: '20%' });
   }
 
   const bodyFormateado = listaElementos.map(item => {

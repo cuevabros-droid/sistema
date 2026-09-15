@@ -119,10 +119,18 @@ class ContainerPg {
     }
   }
 
-async getAllWithFilters(filtros = {}) {
-  //console.log("Filtros recibidos en Backend:", filtros);
-
-  const { search, esAlumno, esTutor, estado, incluirSaldo } = filtros;
+  
+  async getAllWithFilters(filtros = {}) {
+  const { 
+    search, 
+    esAlumno, 
+    esTutor, 
+    estado, 
+    incluirSaldo,
+    idNivel,
+    idGrado,
+    idDivision 
+  } = filtros;
 
   const conditions = ["persona.activo <> 'B'"];
   const params = [];
@@ -152,10 +160,23 @@ async getAllWithFilters(filtros = {}) {
     conditions.push(`alumno.regular = 'N'`);
   }
 
-  const whereClause =
-    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  if (idNivel && idNivel !== "") {
+    params.push(idNivel);
+    conditions.push(`nivel.id_nivel = $${params.length}`);
+  }
 
-  // 🟢 Convertimos a String para asegurar que compare 'true' correctamente
+  if (idGrado && idGrado !== "") {
+    params.push(idGrado);
+    conditions.push(`alumno_datos_cursada.id_grado = $${params.length}`);
+  }
+
+  if (idDivision && idDivision !== "") {
+    params.push(idDivision);
+    conditions.push(`(alumno_datos_cursada.id_division = $${params.length} OR divisiones.id_division = $${params.length})`);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
   const debeCalcularSaldo = String(incluirSaldo) === "true";
 
   const selectDeudaFields = debeCalcularSaldo 
@@ -188,11 +209,12 @@ async getAllWithFilters(filtros = {}) {
             alumno.id_alumno,
             regular,
             motivo_desercion.nombre AS motivo_desercion,
-            alumno_datos_cursada.id_grado as id_grado,
-            grado.nombre as nombre_grado,
-            nivel.id_nivel as id_nivel,
-            nivel.nombre as nombre_nivel,
-            division as division
+            alumno_datos_cursada.id_grado AS id_grado,
+            grado.nombre AS nombre_grado,
+            nivel.id_nivel AS id_nivel,
+            nivel.nombre AS nombre_nivel,
+            COALESCE(alumno_datos_cursada.id_division, divisiones.id_division) AS id_division,
+            COALESCE(divisiones.division, alumno_datos_cursada.division) AS division
             ${selectDeudaFields}
         FROM persona 
         INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
@@ -212,6 +234,10 @@ async getAllWithFilters(filtros = {}) {
 
         LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
         LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
+        LEFT JOIN divisiones ON (
+            divisiones.id_division = alumno_datos_cursada.id_division 
+            OR LOWER(TRIM(divisiones.division)) = LOWER(TRIM(alumno_datos_cursada.division))
+        )
     ${whereClause}
         ORDER BY 
             persona.id_persona, 
@@ -222,13 +248,13 @@ async getAllWithFilters(filtros = {}) {
     `;
 
     const objetoBuscado = await pool.query(query, params);
-    //console.log("Fila de ejemplo devuelta por BD:", objetoBuscado.rows[0]);
     return objetoBuscado.rows;
   } catch (error) {
     console.error("Error en getAllWithFilters:", error);
     throw error;
   }
 }
+
 
   async getLocalidades() {
     try {
