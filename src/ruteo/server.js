@@ -22,6 +22,7 @@ import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
 import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import cors from 'cors'
+import path from 'path';
 
 const servidor = express()
 
@@ -79,7 +80,8 @@ servidor.use('/api/escuela', routerApiEscuela)
 servidor.use('/api/', routerApiAfip)
 servidor.use('/api/parametros', routerApiParametros)
 servidor.use('/api/usuarios', routerApiUsuarios)
-servidor.use('/public', express.static('public'));
+//servidor.use('/public', express.static('public'));
+servidor.use('/img/usuarios', express.static(path.join(process.cwd(), 'public/img/usuarios')));
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
 
 
