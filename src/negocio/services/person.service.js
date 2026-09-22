@@ -13,6 +13,8 @@ import { PersonaAllegadaCreate } from '../repository/personas/person.js';
 import { eliminarAllegado } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellidoDocumento } from '../repository/personas/person.js';
 import { updatePersonaAllegada } from '../repository/personas/person.js';
+import { sexo } from '../repository/personas/person.js';
+
 
 
 
@@ -123,6 +125,11 @@ class PersontService {
             return error
         }
     } 
+
+    async  sexo() {
+        const listarSexo = await sexo()
+        return listarSexo
+    }
 
 }
 

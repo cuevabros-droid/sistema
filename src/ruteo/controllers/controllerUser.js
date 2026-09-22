@@ -54,6 +54,7 @@ async function controladorInfousuario(req, res){
  }
 
 
+
  
   
 export {controladorRegistro, controladorInfousuario}

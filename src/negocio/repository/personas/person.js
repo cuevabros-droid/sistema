@@ -186,3 +186,13 @@ export async function PersonaAllegadaCreate(objeto) {
           return error
       }       
   }
+
+
+  export async function sexo() {
+        try {
+          const resul = await pg.sexo()
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }

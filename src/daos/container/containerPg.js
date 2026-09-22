@@ -1,7 +1,9 @@
 import { pool } from "../../daos/db/pgClient.js";
 import { format } from "date-fns";
 
+
 class ContainerPg {
+
   //ACTUALIZA DATOS DE UNA PERSONA
   async updatePersons(objeto, id) {
     if (objeto.es_alumno === "S") objeto.usuario = null;
@@ -132,7 +134,7 @@ class ContainerPg {
     idDivision 
   } = filtros;
 
-  const conditions = ["persona.activo <> 'B'"];
+  const conditions = ["persona.activo <> 'B' AND persona.es_alumno IS NOT NULL"];
   const params = [];
 
   if (search && search.trim() !== "") {
@@ -387,7 +389,7 @@ class ContainerPg {
   async registrarDocumentoPersona(objeto) {
     // Formato estándar de base de datos sin offset de zona horaria
     const fecha_alta = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-    // Resultado: "2026-05-25 14:20:00"
+    // Resultado: "2026-05-25 14:20:00"registrarDocumentoPersona
 
     const query = `
         INSERT INTO persona_tipo_documento (
@@ -654,176 +656,208 @@ class ContainerPg {
     }
   }
 
-  async getSaldosPorAlumno(id) {
-
-    const parametro = 'fecha_desde_listado_cuenta_corriente';
-    const fecha = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
-    const getStartOfYear = (fecha) => `${fecha}-01-01 00:00:00`;
-    const fecha_incio = getStartOfYear(fecha.rows[0].valor);
-
-
-    try {
-
-      const objetoBuscado = await pool.query(
-        `SELECT  
-    tcc.id_transaccion_cc, 
-    acc.id_alumno_cc, 
-    MAX(tcc.id_estado_cuota) AS id_estado_cuota, 
-	MAX(ec.nombre) as estado_cuota,
-    MAX(fecha_pago) AS fecha_pago, 
-    MAX(fecha_respuesta_prisma) AS fecha_respuesta_prisma, 
-    tcc.fecha_transaccion, 
-    MAX(tcc.id_medio_pago) AS id_medio_pago, 
-	MAX(mp.nombre) as medio_pago,
-    MAX(tcc.id_marca_tarjeta) AS id_marca_tarjeta, 
-    MAX(id_motivo_rechazo1) AS id_motivo_rechazo1, 
-    MAX(id_motivo_rechazo2) AS id_motivo_rechazo2, 
-    MAX(codigo_error_debito) AS codigo_error_debito, 
-    MAX(descripcion_error_debito) AS descripcion_error_debito, 
-    g.nombre AS Grado,  
-    CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, 
-    a.legajo,
-    MAX(a.direccion_calle) || ' ' || MAX(a.direccion_numero) as direccion_alumno,
-    MAX(tcc.numero_comprobante) AS numero_comprobante, 
-    MAX(numero_lote) AS numero_lote, 
-    MAX(numero_autorizacion) AS numero_autorizacion, 
-    MAX(punto_venta) AS punto_venta, 
-    MAX(comprobante_tipo) AS comprobante_tipo, 
-    MAX(comprobante_numero) AS comprobante_numero,
-	max(mt.nombre) as nombre_tarjeta,
-    max(tcc.descripcion_error_debito) as motivo_rechazo,
-    max(tcc.importe) as importe,
-    max(tcc.CAE) as cae,
-max(ee.entidadeducativa) as entidad_educativa,
-max(ee.direccion) as direccion,
-max(ee.numero) as numero,
-max(ee.logo) as logo,
-max(ee.cuit) as cuit_institucion,
-max(persona_allegada) as persona_allegada,
-max(loc.nombre) as localidad_nombre,
-max(prov.nombre) as provincia_nombre,
-max(cuit_tutor) as cuil_tutor, 		
-max(id_tipo_documento_tutor) as id_tipo_documento_tutor, -- <--- AGREGAR AQUÍ
-max(ingresos_brutos) as ingresos_brutos,
-max(condicion_iva) as condicion_iva,
-max(inicio_actividades) as inicio_actividades,
-
-    		SUM(tcc.importe) AS SaldoCuota, SaldoTotal,
-    -- Año: toma el año de generación para Materiales e Inscripción, o el año de acc.cuota para el resto
-    CASE 
-        WHEN UPPER(acc.descripcion) LIKE '%INSCRIP%' OR UPPER(acc.descripcion) LIKE '%MATERIAL%' 
-            THEN TO_CHAR(acc.fecha_generacion_cc, 'YYYY')
-        WHEN acc.cuota IS NULL OR TRIM(acc.cuota) = '' THEN SUBSTRING(acc.descripcion FROM 20 FOR 4)
-        ELSE RIGHT(acc.cuota, 4)
-    END AS Anio,
-
-    -- Cuota: asigna '00_INS' o '00_MAT' para ordenarlos al inicio del año antes del mes 01
--- Cuota: Toma el mes de generación real para Materiales/Inscripción y le concatena un identificador
-    CASE 
-        WHEN UPPER(acc.descripcion) LIKE '%INSCRIP%' 
-            THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_INS'
-        WHEN UPPER(acc.descripcion) LIKE '%MATERIAL%' 
-            THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_MAT'
-        WHEN acc.cuota IS NULL OR TRIM(acc.cuota) = '' 
-            THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_VAR'
-        ELSE LEFT(acc.cuota, 2) 
-    END AS Cuota,
-
-    acc.descripcion AS Anio_Cuota,
-    SUM(tcc.importe) AS SaldoCuota, 
-    SaldoTotal  
-
-FROM transaccion_cuenta_corriente tcc
-INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
-INNER JOIN alumno a ON a.id_alumno = acc.id_alumno --AND a.regular = 'S'
-LEFT JOIN alumno_tarjeta PT ON PT.Id_alumno = A.Id_alumno
-LEFT JOIN marca_tarjeta mt ON tcc.id_marca_tarjeta = mt.id_marca_tarjeta
-LEFT JOIN public.medio_pago mp ON tcc.id_medio_pago = mp.id_medio_pago
-INNER JOIN public.estado_cuota ec ON tcc.id_estado_cuota = ec.id_estado_cuota
-LEFT JOIN entidades_educativas ee ON ee.identidadeducativa = a.id_establecimiento
-LEFT JOIN localidad loc ON ee.localidad = loc.id_localidad
-LEFT JOIN provincia prov ON ee.provincia = prov.id_provincia
-INNER JOIN (
-    SELECT 
-        id_establecimiento,
-        MAX(CASE WHEN id_parametro = 18 THEN valor END) AS ingresos_brutos,
-        MAX(CASE WHEN id_parametro = 22 THEN valor END) AS condicion_iva,
-        MAX(CASE WHEN id_parametro = 19 THEN valor END) AS inicio_actividades
-    FROM parametros_sistema 
-    WHERE id_parametro IN (18, 22, 19)
-    GROUP BY id_establecimiento
-) AS param ON param.id_establecimiento = a.id_establecimiento
-INNER JOIN persona p ON p.id_persona = a.id_persona
-INNER JOIN (
-    SELECT 
-        pa.id_alumno,
-        per.apellidos || ', ' || per.nombres AS persona_allegada,
-        tipdoc.numero AS cuit_tutor,
-        tipdoc.id_tipo_documento AS id_tipo_documento_tutor, -- <--- AGREGAR AQUÍ
-        ROW_NUMBER() OVER (
-            PARTITION BY pa.id_alumno 
-            ORDER BY 
-                CASE 
-                    WHEN tipdoc.id_tipo_documento = 7 THEN 1 
-                    WHEN tipdoc.id_tipo_documento = 8 THEN 2 
-                    ELSE 3 
-                END
-        ) as orden
-    FROM persona_allegado pa
-    INNER JOIN persona per ON per.id_persona = pa.id_persona
-    LEFT JOIN persona_tipo_documento tipdoc ON tipdoc.id_persona = pa.id_persona
-) RP ON RP.id_alumno = a.id_alumno AND RP.orden = 1
-INNER JOIN 
-    (SELECT id_alumno, SUM(tc.importe) AS SaldoCuota
-     FROM transaccion_cuenta_corriente tc
-     INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
-     GROUP BY id_alumno
-     --HAVING SUM(tc.importe) > 0
-    ) AS R1 ON R1.id_alumno = a.id_alumno
-INNER JOIN
-    (SELECT id_alumno, SUM(tc.importe) AS SaldoTotal 
-     FROM transaccion_cuenta_corriente tc
-     INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
-     GROUP BY id_alumno)
-     --HAVING SUM(tc.importe) > 0) 
-     AS r2 ON r2.id_alumno = a.id_alumno
-INNER JOIN
-     (SELECT id_alumno, MAX(id_grado) AS ultGrado
-      FROM alumno_datos_cursada
-      GROUP BY id_alumno) AS adc ON adc.id_alumno = r1.id_alumno
-INNER JOIN grado g ON g.id_grado = adc.ultGrado
-
-WHERE a.id_alumno = $1 
-  AND tcc.fecha_transaccion >= $2::timestamp -- <--- FILTRO AGREGADO
+    async getSaldosPorAlumno(id) {
+      const parametro = 'fecha_desde_listado_cuenta_corriente';
+      const fecha = await pool.query(`SELECT valor FROM parametros_sistema WHERE parametro = $1`, [parametro]);
+      
+      if (!fecha.rows || fecha.rows.length === 0) {
+        throw new Error('No se encontró el parámetro fecha_desde_listado_cuenta_corriente.');
+      }
     
-GROUP BY 
-    tcc.id_transaccion_cc, 
-    tcc.fecha_transaccion, 
-    g.nombre, 
-    p.apellidos, 
-    p.nombres, 
-    a.legajo, 
-    acc.id_alumno_cc, 
-    acc.cuota, 
-    acc.descripcion,
-    acc.fecha_generacion_cc,
-    SaldoTotal  
+      const getStartOfYear = (f) => `${f}-01-01 00:00:00`;
+      const fecha_inicio = getStartOfYear(fecha.rows[0].valor);
 
-ORDER BY 
-    Anio,
-    Cuota,
-	tcc.id_transaccion_cc,
-    tcc.fecha_transaccion ASC;
+      
+      const parametro2 = 'criterio_generacion_cuota';
+      const orden = await pool.query(`SELECT valor FROM parametros_sistema WHERE parametro = $1`, [parametro2]);
+  
+      if (!orden.rows | orden.rows.length === 0) {
+        throw new Error('No se encontró el parámetro criterio_generacion_cuota.');
+      }
+
+      const tipoOrden = orden.rows[0].valor;
 
 
-        `,
-       [id, fecha_incio],
-      );
-      return objetoBuscado.rows;
-    } catch (error) {
-      throw error;
-    }
-  }
+        // 1. Diccionario de ordenamientos seguros (Evita SQL Injection)
+  const opcionesOrden = {
+    // Opción A: Cuotas por mes nominal, Materiales/Inscripción por fecha real
+    ultima_generada: `
+      acc.id_alumno_cc ASC, 
+      tcc.fecha_transaccion ASC,
+      tcc.id_transaccion_cc ASC
+    `,
+    // Opción B: Por número de cuota estricto (01, 02, 03...)
+    cuota: `Anio ASC, Cuota ASC, tcc.fecha_transaccion ASC`,
+
+    // Opción C: Alfabético por descripción del concepto
+    alfabetico: `acc.descripcion ASC, tcc.fecha_transaccion ASC`,
+
+    // Opción D: Por fecha real de transacción pura
+    fecha_transaccion: `tcc.fecha_transaccion ASC, tcc.id_transaccion_cc ASC`
+  };
+
+  // 2. Selección de la cláusula (si envían un valor no válido, usa 'cronologico' por defecto)
+  const ordenSQL = opcionesOrden[tipoOrden] || opcionesOrden.ultima_generada;
+
+    
+      try {
+        const objetoBuscado = await pool.query(
+          `SELECT  
+            tcc.id_transaccion_cc, 
+            acc.id_alumno_cc, 
+            MAX(tcc.id_estado_cuota) AS id_estado_cuota, 
+            MAX(ec.nombre) AS estado_cuota,
+            MAX(tcc.fecha_pago) AS fecha_pago, 
+            MAX(tcc.fecha_respuesta_prisma) AS fecha_respuesta_prisma, 
+            tcc.fecha_transaccion, 
+            MAX(tcc.id_medio_pago) AS id_medio_pago, 
+            MAX(mp.nombre) AS medio_pago,
+            MAX(tcc.id_marca_tarjeta) AS id_marca_tarjeta, 
+            MAX(tcc.id_motivo_rechazo1) AS id_motivo_rechazo1, 
+            MAX(tcc.id_motivo_rechazo2) AS id_motivo_rechazo2, 
+            MAX(tcc.codigo_error_debito) AS codigo_error_debito, 
+            MAX(tcc.descripcion_error_debito) AS descripcion_error_debito, 
+            MAX(tcc.descripcion_error_debito) AS motivo_rechazo,
+            MAX(tcc.importe) AS importe,
+            MAX(tcc.CAE) AS cae,
+            g.nombre AS Grado,  
+            CONCAT(p.apellidos, ' ', p.nombres) AS NombreAlumno, 
+            a.legajo,
+            MAX(a.direccion_calle) || ' ' || MAX(a.direccion_numero) AS direccion_alumno,
+            MAX(tcc.numero_comprobante) AS numero_comprobante, 
+            MAX(tcc.numero_lote) AS numero_lote, 
+            MAX(tcc.numero_autorizacion) AS numero_autorizacion, 
+            MAX(tcc.punto_venta) AS punto_venta, 
+            MAX(tcc.comprobante_tipo) AS comprobante_tipo, 
+            MAX(tcc.comprobante_numero) AS comprobante_numero,
+            MAX(mt.nombre) AS nombre_tarjeta,
+            MAX(ee.entidadeducativa) AS entidad_educativa,
+            MAX(ee.direccion) AS direccion,
+            MAX(ee.numero) AS numero,
+            MAX(ee.logo) AS logo,
+            MAX(ee.cuit) AS cuit_institucion,
+            MAX(RP.persona_allegada) AS persona_allegada,
+            MAX(loc.nombre) AS localidad_nombre,
+            MAX(prov.nombre) AS provincia_nombre,
+            MAX(RP.cuit_tutor) AS cuil_tutor,         
+            MAX(RP.id_tipo_documento_tutor) AS id_tipo_documento_tutor,
+            MAX(param.ingresos_brutos) AS ingresos_brutos,
+            MAX(param.condicion_iva) AS condicion_iva,
+            MAX(param.inicio_actividades) AS inicio_actividades,
+    
+            -- Año asignado para la cuota/cargo
+            CASE 
+                WHEN UPPER(acc.descripcion) LIKE '%INSCRIP%' OR UPPER(acc.descripcion) LIKE '%MATERIAL%' 
+                    THEN TO_CHAR(acc.fecha_generacion_cc, 'YYYY')
+                WHEN acc.cuota IS NULL OR TRIM(acc.cuota) = '' 
+                    THEN SUBSTRING(acc.descripcion FROM 20 FOR 4)
+                ELSE RIGHT(acc.cuota, 4)
+            END AS Anio,
+    
+            -- Identificador visual de la cuota
+            CASE 
+                WHEN UPPER(acc.descripcion) LIKE '%INSCRIP%' 
+                    THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_INS'
+                WHEN UPPER(acc.descripcion) LIKE '%MATERIAL%' 
+                    THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_MAT'
+                WHEN acc.cuota IS NULL OR TRIM(acc.cuota) = '' 
+                    THEN TO_CHAR(acc.fecha_generacion_cc, 'MM') || '_VAR'
+                ELSE LEFT(acc.cuota, 2) 
+            END AS Cuota,
+    
+            acc.descripcion AS Anio_Cuota,
+            SUM(tcc.importe) AS SaldoCuota, 
+            r2.SaldoTotal  
+    
+          FROM transaccion_cuenta_corriente tcc
+          INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
+          INNER JOIN alumno a ON a.id_alumno = acc.id_alumno
+          LEFT JOIN marca_tarjeta mt ON tcc.id_marca_tarjeta = mt.id_marca_tarjeta
+          LEFT JOIN public.medio_pago mp ON tcc.id_medio_pago = mp.id_medio_pago
+          INNER JOIN public.estado_cuota ec ON tcc.id_estado_cuota = ec.id_estado_cuota
+          LEFT JOIN entidades_educativas ee ON ee.identidadeducativa = a.id_establecimiento
+          LEFT JOIN localidad loc ON ee.localidad = loc.id_localidad
+          LEFT JOIN provincia prov ON ee.provincia = prov.id_provincia
+    
+          -- Parámetros del sistema
+          INNER JOIN (
+              SELECT 
+                  id_establecimiento,
+                  MAX(CASE WHEN id_parametro = 18 THEN valor END) AS ingresos_brutos,
+                  MAX(CASE WHEN id_parametro = 22 THEN valor END) AS condicion_iva,
+                  MAX(CASE WHEN id_parametro = 19 THEN valor END) AS inicio_actividades
+              FROM parametros_sistema 
+              WHERE id_parametro IN (18, 22, 19)
+              GROUP BY id_establecimiento
+          ) AS param ON param.id_establecimiento = a.id_establecimiento
+    
+          INNER JOIN persona p ON p.id_persona = a.id_persona
+    
+          -- Tutor o allegado principal
+          INNER JOIN (
+              SELECT 
+                  pa.id_alumno,
+                  per.apellidos || ', ' || per.nombres AS persona_allegada,
+                  tipdoc.numero AS cuit_tutor,
+                  tipdoc.id_tipo_documento AS id_tipo_documento_tutor,
+                  ROW_NUMBER() OVER (
+                      PARTITION BY pa.id_alumno 
+                      ORDER BY 
+                          CASE 
+                              WHEN tipdoc.id_tipo_documento = 7 THEN 1 
+                              WHEN tipdoc.id_tipo_documento = 8 THEN 2 
+                              ELSE 3 
+                          END
+                  ) AS orden
+              FROM persona_allegado pa
+              INNER JOIN persona per ON per.id_persona = pa.id_persona
+              LEFT JOIN persona_tipo_documento tipdoc ON tipdoc.id_persona = pa.id_persona
+          ) RP ON RP.id_alumno = a.id_alumno AND RP.orden = 1
+    
+          -- Saldo total acumulado
+          INNER JOIN (
+              SELECT id_alumno, SUM(tc.importe) AS SaldoTotal 
+              FROM transaccion_cuenta_corriente tc
+              INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tc.id_alumno_cc    
+              GROUP BY id_alumno
+          ) AS r2 ON r2.id_alumno = a.id_alumno
+    
+          -- Último grado cursado
+          INNER JOIN (
+              SELECT id_alumno, MAX(id_grado) AS ultGrado
+              FROM alumno_datos_cursada
+              GROUP BY id_alumno
+          ) AS adc ON adc.id_alumno = a.id_alumno
+          INNER JOIN grado g ON g.id_grado = adc.ultGrado
+    
+          WHERE a.id_alumno = $1 
+            AND tcc.fecha_transaccion >= $2::timestamp 
+              
+          GROUP BY 
+              tcc.id_transaccion_cc, 
+              tcc.fecha_transaccion, 
+              g.nombre, 
+              p.apellidos, 
+              p.nombres, 
+              a.legajo, 
+              acc.id_alumno_cc, 
+              acc.cuota, 
+              acc.descripcion,
+              acc.fecha_generacion_cc,
+              r2.SaldoTotal  
+    
+ORDER BY ${ordenSQL};
+    `,
+    
+          [id, fecha_inicio]
+        );
+    
+        return objetoBuscado.rows;
+      } catch (error) {
+        throw error;
+      }
+}
+
 
   async getAlumnosPorId(id, id_establecimiento) {
     try {
@@ -1983,7 +2017,7 @@ async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
 
 
 async ActualizarImporte(objeto) {
-  console.log("Procesando actualización:", objeto);
+ // console.log("Procesando actualización:", objeto);
 
   // 1. Usar siempre 'client' para mantener la transacción
   const client = await pool.connect();
@@ -2142,6 +2176,389 @@ async ActualizarImporte(objeto) {
       return objetoBuscado.rows;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async TipoUsuarios() {
+    try {
+      const objetoBuscado = await pool.query(`select * from tipos_usuarios`);
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
+
+async Usuarios(busqueda, identidadeducativa) {
+  try { // 1. Abrir el bloque try
+    const query = `
+      WITH personas_documentos AS (
+          SELECT 
+              u.id_usuario AS id,
+              per.apellidos,
+              per.nombres,
+              per.id_localidad_nacimiento AS id_localidad_nacimiento,
+              ln.nombre AS localidad_nacimiento,
+              per.id_localidad_residencia AS id_localidad_residencia,
+              lr.nombre AS localidad_residencia,
+              per.id_nacionalidad AS id_nacionalidad,
+              n.nombre AS nacionalidad,
+              u.usuario,
+              u.email,
+              doc.nombre_corto AS "tipoDocumento",
+              ptd.numero AS "numeroDocumento",
+              u.idtipousuario AS "idTipoUsuario",
+              tu.tipousuario AS "tipousuario",
+              u.activo,
+              u.imagen,
+              s.id_sexo,
+              s.nombre AS "sexo",
+              per.fecha_nacimiento AS fecha_nacimiento,
+              per.telefono AS telefono,
+              ROW_NUMBER() OVER (
+                  PARTITION BY per.id_persona 
+                  ORDER BY 
+                      CASE UPPER(doc.nombre_corto)
+                          WHEN 'DNI'  THEN 1
+                          WHEN 'CUIL' THEN 2
+                          WHEN 'CUIT' THEN 3
+                          ELSE 4
+                      END
+              ) AS rn
+          FROM persona per
+          INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
+          INNER JOIN tipo_documento doc        ON ptd.id_tipo_documento = doc.id_tipo_documento
+          INNER JOIN usuarios u                ON per.id_persona = u.id_persona
+		      INNER JOIN tipos_usuarios tu         ON u.idtipousuario = tu.idtipousuario
+          INNER JOIN persona_sexo ps           ON per.id_persona = ps.id_persona
+          INNER JOIN sexo s                    ON ps.id_sexo = s.id_sexo
+          LEFT JOIN  localidad ln               ON per.id_localidad_nacimiento = ln.id_localidad
+          LEFT JOIN  localidad lr               ON per.id_localidad_residencia = lr.id_localidad
+          LEFT JOIN  nacionalidad n             ON per.id_nacionalidad = n.id_nacionalidad
+          WHERE u.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
+      )
+      SELECT id, apellidos, nombres, id_localidad_nacimiento, localidad_nacimiento, id_localidad_residencia, localidad_residencia, id_nacionalidad, nacionalidad, usuario, email, "tipoDocumento", "numeroDocumento", "idTipoUsuario", "tipousuario", activo, imagen, id_sexo, sexo, fecha_nacimiento, telefono
+      FROM personas_documentos
+      WHERE rn = 1
+        AND (
+            $1::text IS NULL 
+            OR $1::text = '' 
+            OR apellidos ILIKE '%' || $1 || '%'
+            OR nombres ILIKE '%' || $1 || '%'
+            OR usuario ILIKE '%' || $1 || '%'
+            OR "numeroDocumento" ILIKE '%' || $1 || '%'
+        ) -- <-- 3. $1 para la búsqueda
+      ORDER BY apellidos, nombres;
+    `;
+
+    // 4. Un solo arreglo con ambos parámetros: [$1, $2]
+    const resultado = await pool.query(query, [busqueda || '', identidadeducativa]);
+    
+    // 5. Retornar sólo los datos (rows)
+    return resultado.rows; 
+  } catch (error) {
+    throw error; // Re-lanzar el error para que lo atrape el controllerUsuarios
+  }
+}
+
+
+async TutoresSinUsuario(busqueda, identidadeducativa) {
+  try { // 1. Abrir el bloque try
+    const query = `
+      WITH personas_documentos AS (
+          SELECT 
+              per.id_persona,
+              per.apellidos,
+              per.nombres,
+              doc.nombre_corto AS "tipoDocumento",
+              ptd.numero AS "numeroDocumento",
+              ROW_NUMBER() OVER (
+                  PARTITION BY per.id_persona 
+                  ORDER BY 
+                      CASE UPPER(doc.nombre_corto)
+                          WHEN 'DNI'  THEN 1
+                          WHEN 'CUIL' THEN 2
+                          WHEN 'CUIT' THEN 3
+                          ELSE 4
+                      END
+              ) AS rn
+          FROM persona per
+          INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
+          INNER JOIN tipo_documento doc        ON ptd.id_tipo_documento = doc.id_tipo_documento
+          INNER JOIN persona_allegado pa                ON per.id_persona = pa.id_persona
+          INNER JOIN alumno a                   ON a.id_alumno = pa.id_alumno
+          WHERE a.id_establecimiento = $2 -- <-- 2. $2 para la entidad educativa
+          AND pa.id_persona NOT IN (SELECT id_persona FROM usuarios u WHERE u.identidadeducativa = $2)
+      )
+      SELECT id_persona, apellidos, nombres, "tipoDocumento", "numeroDocumento"
+      FROM personas_documentos
+      WHERE rn = 1
+        AND (
+            $1::text IS NULL 
+            OR $1::text = '' 
+            OR apellidos ILIKE '%' || $1 || '%'
+            OR nombres ILIKE '%' || $1 || '%'
+            OR "numeroDocumento" ILIKE '%' || $1 || '%'
+        ) -- <-- 3. $1 para la búsqueda
+      ORDER BY apellidos, nombres;
+    `;
+
+    // 4. Un solo arreglo con ambos parámetros: [$1, $2]
+    const resultado = await pool.query(query, [busqueda || '', identidadeducativa]);
+    
+    // 5. Retornar sólo los datos (rows)
+    return resultado.rows; 
+  } catch (error) {
+    throw error; // Re-lanzar el error para que lo atrape el controllerUsuarios
+  }
+}
+
+
+async CrearUsuario(objeto) {
+  console.log("Objeto recibido para alta:", objeto);
+
+  // 1. Solicitar un cliente dedicado del pool para manejar la transacción
+  const client = await pool.connect();
+
+  try {
+    // Iniciar la transacción en esta conexión
+    await client.query("BEGIN");
+
+    // -----------------------------------------------------------------
+    // PASO 1: Comprobar si el NOMBRE DE USUARIO ya existe
+    // -----------------------------------------------------------------
+    const queryCheckUsuario = `SELECT id_usuario FROM usuarios WHERE usuario = $1;`;
+    const resUsuarioExistente = await client.query(queryCheckUsuario, [objeto.usuario]);
+
+    if (resUsuarioExistente.rows.length > 0) {
+      const error = new Error("El nombre de usuario ya existe. Por favor ingrese uno diferente.");
+      error.code = 'USUARIO_DUPLICADO';
+      throw error; // Salta directamente al catch y ejecuta ROLLBACK
+    }
+
+    // -----------------------------------------------------------------
+    // PASO 2: Comprobar si la Persona y su Documento ya existen
+    // -----------------------------------------------------------------
+    const idTipoDoc = objeto.idTipoDocumento ? parseInt(objeto.idTipoDocumento) : null;
+    const numDoc = objeto.numeroDocumento || null;
+
+    let idPersona = null;
+    let personaExistia = false;
+
+    if (idTipoDoc && numDoc) {
+      const queryCheckDoc = `
+        SELECT id_persona 
+        FROM persona_tipo_documento 
+        WHERE id_tipo_documento = $1 AND numero = $2;
+      `;
+      const resDocExistente = await client.query(queryCheckDoc, [idTipoDoc, numDoc]);
+
+      if (resDocExistente.rows.length > 0) {
+        // 🟢 La persona y su documento YA existen: reutilizamos id_persona
+        idPersona = resDocExistente.rows[0].id_persona;
+        personaExistia = true;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // PASO 3: Si la persona NO existía, la creamos con su documento
+    // -----------------------------------------------------------------
+    if (!idPersona) {
+      // a) Datos para la tabla personas
+      const persona = {
+        apellidos: objeto.apellido || null,
+        nombres: objeto.nombre || null,
+        id_sexo: objeto.id_sexo ? parseInt(objeto.id_sexo) : null,
+        correo_electronico: objeto.email || null,
+        recibe_notif_x_correo: 'S',
+        fecha_nacimiento: objeto.fechaNacimiento || objeto.fecha_nacimiento,
+        telefono: objeto.telefono,
+        id_localidad_nacimiento: objeto.id_localidad_nacimiento,
+        id_localidad_residencia: objeto.id_localidad_residencia,
+        id_nacionalidad: objeto.id_nacionalidad,
+        activo: 'S',
+        es_alumno: null,
+        usuario: objeto.usuario,
+        fecha_alta: new Date(),
+        usuario_sistema: objeto.usuario_sistema,
+        fecha_ultima_modificacion: new Date()
+      };
+
+      // Crear persona reutilizando el cliente en la transacción
+      const resPersona = await this.createPerson(persona, client);
+      idPersona = resPersona.id_persona;
+
+      // b) Registrar Documento de la nueva persona
+      const documento = {
+        id_persona: idPersona,
+        id_tipo_documento: idTipoDoc,
+        numero: numDoc,
+        activo: 'S',
+        fecha_alta: new Date(),
+        usuario_sistema: objeto.usuario_sistema || null
+      };
+
+      await this.registrarDocumentoPersona(documento, client);
+    }
+
+    // -----------------------------------------------------------------
+    // PASO 4: Crear Registro en la Tabla Usuarios
+    // -----------------------------------------------------------------
+    const queryUsuario = `
+      INSERT INTO usuarios (
+        usuario,
+        password_hash,
+        nombre,
+        email,
+        activo,
+        fecha_creacion,
+        ultimo_login,
+        idtipousuario,
+        identidadeducativa,
+        id_persona,
+        imagen
+      ) VALUES (
+        $1,
+        crypt($2, gen_salt('bf')),
+        $3,
+        $4,
+        $5,
+        clock_timestamp()::timestamp,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10
+      ) 
+      RETURNING id_usuario;
+    `;
+
+    const nombreMostrar = objeto.nombreAMostrar || `${objeto.apellido || ''}, ${objeto.nombre || ''}`.trim();
+
+    const valoresUsuario = [
+      objeto.usuario || null,                                                // $1
+      objeto.password || null,                                               // $2
+      nombreMostrar,                                                         // $3
+      objeto.email || null,                                                  // $4
+      objeto.activo !== undefined ? objeto.activo : true,                    // $5
+      null,                                                                  // $6 (ultimo_login)
+      objeto.idTipoUsuario ? parseInt(objeto.idTipoUsuario) : null,          // $7
+      objeto.identidadeducativa ? parseInt(objeto.identidadeducativa) : null, // $8
+      idPersona,                                                             // $9
+      objeto.imagenUrl || objeto.imagen || null                              // $10
+    ];
+
+    const resUsuario = await client.query(queryUsuario, valoresUsuario);
+
+    // Confirmar la transacción
+    await client.query("COMMIT");
+
+    // Retornamos el id_usuario junto con el flag de si la persona ya existía
+    return {
+      id_usuario: resUsuario.rows[0].id_usuario,
+      personaExistia: personaExistia
+    };
+
+  } catch (error) {
+    // Si algo falla, se revierten todos los inserts intermedios
+    await client.query("ROLLBACK");
+    console.error("❌ Error en transacción CrearUsuario:", error);
+    throw error;
+  } finally {
+    // Liberar la conexión al pool
+    client.release();
+  }
+}
+
+
+
+async CrearUsuarioEnMasa(objeto) {
+  const query = `
+    WITH personas_documentos AS (
+        SELECT 
+            per.id_persona,
+            ptd.numero AS usuario,
+            per.apellidos || ', ' || per.nombres AS nombre,
+            per.correo_electronico AS email,
+            ROW_NUMBER() OVER (
+                PARTITION BY per.id_persona 
+                ORDER BY 
+                    CASE UPPER(doc.nombre_corto)
+                        WHEN 'DNI'  THEN 1
+                        WHEN 'CUIL' THEN 2
+                        WHEN 'CUIT' THEN 3
+                        ELSE 4
+                    END
+            ) AS rn
+        FROM persona per
+        INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
+        INNER JOIN tipo_documento doc ON ptd.id_tipo_documento = doc.id_tipo_documento
+        WHERE per.id_persona = ANY($1::int[])
+    )
+    INSERT INTO usuarios (
+        usuario,
+        password_hash,
+        nombre,
+        email,
+        activo,
+        fecha_creacion,
+        ultimo_login,
+        idtipousuario,
+        identidadeducativa,
+        id_persona,
+        imagen
+    )
+    SELECT 
+        pd.usuario,
+        crypt(pd.usuario, gen_salt('bf')) AS password_hash,
+        pd.nombre,
+        pd.email,
+        true AS activo,
+        clock_timestamp()::timestamp AS fecha_creacion,
+        NULL AS ultimo_login,
+        3 AS idtipousuario,
+        $2 AS identidadeducativa,
+        pd.id_persona,
+        null
+    FROM personas_documentos pd
+    WHERE pd.rn = 1
+    RETURNING id_usuario, usuario, id_persona;
+  `;
+
+  try {
+    // Normaliza el array de IDs (soporta [45, 46] o [{id_persona: 45}, ...])
+    const idsArray = objeto.tutoresIds
+      .map((item) => parseInt(typeof item === 'object' ? (item.id_persona ?? item.id) : item))
+      .filter(Boolean);
+
+    if (idsArray.length === 0) {
+      throw new Error("No se enviaron IDs de personas válidos para procesar.");
+    }
+
+    // Ejecución masiva en una sola consulta
+    const resultado = await pool.query(query, [
+      idsArray, 
+      objeto.identidadeducativa
+    ]);
+
+    console.log(`✅ Usuarios creados exitosamente: ${resultado.rowCount}`);
+
+    return resultado.rows;
+
+  } catch (error) {
+    console.error("❌ Error al crear usuarios en masa en PostgreSQL:", error);
+    throw error;
+  }
+}
+
+
+  async sexo() {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from sexo`
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
     }
   }
 
