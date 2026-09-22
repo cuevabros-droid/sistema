@@ -23,6 +23,7 @@ import { multer_function } from '../negocio/utils/multer.js'
 import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import cors from 'cors'
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const servidor = express()
 
@@ -81,7 +82,9 @@ servidor.use('/api/', routerApiAfip)
 servidor.use('/api/parametros', routerApiParametros)
 servidor.use('/api/usuarios', routerApiUsuarios)
 //servidor.use('/public', express.static('public'));
-servidor.use('/img/usuarios', express.static(path.join(process.cwd(), 'public/img/usuarios')));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+servidor.use('/img/usuarios', express.static(path.join(__dirname, '../../public/img/usuarios')));
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
 
 
