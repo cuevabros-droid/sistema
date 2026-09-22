@@ -414,6 +414,19 @@ async function controllerFacturaPDF({ user, body }, res) {
 }
 
 
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF, controllerFacturaPDF}
+async function controllerSexo(req, res) {
+
+  try {
+    const pers = await persontService.sexo()
+    console.log(pers)
+    res.status(200).json(pers)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+
+}
+
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF, controllerFacturaPDF, controllerSexo}
 
 

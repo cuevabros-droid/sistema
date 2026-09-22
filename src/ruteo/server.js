@@ -16,6 +16,7 @@ import routerApiPagos from './routers/routerApiPagos.js';
 import routerApiEscuela from './routers/routerApiEscuela.js';
 import routerApiAfip from './routers/RouterApiAfip.js';
 import routerApiParametros from './routers/RouterApiParametros.js';
+import routerApiUsuarios from './routers/routerApiUsuarios.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
@@ -23,6 +24,7 @@ import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import cors from 'cors'
 
 const servidor = express()
+
 
 //Cors
 /*servidor.use(cors({
@@ -76,7 +78,8 @@ servidor.use('/api/pagos', routerApiPagos)
 servidor.use('/api/escuela', routerApiEscuela)
 servidor.use('/api/', routerApiAfip)
 servidor.use('/api/parametros', routerApiParametros)
-servidor.use(express.static('public/img'))
+servidor.use('/api/usuarios', routerApiUsuarios)
+servidor.use('/public', express.static('public'));
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
 
 

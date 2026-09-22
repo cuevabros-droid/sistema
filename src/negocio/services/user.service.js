@@ -51,7 +51,8 @@ class UserService {
             throw new Error("Usuario no encontrado")
 
     }
-    
+
+   
 }
 
 export const userService = new UserService()
