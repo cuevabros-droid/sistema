@@ -53,3 +53,22 @@ const pg = new ContainerPg
         }       
     }
   
+
+    export async function UsuariosActualizar(objeto) {
+        try {
+          const resul = await pg.ActualizarUsuario(objeto)
+          return resul
+        } catch (error) {
+          throw error; // 👈 OBLIGATORIO: Volver a lanzar el error para que llegue al controlador
+        }       
+    }
+
+
+    export async function UsuariosEliminar(id) {
+        try {
+          const resul = await pg.EliminarUsuario(id)
+          return resul
+        } catch (error) {
+          throw error; // 👈 OBLIGATORIO: Volver a lanzar el error para que llegue al controlador
+        }       
+    }

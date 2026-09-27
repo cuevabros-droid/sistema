@@ -1758,6 +1758,29 @@ const obtenerParametroDeudaQuery = `
     LIMIT 1;
   `;
 
+  /*  OPCIÓN CON EL ÚLTIMO AÑO ACADÉMICO ACTIVO, QUE EL ALUMNO TENGA REGISTRADO ESE AÑO
+  SELECT id_anio, anio
+    FROM anio
+    WHERE estado = 'A'
+      AND anio = (
+          SELECT MAX(anio) 
+          FROM anio 
+          WHERE estado = 'A'
+      )
+      AND id_anio NOT IN (
+          SELECT anio_cursada 
+          FROM alumno_datos_cursada 
+          WHERE id_alumno = $1
+      );*/
+
+
+  //OPCIÓN QUE COINCIDA CON EL AÑO ELEGIDO DE LA CUOTA, QUE EL ALUMNO TENGA REGISTRADO ESE AÑO
+  const obtenerAnioCursado = `
+      SELECT anio_cursada 
+      FROM alumno_datos_cursada 
+      WHERE id_alumno = $1 and anio_cursada in (select id_anio from anio where id_anio = $2)
+  `;
+
   const query1 = `
     INSERT INTO alumno_cuenta_corriente (
         id_alumno, usuario_alta, fecha_generacion_cc, cuota, 
@@ -1800,7 +1823,7 @@ const obtenerParametroDeudaQuery = `
   ['S', 'SI', 'TRUE', '1'].includes(String(resParam.rows[0].valor).toUpperCase());
 
     for (const item of listaItems) {
-
+    //console.log(item)
       // Validar que el cargo de Materiales (id_cargo = 3) solo se aplique a Nivel Inicial (id_nivel = 1)
       if (Number(item.id_cargo_cuenta_corriente) === 3 && Number(item.id_nivel) !== 1) {
         //console.log(`[RECHAZADO - PASO 1] Alumno ${item.id_alumno} no es Nivel Inicial (Nivel actual: ${item.id_nivel})`);
@@ -1833,6 +1856,25 @@ const obtenerParametroDeudaQuery = `
             detallesNoGenerados.push({
                 ...datosAlumno.rows[0],
                 motivo: 'Ya tiene el cargo o cuota generada'
+            });
+        }
+        continue;
+    }
+
+
+          // 1. Validar si ya existe la cuota/cargo para el alumno
+    const existeAnio = await client.query(obtenerAnioCursado, [item.id_alumno, item.id_anio]);
+
+        
+    if (existeAnio.rowCount === 0) {
+        noGenerados++;
+
+        // Obtener datos personales del alumno omitido
+        const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+        if (datosAlumno.rowCount > 0) {
+            detallesNoGenerados.push({
+                ...datosAlumno.rows[0],   
+                motivo: `Al alumno le falta generar en Gestión Académica datos del cursado correspondiente al año académico ${item.anio}`
             });
         }
         continue;
@@ -2138,7 +2180,6 @@ async ActualizarImporte(objeto) {
 
   async getEstadoDeuda(id) {
 
-
     try {
 
       const objetoBuscado = await pool.query(
@@ -2193,7 +2234,8 @@ async Usuarios(busqueda, identidadeducativa) {
     const query = `
       WITH personas_documentos AS (
           SELECT 
-              u.id_usuario AS id,
+              u.id_usuario AS id_usuario,
+              per.id_persona AS id_persona,
               per.apellidos,
               per.nombres,
               per.id_localidad_nacimiento AS id_localidad_nacimiento,
@@ -2236,7 +2278,7 @@ async Usuarios(busqueda, identidadeducativa) {
           LEFT JOIN  nacionalidad n             ON per.id_nacionalidad = n.id_nacionalidad
           WHERE u.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
       )
-      SELECT id, apellidos, nombres, id_localidad_nacimiento, localidad_nacimiento, id_localidad_residencia, localidad_residencia, id_nacionalidad, nacionalidad, usuario, email, "tipoDocumento", "numeroDocumento", "idTipoUsuario", "tipousuario", activo, imagen, id_sexo, sexo, fecha_nacimiento, telefono
+      SELECT id_usuario, id_persona, apellidos, nombres, id_localidad_nacimiento, localidad_nacimiento, id_localidad_residencia, localidad_residencia, id_nacionalidad, nacionalidad, usuario, email, "tipoDocumento", "numeroDocumento", "idTipoUsuario", "tipousuario", activo, imagen, id_sexo, sexo, fecha_nacimiento, telefono
       FROM personas_documentos
       WHERE rn = 1
         AND (
@@ -2359,6 +2401,27 @@ async CrearUsuario(objeto) {
       }
     }
 
+
+    let usuarioExistia = false;
+
+// NOS FIJAMOS SI LA PERSONA YA NO TIENE UN USUARIO
+if (personaExistia) {
+
+  const queryCheckUsr = `
+
+        SELECT id_persona 
+        FROM usuarios 
+        WHERE id_persona = $1;
+      `;
+      const resUsrExistente = await client.query(queryCheckUsr, [idPersona]);
+
+      if (resUsrExistente.rows.length > 0) {
+      const error = new Error("La persona ya tiene usuario.");
+      error.code = 'PERSONA_CON_USUARIO';
+      throw error; // Salta directamente al catch y ejecuta ROLLBACK
+    }
+
+}
     // -----------------------------------------------------------------
     // PASO 3: Si la persona NO existía, la creamos con su documento
     // -----------------------------------------------------------------
@@ -2562,6 +2625,144 @@ async CrearUsuarioEnMasa(objeto) {
     }
   }
 
+
+  async ActualizarUsuario(objeto) {
+console.log(objeto)
+  const {
+    id_persona,
+    id_usuario,
+    usuario,
+    nombreAMostrar,
+    email,
+    activo,
+    idTipoUsuario,
+    imagenUrl,
+    password,
+    identidadeducativa,
+    apellido,
+    nombre,
+    id_sexo,
+    fechaNacimiento,
+    telefono,
+    id_localidad_nacimiento,
+    id_localidad_residencia,
+    id_nacionalidad,
+    numeroDocumento,
+    idTipoDocumento,
+    usuario_sistema
+  } = objeto;
+
+
+ const persona = {
+    apellidos: apellido,
+    nombres: nombre,
+    id_sexo,
+    fecha_nacimiento: fechaNacimiento,
+    correo_electronico: email,
+    recibe_notif_x_correo: 'S',
+    telefono,
+    usuario,
+    id_localidad_nacimiento,
+    id_localidad_residencia,
+    id_nacionalidad,
+    usuario_alta: usuario_sistema
+ }
+
+ const persona_documento = {
+    id_tipo_documento: idTipoDocumento,
+    numero: numeroDocumento,
+    activo: 'A',
+    usuario_alta: usuario_sistema
+ }
+
+
+  try {
+    // 1. UPDATE en la tabla 'usuarios'
+    if (password && password.trim() !== '') {
+      // Si el payload incluye nueva contraseña (recuerda aplicar bcrypt o hashing aquí)
+      await pool.query(
+        `UPDATE usuarios 
+         SET 
+           usuario = $1,
+           nombre = $2,
+           email = $3,
+           activo = $4,
+           idtipousuario = $5,
+           id_persona = $6,
+           imagen = $7,
+           password_hash = crypt($8, gen_salt('bf')),
+           identidadeducativa = $9
+         WHERE id_usuario = $10`,
+        [
+          usuario,
+          nombreAMostrar,
+          email,
+          activo,
+          idTipoUsuario ? Number(idTipoUsuario) : null,
+          id_persona ? Number(id_persona) : null,
+          imagenUrl,
+          password,  // Usar contraseña hasheada aquí
+          identidadeducativa,
+          id_usuario
+        ]
+      );
+    } else {
+      // Si NO se modifica la contraseña
+      await pool.query(
+        `UPDATE usuarios 
+         SET 
+           usuario = $1,
+           nombre = $2,
+           email = $3,
+           activo = $4,
+           idtipousuario = $5,
+           id_persona = $6,
+           imagen = $7,
+           identidadeducativa = $8
+         WHERE id_usuario = $9`,
+        [
+          usuario,
+          nombreAMostrar,
+          email,
+          activo,
+          idTipoUsuario ? Number(idTipoUsuario) : null,
+          id_persona ? Number(id_persona) : null,
+          imagenUrl,
+          identidadeducativa,
+          id_usuario
+        ]
+      );
+    }
+
+    // 2. UPDATE opcional en la tabla 'personas' (si id_persona viene informado)
+    if (id_persona) {
+      const id = await pool.query('select id_persona_tipo_documento from persona_tipo_documento where id_persona = $1', [id_persona])
+console.log(id.rows[0].id_persona_tipo_documento)
+      persona_documento.id_persona_tipo_documento = id.rows[0].id_persona_tipo_documento;
+console.log(persona_documento)
+    await this.updatePersons(persona, id_persona)
+    await this.actualizarDocumentoPersona(persona_documento)
+    }
+
+    return 'Usuario y persona actualizados correctamente';
+  } catch (error) {
+    console.error('Error al actualizar usuario:', error);
+    throw error.message;
+  }
+
+  }
+
+
+  async EliminarUsuario(id) {
+    try {
+      const objetoBuscado = await pool.query(
+        `select * from sexo`
+      );
+      return objetoBuscado.rows;
+    } catch (error) {
+      return error;
+    }
+  }
 
 
 }
