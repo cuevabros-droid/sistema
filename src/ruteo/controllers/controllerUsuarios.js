@@ -72,6 +72,13 @@ async function controladorUsuariosCrear(req, res) {
       });
     }
 
+        // Si es un error conocido (como 'USUARIO_DUPLICADO' o error manual)
+    if (error.code === 'PERSONA_CON_USUARIO' || error.message.includes("La persona ya tiene usuario generado.")) {
+      return res.status(400).json({ 
+        error: error.message 
+      });
+    }
+
     // Para cualquier otro tipo de error de servidor
     return res.status(500).json({ 
       error: "No se pudo registrar el usuario en el servidor.",
@@ -96,7 +103,37 @@ async function controladorUsuariosCrear(req, res) {
  }
 
 
+    async function controladorUsuariosActualizar(req, res){
 
-export {controladorTipoUsuarios, controladorUsuarios, controladorTutoresSinUsuario, controladorUsuariosCrear, controladorUsuariosCrearEnMasa}
+    req.body.identidadeducativa = req.user.identidadeducativa
+    req.body.usuario_sistema = req.user.usuario
+
+  try {
+    const usuarios = await usuarioService.UsuariosActualizar(req.body)
+    res.status(200).json(usuarios)
+  } catch (error) {
+    loggerError(error)
+    res.status(404).json(error)
+  }
+
+ }
+
+    async function controladorUsuariosEliminar(req, res){
+
+    req.body.identidadeducativa = req.user.identidadeducativa
+  
+  try {
+    const usuarios = await usuarioService.UsuariosEliminar(id)
+    res.status(200).json(usuarios)
+  } catch (error) {
+    loggerError(error)
+    res.status(404).json(error)
+  }
+
+ }
+
+
+
+export {controladorTipoUsuarios, controladorUsuarios, controladorTutoresSinUsuario, controladorUsuariosCrear, controladorUsuariosCrearEnMasa, controladorUsuariosActualizar, controladorUsuariosEliminar}
 
 

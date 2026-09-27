@@ -11,6 +11,8 @@ import { Usuarios } from '../repository/usuarios/usuarios.js';
 import { TutoresSinUsuario } from '../repository/usuarios/usuarios.js';
 import { UsuariosCrear } from '../repository/usuarios/usuarios.js';
 import { UsuariosCrearEnMasa } from '../repository/usuarios/usuarios.js';
+import { UsuariosActualizar } from '../repository/usuarios/usuarios.js';
+import { UsuariosEliminar } from '../repository/usuarios/usuarios.js';
 
 
 class UsuarioService {
@@ -51,6 +53,19 @@ class UsuarioService {
             const lista = await UsuariosCrearEnMasa(objeto)
             return lista
     }
+
+    //Actualiza Usuarios
+    async UsuariosActualizar(objeto) {
+            const lista = await UsuariosActualizar(objeto)
+            return lista
+    }
+
+    //Actualiza Usuarios
+    async UsuariosEliminar(id) {
+            const lista = await UsuariosEliminar(id)
+            return lista
+    }
+
 
 }
 
