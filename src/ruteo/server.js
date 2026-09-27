@@ -20,6 +20,7 @@ import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
 import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
+import routerApiMarcadores from './routers/routerApiMarcadores.js';
 import cors from 'cors'
 
 const servidor = express()
@@ -78,6 +79,7 @@ servidor.use('/api/', routerApiAfip)
 servidor.use('/api/parametros', routerApiParametros)
 servidor.use(express.static('public/img'))
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
+servidor.use('/api/marcadores', routerApiMarcadores)
 
 
 //multer

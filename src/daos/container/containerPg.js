@@ -273,7 +273,7 @@ class ContainerPg {
     }
   }
 
-    async getMarcadores() {
+  async getMarcadores() {
     try {
       const objetoBuscado = await pool.query(`select * from marcadoresmapa`);
       return objetoBuscado.rows;
@@ -281,7 +281,6 @@ class ContainerPg {
       return error;
     }
   }
-
 
   async actualizarDocumentoPersona(objeto) {
     try {
@@ -537,6 +536,7 @@ class ContainerPg {
   }
 
   async getAlumnosPorUsuario(usuario) {
+    console.log('usuario: ' + usuario)
     try {
       const objetoBuscado = await pool.query(
         `SELECT  P.id_persona, 
@@ -545,7 +545,8 @@ class ContainerPg {
             CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno,
             g.nombre AS Grado,
             CantCuotasAdeudadas, SaldoAdeudado
-        FROM Persona P
+        FROM Usuarios U
+		    INNER JOIN Persona P ON P.id_persona = U.id_persona
         INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
         INNER JOIN alumno A ON  A.id_alumno = pa.id_alumno
                             AND A.Regular = 'S'	
@@ -559,8 +560,8 @@ class ContainerPg {
         INNER JOIN
         (SELECT
                     t.id_alumno,
-                    COUNT(*) AS CantCuotasAdeudadas,
-                    SUM(t.SaldoAdeudado) AS SaldoAdeudado
+                COALESCE(COUNT(*), 0) AS CantCuotasAdeudadas,
+                COALESCE(SUM(t.SaldoAdeudado), 0) AS SaldoAdeudado
                 FROM
                 (
                     SELECT
@@ -573,12 +574,12 @@ class ContainerPg {
                     GROUP BY
                         acc.id_alumno,
                         acc.id_alumno_cc
-                    HAVING SUM(tc.importe) > 0
+                   -- HAVING SUM(tc.importe) > 0
                 ) t
                 GROUP BY t.id_alumno) AS R1 ON R1.id_alumno = a.id_alumno
         WHERE  pa.activo = 'S'
         AND P.activo = 'S' AND P.es_alumno = 'N'
-        AND p.usuario = $1
+        AND u.usuario = $1
         `,
         [usuario],
       );
@@ -589,15 +590,15 @@ class ContainerPg {
   }
 
   async getSaldosPorAlumno(id) {
-
-    const parametro = 'fecha_desde_listado_cuenta_corriente';
-    const fecha = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
+    const parametro = "fecha_desde_listado_cuenta_corriente";
+    const fecha = await pool.query(
+      `select valor from parametros_sistema where parametro = $1`,
+      [parametro],
+    );
     const getStartOfYear = (fecha) => `${fecha}-01-01 00:00:00`;
     const fecha_incio = getStartOfYear(fecha.rows[0].valor);
 
-
     try {
-
       const objetoBuscado = await pool.query(
         `SELECT  
     tcc.id_transaccion_cc, 
@@ -751,7 +752,7 @@ ORDER BY
 
 
         `,
-       [id, fecha_incio],
+        [id, fecha_incio],
       );
       return objetoBuscado.rows;
     } catch (error) {
@@ -1277,7 +1278,7 @@ ORDER BY
     }
   }
 
-    async getCargos() {
+  async getCargos() {
     try {
       const objetoBuscado = await pool.query(
         `select id_cargo_cuenta_corriente, nombre from cargo_cuenta_corriente order by nombre`,
@@ -1388,40 +1389,35 @@ WHERE a.id_alumno = $1
     }
   }
 
-async generarArchivoDebito() {
-  const client = await pool.connect();
+  async generarArchivoDebito() {
+    const client = await pool.connect();
 
-  try {
-    await client.query("BEGIN");
+    try {
+      await client.query("BEGIN");
 
-    const resultado = await client.query(
-      `SELECT * FROM spcreacionarchivodebitobuffers()`
-    );
+      const resultado = await client.query(
+        `SELECT * FROM spcreacionarchivodebitobuffers()`,
+      );
 
-    await client.query("COMMIT");
+      await client.query("COMMIT");
 
-    const archivos = resultado.rows[0];
+      const archivos = resultado.rows[0];
 
-    return {
-      archivo_visa_debito:
-        archivos.archivo_visa_debito?.toString("utf8"),
+      return {
+        archivo_visa_debito: archivos.archivo_visa_debito?.toString("utf8"),
 
-      archivo_visa_credito:
-        archivos.archivo_visa_credito?.toString("utf8"),
+        archivo_visa_credito: archivos.archivo_visa_credito?.toString("utf8"),
 
-      archivo_mastercard_credito:
-        archivos.archivo_mastercard_credito?.toString("utf8"),
-    };
-
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
+        archivo_mastercard_credito:
+          archivos.archivo_mastercard_credito?.toString("utf8"),
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   }
-}
-
-
 
   async updatePago(objeto) {
     try {
@@ -1463,21 +1459,20 @@ async generarArchivoDebito() {
       ];
 
       // 3. Ejecutamos la consulta en tu pool de base de datos
-      const resultados = await pool.query(queryText, queryValues); 
-      
-    return resultados;
+      const resultados = await pool.query(queryText, queryValues);
 
-  } catch (error) {
-    console.error("Error en ContainerPg.updateAcademica:", error);
-    throw error;
+      return resultados;
+    } catch (error) {
+      console.error("Error en ContainerPg.updateAcademica:", error);
+      throw error;
+    }
   }
-}
-
 
   async getEscuela(id) {
     try {
       const objetoBuscado = await pool.query(
-        `select * from entidades_educativas where identidadeducativa=$1`,[id],
+        `select * from entidades_educativas where identidadeducativa=$1`,
+        [id],
       );
       return objetoBuscado.rows[0];
     } catch (error) {
@@ -1485,11 +1480,11 @@ async generarArchivoDebito() {
     }
   }
 
-
-    async parametros(id) {
+  async parametros(id) {
     try {
       const objetoBuscado = await pool.query(
-        `select * from parametros_sistema where id_establecimiento=$1`,[id],
+        `select * from parametros_sistema where id_establecimiento=$1`,
+        [id],
       );
       return objetoBuscado.rows;
     } catch (error) {
@@ -1497,7 +1492,7 @@ async generarArchivoDebito() {
     }
   }
 
-async createPagoCuota(objeto) {
+  async createPagoCuota(objeto) {
     const query = `
 INSERT INTO transaccion_cuenta_corriente (
     id_alumno_cc,
@@ -1541,7 +1536,8 @@ RETURNING id_transaccion_cc;
       await pool.query("BEGIN");
 
       // $9: Comprobante Manual del Formulario
-      const nroComprobanteManual = objeto.nroComprobante || objeto.numero_comprobante;
+      const nroComprobanteManual =
+        objeto.nroComprobante || objeto.numero_comprobante;
 
       // $20: Factura Electrónica de AFIP
       const nroFacturaAfip = objeto.comprobante_numero;
@@ -1565,8 +1561,8 @@ RETURNING id_transaccion_cc;
         objeto.codigo_error_debito,
         objeto.descripcion_error_debito,
         objeto.punto_venta || objeto.puntoVenta,
-        objeto.comprobante_tipo || objeto.tipoComprobante,   
-        nroFacturaAfip,       // $20: comprobante_numero (AFIP)
+        objeto.comprobante_tipo || objeto.tipoComprobante,
+        nroFacturaAfip, // $20: comprobante_numero (AFIP)
         false,
         objeto.fecha_ultima_modificacion,
         objeto.cae,
@@ -1575,10 +1571,12 @@ RETURNING id_transaccion_cc;
         false,
         null,
         false,
-        null
+        null,
       ];
 
-      const valores = valoresBrutos.map((val) => (val === "" || val === undefined ? null : val));
+      const valores = valoresBrutos.map((val) =>
+        val === "" || val === undefined ? null : val,
+      );
 
       console.log("Intentando insertar registro con los valores:", valores);
 
@@ -1589,18 +1587,19 @@ RETURNING id_transaccion_cc;
       return resultado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      console.error("❌ Error al insertar múltiples registros en Postgres:", error);
+      console.error(
+        "❌ Error al insertar múltiples registros en Postgres:",
+        error,
+      );
       throw error;
     }
   }
 
-
-  
   // ALTA MÚLTIPLE
-async GenerarPagos(objeto) {
-  const client = await pool.connect();
+  async GenerarPagos(objeto) {
+    const client = await pool.connect();
 
-  const checkExistenciaQuery = `
+    const checkExistenciaQuery = `
   SELECT 1 
   FROM alumno_cuenta_corriente 
   WHERE id_alumno = $1 
@@ -1613,8 +1612,8 @@ async GenerarPagos(objeto) {
   LIMIT 1;
 `;
 
- // Consulta para verificar si el alumno registra deuda impaga (saldo acumulado > 0)
-const checkDeudaQuery = `
+    // Consulta para verificar si el alumno registra deuda impaga (saldo acumulado > 0)
+    const checkDeudaQuery = `
   SELECT 1 
   FROM transaccion_cuenta_corriente tcc
   INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
@@ -1624,15 +1623,15 @@ const checkDeudaQuery = `
   LIMIT 1;
 `;
 
-// Consulta para verificar el parámetro de validación de deuda en inscripción
-const obtenerParametroDeudaQuery = `
+    // Consulta para verificar el parámetro de validación de deuda en inscripción
+    const obtenerParametroDeudaQuery = `
   SELECT valor 
   FROM parametros_sistema 
   WHERE parametro = 'valida_cuotas_impagas_pago_inscripcion'
   LIMIT 1;
 `;
 
-  const obtenerAlumnoQuery = `
+    const obtenerAlumnoQuery = `
     SELECT 
       p.apellidos, 
       p.nombres, 
@@ -1646,7 +1645,7 @@ const obtenerParametroDeudaQuery = `
     LIMIT 1;
   `;
 
-  const query1 = `
+    const query1 = `
     INSERT INTO alumno_cuenta_corriente (
         id_alumno, usuario_alta, fecha_generacion_cc, cuota, 
         descripcion, id_cargo_cuenta_corriente, importe, numero_cuota
@@ -1654,7 +1653,7 @@ const obtenerParametroDeudaQuery = `
     RETURNING id_alumno_cc;
   `;
 
-  const query2 = `
+    const query2 = `
     INSERT INTO transaccion_cuenta_corriente (
         id_alumno_cc, fecha_transaccion, id_estado_cuota, importe, fecha_pago,
         fecha_respuesta_prisma, usuario_ultima_modificacion, fecha_ultima_modificacion,
@@ -1672,77 +1671,89 @@ const obtenerParametroDeudaQuery = `
     RETURNING *;
   `;
 
-  const listaItems = Array.isArray(objeto) ? objeto : (objeto.items || []);
-  const usuarioSistema = objeto.usuario_sistema;
+    const listaItems = Array.isArray(objeto) ? objeto : objeto.items || [];
+    const usuarioSistema = objeto.usuario_sistema;
 
-  let generados = 0;
-  let noGenerados = 0;
-  const detallesGenerados = [];   // <-- 1. Inicializamos el array
-  const detallesNoGenerados = [];
+    let generados = 0;
+    let noGenerados = 0;
+    const detallesGenerados = []; // <-- 1. Inicializamos el array
+    const detallesNoGenerados = [];
 
-  try {
-    await client.query("BEGIN");
+    try {
+      await client.query("BEGIN");
 
-    const resParam = await client.query(obtenerParametroDeudaQuery);
-    const validaParametroDeuda = resParam.rows.length > 0 && 
-  ['S', 'SI', 'TRUE', '1'].includes(String(resParam.rows[0].valor).toUpperCase());
+      const resParam = await client.query(obtenerParametroDeudaQuery);
+      const validaParametroDeuda =
+        resParam.rows.length > 0 &&
+        ["S", "SI", "TRUE", "1"].includes(
+          String(resParam.rows[0].valor).toUpperCase(),
+        );
 
-    for (const item of listaItems) {
-
-      // Validar que el cargo de Materiales (id_cargo = 3) solo se aplique a Nivel Inicial (id_nivel = 1)
-      if (Number(item.id_cargo_cuenta_corriente) === 3 && Number(item.id_nivel) !== 1) {
-        //console.log(`[RECHAZADO - PASO 1] Alumno ${item.id_alumno} no es Nivel Inicial (Nivel actual: ${item.id_nivel})`);
+      for (const item of listaItems) {
+        // Validar que el cargo de Materiales (id_cargo = 3) solo se aplique a Nivel Inicial (id_nivel = 1)
+        if (
+          Number(item.id_cargo_cuenta_corriente) === 3 &&
+          Number(item.id_nivel) !== 1
+        ) {
+          //console.log(`[RECHAZADO - PASO 1] Alumno ${item.id_alumno} no es Nivel Inicial (Nivel actual: ${item.id_nivel})`);
           noGenerados++;
-          const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+          const datosAlumno = await client.query(obtenerAlumnoQuery, [
+            item.id_alumno,
+          ]);
           if (datosAlumno.rows.length > 0) {
-              detallesNoGenerados.push({
-                  ...datosAlumno.rows[0],
-                  motivo: 'El cargo de Materiales solo aplica a Nivel Inicial'
-              });
+            detallesNoGenerados.push({
+              ...datosAlumno.rows[0],
+              motivo: "El cargo de Materiales solo aplica a Nivel Inicial",
+            });
           }
           continue;
-      }
-
-
-      // 1. Validar si ya existe la cuota/cargo para el alumno
-    const existeCargo = await client.query(checkExistenciaQuery, [
-        item.id_alumno,
-        Number(item.id_cargo_cuenta_corriente),
-        item.cuota || null,
-        item.descripcion || null
-    ]);
-
-    if (existeCargo.rows.length > 0) {
-        noGenerados++;
-
-        // Obtener datos personales del alumno omitido
-        const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
-        if (datosAlumno.rows.length > 0) {
-            detallesNoGenerados.push({
-                ...datosAlumno.rows[0],
-                motivo: 'Ya tiene el cargo o cuota generada'
-            });
         }
-        continue;
-    }
 
-    
-      if (validaParametroDeuda && Number(item.id_cargo_cuenta_corriente) === 1) {
-        const tieneDeuda = await client.query(checkDeudaQuery, [item.id_alumno]);
-        if (tieneDeuda.rows.length > 0) {
+        // 1. Validar si ya existe la cuota/cargo para el alumno
+        const existeCargo = await client.query(checkExistenciaQuery, [
+          item.id_alumno,
+          Number(item.id_cargo_cuenta_corriente),
+          item.cuota || null,
+          item.descripcion || null,
+        ]);
+
+        if (existeCargo.rows.length > 0) {
+          noGenerados++;
+
+          // Obtener datos personales del alumno omitido
+          const datosAlumno = await client.query(obtenerAlumnoQuery, [
+            item.id_alumno,
+          ]);
+          if (datosAlumno.rows.length > 0) {
+            detallesNoGenerados.push({
+              ...datosAlumno.rows[0],
+              motivo: "Ya tiene el cargo o cuota generada",
+            });
+          }
+          continue;
+        }
+
+        if (
+          validaParametroDeuda &&
+          Number(item.id_cargo_cuenta_corriente) === 1
+        ) {
+          const tieneDeuda = await client.query(checkDeudaQuery, [
+            item.id_alumno,
+          ]);
+          if (tieneDeuda.rows.length > 0) {
             noGenerados++;
-            const datosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
+            const datosAlumno = await client.query(obtenerAlumnoQuery, [
+              item.id_alumno,
+            ]);
             if (datosAlumno.rows.length > 0) {
-                detallesNoGenerados.push({
-                    ...datosAlumno.rows[0],
-                    motivo: 'Posee cuotas impagas'
-                });
+              detallesNoGenerados.push({
+                ...datosAlumno.rows[0],
+                motivo: "Posee cuotas impagas",
+              });
             }
             continue;
+          }
         }
-    }
-
-
 
         // 2. Insertar en alumno_cuenta_corriente
         const valores1 = [
@@ -1753,56 +1764,81 @@ const obtenerParametroDeudaQuery = `
           item.descripcion,
           item.id_cargo_cuenta_corriente,
           null,
-          null
+          null,
         ];
         const res1 = await client.query(query1, valores1);
         const idAlumnoCc = res1.rows[0].id_alumno_cc;
 
         // 3. Insertar en transaccion_cuenta_corriente
         const valores2 = [
-          idAlumnoCc, item.fecha, 1, item.importe, null, null,
-          usuarioSistema, item.fecha, null, null, null, null, null,
-          null, null, null, null, null, null, null, false, null, null,
-          false, null, false, null, false, null
+          idAlumnoCc,
+          item.fecha,
+          1,
+          item.importe,
+          null,
+          null,
+          usuarioSistema,
+          item.fecha,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          false,
+          null,
+          null,
+          false,
+          null,
+          false,
+          null,
+          false,
+          null,
         ];
         await client.query(query2, valores2);
 
-
         // <-- 2. Guardamos la información del alumno generado exitosamente
-      const datosAlumnoGenerado = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
-      if (datosAlumnoGenerado.rows.length > 0) {
-        detallesGenerados.push(datosAlumnoGenerado.rows[0]);
-      }
+        const datosAlumnoGenerado = await client.query(obtenerAlumnoQuery, [
+          item.id_alumno,
+        ]);
+        if (datosAlumnoGenerado.rows.length > 0) {
+          detallesGenerados.push(datosAlumnoGenerado.rows[0]);
+        }
 
         generados++;
       }
-    
 
-    await client.query("COMMIT");
+      await client.query("COMMIT");
 
-    return {
-      exito: true,
-      resumen: {
-        generados,
-        noGenerados
-      },
-      detallesGenerados, // <-- 3. Lo incluimos en el objeto de respuesta
-      detallesNoGenerados
-    };
-
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release(); // Liberar el cliente al pool
+      return {
+        exito: true,
+        resumen: {
+          generados,
+          noGenerados,
+        },
+        detallesGenerados, // <-- 3. Lo incluimos en el objeto de respuesta
+        detallesNoGenerados,
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release(); // Liberar el cliente al pool
+    }
   }
-}
 
-
-async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
-
-    const parametro = 'importe_mensual_cuota';
-    const resultParam = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
+  async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
+    const parametro = "importe_mensual_cuota";
+    const resultParam = await pool.query(
+      `select valor from parametros_sistema where parametro = $1`,
+      [parametro],
+    );
     const importeActualVal = Number(resultParam.rows[0]?.valor).toFixed(2);
 
     let sql = `
@@ -1853,43 +1889,41 @@ async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
     const values = [];
 
     // Filtro por alumnos regulares ('S')
-    if (incluirNoRegulares !== 'true' && incluirNoRegulares !== true) {
-        sql += ` AND UPPER(TRIM(alu.regular)) = 'S'`;
+    if (incluirNoRegulares !== "true" && incluirNoRegulares !== true) {
+      sql += ` AND UPPER(TRIM(alu.regular)) = 'S'`;
     }
 
-    const strCuota = cuota ? String(cuota).trim() : '';
-    const strAnio = anio ? String(anio).trim() : '';
+    const strCuota = cuota ? String(cuota).trim() : "";
+    const strAnio = anio ? String(anio).trim() : "";
 
-    if (strCuota !== '' && strAnio !== '') {
-        const cuotaConCero = strCuota.padStart(2, '0');
-        const cuotaNum = Number(strCuota);
-        const codigoCuota = `${cuotaConCero}${strAnio}`;
+    if (strCuota !== "" && strAnio !== "") {
+      const cuotaConCero = strCuota.padStart(2, "0");
+      const cuotaNum = Number(strCuota);
+      const codigoCuota = `${cuotaConCero}${strAnio}`;
 
-        values.push(codigoCuota);
-        const p1 = values.length;
+      values.push(codigoCuota);
+      const p1 = values.length;
 
-        values.push(`%${cuotaNum}%${strAnio}%`);
-        const p2 = values.length;
+      values.push(`%${cuotaNum}%${strAnio}%`);
+      const p2 = values.length;
 
-        sql += ` AND (TRIM(acc.cuota) = $${p1} OR acc.descripcion ILIKE $${p2})`;
+      sql += ` AND (TRIM(acc.cuota) = $${p1} OR acc.descripcion ILIKE $${p2})`;
+    } else if (strCuota !== "") {
+      const cuotaConCero = strCuota.padStart(2, "0");
+      const cuotaNum = Number(strCuota);
 
-    } else if (strCuota !== '') {
-        const cuotaConCero = strCuota.padStart(2, '0');
-        const cuotaNum = Number(strCuota);
+      values.push(`${cuotaConCero}%`);
+      const p1 = values.length;
 
-        values.push(`${cuotaConCero}%`);
-        const p1 = values.length;
+      values.push(`%${cuotaNum}%`);
+      const p2 = values.length;
 
-        values.push(`%${cuotaNum}%`);
-        const p2 = values.length;
+      sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p2})`;
+    } else if (strAnio !== "") {
+      values.push(`%${strAnio}%`);
+      const p1 = values.length;
 
-        sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p2})`;
-
-    } else if (strAnio !== '') {
-        values.push(`%${strAnio}%`);
-        const p1 = values.length;
-
-        sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p1})`;
+      sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p1})`;
     }
 
     // Agregar el ordenamiento por apellido, nombre y cuota
@@ -1898,40 +1932,39 @@ async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
     // Ejecución utilizando la conexión propia del ContainerPg (this.pool o pool)
     const queryExec = this.pool ? this.pool : pool;
     const result = await queryExec.query(sql, values);
-    
+
     return result.rows;
-}
+  }
 
+  async ActualizarImporte(objeto) {
+    console.log("Procesando actualización:", objeto);
 
+    // 1. Usar siempre 'client' para mantener la transacción
+    const client = await pool.connect();
 
-async ActualizarImporte(objeto) {
-  console.log("Procesando actualización:", objeto);
+    const detallesGenerados = [];
+    const detallesNoGenerados = [];
 
-  // 1. Usar siempre 'client' para mantener la transacción
-  const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-  const detallesGenerados = []; 
-  const detallesNoGenerados = []; 
-
-  try {
-    await client.query("BEGIN");
-
-    for (const item of objeto.alumnos) {
-      try {
-        // 2. Ejecutar el UPDATE una sola vez usando 'client'
-        await client.query(
-          `UPDATE transaccion_cuenta_corriente 
+      for (const item of objeto.alumnos) {
+        try {
+          // 2. Ejecutar el UPDATE una sola vez usando 'client'
+          await client.query(
+            `UPDATE transaccion_cuenta_corriente 
            SET importe = $1 
            WHERE id_alumno_cc = $2 AND importe = $3`,
-          [
-            objeto.valorCuotaAplicar,
-            item.id_alumno_cc,
-            item.importeActualVal
-          ]
-        );
+            [
+              objeto.valorCuotaAplicar,
+              item.id_alumno_cc,
+              item.importeActualVal,
+            ],
+          );
 
-        // 3. Consulta de datos del alumno con la prioridad de documento
-        const resAlumno = await client.query(`
+          // 3. Consulta de datos del alumno con la prioridad de documento
+          const resAlumno = await client.query(
+            `
           WITH doc_priorizado AS (
               SELECT 
                   ptd.id_persona,
@@ -1960,54 +1993,52 @@ async ActualizarImporte(objeto) {
           INNER JOIN persona p ON a.id_persona = p.id_persona
           LEFT JOIN doc_priorizado dp ON p.id_persona = dp.id_persona AND dp.rn = 1
           WHERE a.id_alumno = $1;
-        `, [item.id_alumno]);
+        `,
+            [item.id_alumno],
+          );
 
-        const datosAlumno = resAlumno.rows[0];
+          const datosAlumno = resAlumno.rows[0];
 
-        if (datosAlumno) {
-          // 4. Mapear apellido/nombre singular que viene de la tabla persona
-          detallesGenerados.push({
-            apellidos: datosAlumno.apellidos || datosAlumno.apellidos,
-            nombres: datosAlumno.nombres || datosAlumno.nombres,
-            tipo_documento: datosAlumno.tipo_documento,
-            numero_documento: datosAlumno.numero_documento,
-            importeAnterior: item.importeActualVal,
-            nuevoImporte: objeto.valorCuotaAplicar
+          if (datosAlumno) {
+            // 4. Mapear apellido/nombre singular que viene de la tabla persona
+            detallesGenerados.push({
+              apellidos: datosAlumno.apellidos || datosAlumno.apellidos,
+              nombres: datosAlumno.nombres || datosAlumno.nombres,
+              tipo_documento: datosAlumno.tipo_documento,
+              numero_documento: datosAlumno.numero_documento,
+              importeAnterior: item.importeActualVal,
+              nuevoImporte: objeto.valorCuotaAplicar,
+            });
+          }
+        } catch (errItem) {
+          // 5. Si falla un alumno individual, se acumula en no generados y NO rompe el bucle
+          detallesNoGenerados.push({
+            apellidos: item.apellidos,
+            nombres: item.nombres,
+            tipo_documento: item.tipo_documento,
+            numero_documento: item.numero_documento,
+            motivo: errItem.message || "Error al actualizar registro",
           });
         }
-
-      } catch (errItem) {
-        // 5. Si falla un alumno individual, se acumula en no generados y NO rompe el bucle
-        detallesNoGenerados.push({
-          apellidos: item.apellidos,
-          nombres: item.nombres,
-          tipo_documento: item.tipo_documento,
-          numero_documento: item.numero_documento,
-          motivo: errItem.message || 'Error al actualizar registro'
-        });
       }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release(); // Liberar la conexión
     }
-
-    await client.query("COMMIT");
-
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release(); // Liberar la conexión
+    console.log(detallesGenerados);
+    // 6. Retornar con las claves que espera el Frontend ('detallesGenerados')
+    return {
+      ok: true,
+      generados: detallesGenerados.length,
+      noGenerados: detallesNoGenerados.length,
+      detallesGenerados,
+      detallesNoGenerados,
+    };
   }
-console.log(detallesGenerados)
-  // 6. Retornar con las claves que espera el Frontend ('detallesGenerados')
-  return {
-    ok: true,
-    generados: detallesGenerados.length,
-    noGenerados: detallesNoGenerados.length,
-    detallesGenerados,
-    detallesNoGenerados
-  };
-}
-
-
 }
 
 export { ContainerPg };
