@@ -2,7 +2,7 @@ import {
   procesarArchivo as procesarArchivoService
 } from "../../negocio/services/archivosafectacion.service.js";
 
-console.log("🔥 CONTROLLER CARGADO");
+//console.log("🔥 CONTROLLER CARGADO");
 
 const procesarArchivo = async (req, res) => {
   console.log("🌐 ENTRÓ AL CONTROLLER");

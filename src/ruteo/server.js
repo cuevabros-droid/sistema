@@ -16,15 +16,24 @@ import routerApiPagos from './routers/routerApiPagos.js';
 import routerApiEscuela from './routers/routerApiEscuela.js';
 import routerApiAfip from './routers/RouterApiAfip.js';
 import routerApiParametros from './routers/RouterApiParametros.js';
+import routerApiUsuarios from './routers/routerApiUsuarios.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
 import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import routerApiMarcadores from './routers/routerApiMarcadores.js';
 import cors from 'cors'
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const servidor = express()
 
+// 1. Recrear __dirname para ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 2. Apuntar a backend/public subiendo 2 niveles desde /src/ruteo/
+const publicPath = path.join(__dirname, '../../public');
 //Cors
 /*servidor.use(cors({
   origin: '*', // O la URL de tu frontend React
@@ -77,7 +86,17 @@ servidor.use('/api/pagos', routerApiPagos)
 servidor.use('/api/escuela', routerApiEscuela)
 servidor.use('/api/', routerApiAfip)
 servidor.use('/api/parametros', routerApiParametros)
-servidor.use(express.static('public/img'))
+servidor.use('/api/usuarios', routerApiUsuarios)
+//servidor.use(express.static('public'));
+//servidor.use('/public', express.static('public'));
+//const __filename = fileURLToPath(import.meta.url);
+// Asegura que apunte siempre a la carpeta public de tu backend
+// 3. Servir imágenes de forma directa (ej: /img/usuarios/...)
+servidor.use(express.static(publicPath));
+
+// 4. Servir imágenes con prefijo por compatibilidad (ej: /public/img/usuarios/...)
+servidor.use('/public', express.static(publicPath));
+
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
 servidor.use('/api/marcadores', routerApiMarcadores)
 

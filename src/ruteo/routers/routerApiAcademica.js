@@ -1,5 +1,6 @@
 import express from 'express';
 import { controllerGrado } from '../controllers/controllerAcademica.js';
+import { controllerNivel } from '../controllers/controllerAcademica.js';
 import { controllerDivision } from '../controllers/controllerAcademica.js';
 import { controllerAnioCursado } from '../controllers/controllerAcademica.js';
 import { controllerListado } from '../controllers/controllerAcademica.js';
@@ -12,6 +13,7 @@ import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 const routerApiAcademica = express.Router();
 
 routerApiAcademica.get('/grado', autenticacion, controllerGrado); 
+routerApiAcademica.get('/nivel', autenticacion, controllerNivel); 
 routerApiAcademica.get('/division', autenticacion, controllerDivision); 
 routerApiAcademica.get('/aniocursado', autenticacion, controllerAnioCursado); 
 routerApiAcademica.get('/:id', autenticacion, controllerListado); 

@@ -7,7 +7,6 @@ import { ContainerPg } from "../../daos/container/containerPg.js";
 // FUNCIÓN REAL DE ARCA
 import { emitirFacturaAFIP } from "../utils/afip.js";
 
-import { pagosService } from "./pagos.service.js";
 
 // ======================================================
 // DETERMINAR TABLA

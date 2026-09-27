@@ -13,6 +13,16 @@ import { academicaService } from '../../negocio/services/academica.service.js';
   }
 }
 
+ async function controllerNivel({user}, res) {
+  try {
+    const resul = await academicaService.listarNivel(user.identidadeducativa)
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+}
+
  async function controllerDivision({user}, res) {
   try {
     const resul = await academicaService.listarDivision(user.identidadeducativa)
@@ -79,6 +89,6 @@ import { academicaService } from '../../negocio/services/academica.service.js';
       
     }
 
-export {controllerGrado, controllerDivision, controllerAnioCursado, controllerListado, controllerAcademicaUpdate, controllerAcademicaCreate, controllerAcademicaDelete }
+export {controllerGrado, controllerDivision, controllerAnioCursado, controllerListado, controllerAcademicaUpdate, controllerAcademicaCreate, controllerAcademicaDelete, controllerNivel }
 
 
