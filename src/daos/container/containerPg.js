@@ -600,7 +600,7 @@ class ContainerPg {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      return error;  
     }
   }
 
@@ -608,14 +608,15 @@ async getAlumnosPorUsuario(usuario) {
     try {
       const objetoBuscado = await pool.query(
         `SELECT
-            P.id_persona,
+            COALESCE(P.id_persona, U.id_persona) AS id_persona_tutor,
             CONCAT(P.apellidos, ' ', P.nombres) AS Tutor,
-            P.usuario,
+            U.usuario,
             a.id_alumno,
+            PAlumno.id_persona AS id_persona,
             a.legajo,
             CONCAT(PAlumno.apellidos, ' ', PAlumno.nombres) AS NombreAlumno,
-            COALESCE(ptd.dni_alumno, '') AS dni_alumno,
-            COALESCE(ptd.dni_alumno, '') AS dni,
+            COALESCE(td.numero, '') AS dni_alumno,
+            COALESCE(td.numero, '') AS dni,
             g.nombre AS Grado,
             ee.identidadeducativa,
             ee.entidadeducativa,
@@ -624,25 +625,29 @@ async getAlumnosPorUsuario(usuario) {
             COALESCE(R1.CantCuotasAdeudadas, 0) AS CantCuotasAdeudadas,
             COALESCE(R1.SaldoAdeudado, 0) AS SaldoAdeudado
         FROM Usuarios U
-        INNER JOIN Persona P ON P.id_persona = U.id_persona
-        INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
-        INNER JOIN alumno A ON A.id_alumno = pa.id_alumno AND A.Regular = 'S'
+        LEFT JOIN Persona P ON (P.usuario = U.usuario OR (U.id_persona IS NOT NULL AND P.id_persona = U.id_persona))
+        INNER JOIN persona_allegado pa ON (
+            (P.id_persona IS NOT NULL AND pa.id_persona = P.id_persona)
+            OR (U.id_persona IS NOT NULL AND pa.id_persona = U.id_persona)
+            OR (U.id_persona IS NOT NULL AND pa.id_alumno IN (SELECT a2.id_alumno FROM alumno a2 WHERE a2.id_persona = U.id_persona))
+        )
+        INNER JOIN alumno A ON A.id_alumno = pa.id_alumno
         INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
         LEFT JOIN (
-            SELECT DISTINCT ON (id_persona)
-                id_persona,
-                numero AS dni_alumno,
-                id_tipo_documento
-            FROM persona_tipo_documento
-            ORDER BY id_persona, CASE WHEN id_tipo_documento = 8 THEN 0 ELSE 1 END, id_persona_tipo_documento ASC
-        ) ptd ON ptd.id_persona = PAlumno.id_persona
-        LEFT  JOIN entidades_educativas ee ON ee.identidadeducativa = a.id_establecimiento
-        INNER JOIN (
+            SELECT td1.id_persona, td1.numero,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY td1.id_persona 
+                       ORDER BY CASE WHEN td1.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, td1.id_persona_tipo_documento ASC
+                   ) AS rn
+            FROM persona_tipo_documento td1
+        ) td ON td.id_persona = PAlumno.id_persona AND td.rn = 1
+        LEFT JOIN entidades_educativas ee ON ee.identidadeducativa = a.id_establecimiento
+        LEFT JOIN (
             SELECT id_alumno, MAX(id_grado) AS ultGrado
             FROM alumno_datos_cursada
             GROUP BY id_alumno
         ) AS adc ON adc.id_alumno = a.id_alumno
-        INNER JOIN grado g ON g.id_grado = adc.ultGrado
+        LEFT JOIN grado g ON g.id_grado = adc.ultGrado
         LEFT JOIN (
             SELECT
                 t.id_alumno,
@@ -661,9 +666,8 @@ async getAlumnosPorUsuario(usuario) {
             ) t
             GROUP BY t.id_alumno
         ) AS R1 ON R1.id_alumno = a.id_alumno
-        WHERE pa.activo = 'S'
-          AND P.activo = 'S'
-          AND P.es_alumno = 'N'
+        WHERE (pa.activo IS NULL OR pa.activo = 'S' OR pa.activo = 's' OR pa.activo::text = 'true' OR pa.activo != 'N')
+          AND (P.activo IS NULL OR P.activo = 'S' OR P.activo = 's' OR P.activo::text = 'true' OR P.activo != 'N')
           AND u.usuario = $1
         ORDER BY ee.entidadeducativa, PAlumno.apellidos, PAlumno.nombres`,
         [usuario],
@@ -2782,6 +2786,71 @@ console.log(persona_documento)
     }
   }
 
+  async getPerfilUsuario(id_usuario) {
+    try {
+      const result = await pool.query(
+        `SELECT
+            u.id_usuario,
+            u.usuario,
+            u.nombre,
+            u.email,
+            u.activo,
+            u.idtipousuario,
+            TU.tipousuario,
+            u.identidadeducativa,
+            EE.entidadeducativa,
+            u.imagen,
+            u.id_persona,
+            COALESCE(P.apellidos, '') AS apellidos,
+            COALESCE(P.nombres, '') AS nombres,
+            COALESCE(td.numero, '') AS numero_documento,
+            tdoc.nombre_corto AS tipo_documento
+         FROM usuarios u
+         INNER JOIN public.entidades_educativas EE ON EE.identidadeducativa = u.identidadeducativa
+         INNER JOIN public.tipos_usuarios TU ON TU.idtipousuario = u.idtipousuario
+         LEFT JOIN persona P ON (P.id_persona = u.id_persona OR P.usuario = u.usuario)
+         LEFT JOIN (
+             SELECT td1.id_persona, td1.numero, td1.id_tipo_documento,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY td1.id_persona 
+                        ORDER BY CASE WHEN td1.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, td1.id_persona_tipo_documento ASC
+                    ) AS rn
+             FROM persona_tipo_documento td1
+         ) td ON td.id_persona = P.id_persona AND td.rn = 1
+         LEFT JOIN tipo_documento tdoc ON tdoc.id_tipo_documento = td.id_tipo_documento
+         WHERE u.id_usuario = $1
+           AND u.activo = true`,
+        [id_usuario]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async actualizarPerfilUsuario(id_usuario, { imagenUrl, password }) {
+    try {
+      if (password && password.trim() !== '') {
+        await pool.query(
+          `UPDATE usuarios
+           SET imagen = $1,
+               password_hash = crypt($2, gen_salt('bf'))
+           WHERE id_usuario = $3`,
+          [imagenUrl || null, password.trim(), id_usuario]
+        );
+      } else {
+        await pool.query(
+          `UPDATE usuarios
+           SET imagen = $1
+           WHERE id_usuario = $2`,
+          [imagenUrl || null, id_usuario]
+        );
+      }
+      return await this.getPerfilUsuario(id_usuario);
+    } catch (error) {
+      throw error;
+    }
+  }
 
 }
 

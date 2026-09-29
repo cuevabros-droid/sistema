@@ -13,6 +13,7 @@ import { UsuariosCrear } from '../repository/usuarios/usuarios.js';
 import { UsuariosCrearEnMasa } from '../repository/usuarios/usuarios.js';
 import { UsuariosActualizar } from '../repository/usuarios/usuarios.js';
 import { UsuariosEliminar } from '../repository/usuarios/usuarios.js';
+import { PerfilUsuario, ActualizarPerfilUsuario } from '../repository/usuarios/usuarios.js';
 
 
 class UsuarioService {
@@ -44,7 +45,7 @@ class UsuarioService {
         } catch (error) {
           console.error("Error en UsuarioService.UsuariosCrear:", error);
           throw error; // 👈 OBLIGATORIO: Volver a lanzar el error para que llegue al controlador
-   9  }
+        }
 
     }
 
@@ -66,6 +67,17 @@ class UsuarioService {
             return lista
     }
 
+    // Obtener perfil del usuario logueado
+    async PerfilUsuario(id_usuario) {
+        const perfil = await PerfilUsuario(id_usuario);
+        return perfil;
+    }
+
+    // Actualizar foto y/o password del usuario logueado
+    async ActualizarPerfilUsuario(id_usuario, datos) {
+        const perfil = await ActualizarPerfilUsuario(id_usuario, datos);
+        return perfil;
+    }
 
 }
 

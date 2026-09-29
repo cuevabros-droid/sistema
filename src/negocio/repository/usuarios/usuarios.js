@@ -72,3 +72,21 @@ const pg = new ContainerPg
           throw error; // 👈 OBLIGATORIO: Volver a lanzar el error para que llegue al controlador
         }       
     }
+
+    export async function PerfilUsuario(id_usuario) {
+        try {
+          const resul = await pg.getPerfilUsuario(id_usuario);
+          return resul;
+        } catch (error) {
+          throw error;
+        }
+    }
+
+    export async function ActualizarPerfilUsuario(id_usuario, datos) {
+        try {
+          const resul = await pg.actualizarPerfilUsuario(id_usuario, datos);
+          return resul;
+        } catch (error) {
+          throw error;
+        }
+    }

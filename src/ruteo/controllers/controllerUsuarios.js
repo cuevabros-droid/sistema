@@ -132,8 +132,48 @@ async function controladorUsuariosCrear(req, res) {
 
  }
 
+ async function controladorUsuarioPerfil(req, res) {
+   try {
+     const perfil = await usuarioService.PerfilUsuario(req.user.id_usuario);
+     if (!perfil) {
+       return res.status(404).json({ error: "Usuario no encontrado" });
+     }
+     res.status(200).json(perfil);
+   } catch (error) {
+     loggerError(error);
+     res.status(500).json({ error: error.message });
+   }
+ }
 
+ async function controladorUsuarioActualizarPerfil(req, res) {
+   try {
+     const { imagenUrl, password } = req.body;
+     if (password && password.trim() !== '' && password.trim().length < 4) {
+       return res.status(400).json({ error: "La contraseña debe tener al menos 4 caracteres." });
+     }
+     const perfil = await usuarioService.ActualizarPerfilUsuario(req.user.id_usuario, {
+       imagenUrl,
+       password
+     });
+     res.status(200).json({
+       exito: true,
+       mensaje: "Perfil actualizado correctamente",
+       usuario: perfil
+     });
+   } catch (error) {
+     loggerError(error);
+     res.status(500).json({ error: error.message });
+   }
+ }
 
-export {controladorTipoUsuarios, controladorUsuarios, controladorTutoresSinUsuario, controladorUsuariosCrear, controladorUsuariosCrearEnMasa, controladorUsuariosActualizar, controladorUsuariosEliminar}
-
-
+export {
+  controladorTipoUsuarios,
+  controladorUsuarios,
+  controladorTutoresSinUsuario,
+  controladorUsuariosCrear,
+  controladorUsuariosCrearEnMasa,
+  controladorUsuariosActualizar,
+  controladorUsuariosEliminar,
+  controladorUsuarioPerfil,
+  controladorUsuarioActualizarPerfil
+}
