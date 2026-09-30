@@ -77,6 +77,10 @@ async function controladorLoginp(req, res) {
         tipoUsuario: usuario.tipousuario,
         identidadeducativa: usuario.identidadeducativa,
         entidadeducativa: usuario.entidadeducativa,
+        imagen: usuario.imagen,
+        id_persona: usuario.id_persona,
+        apellidos: usuario.apellidos,
+        nombres: usuario.nombres,
       },
     });
   } catch (error) {

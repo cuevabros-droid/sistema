@@ -6,21 +6,26 @@ class LoginService {
       const result = await pool.query(
         `
 		SELECT
-			id_usuario,
-			usuario,
-			password_hash,
-			nombre,
-			email,
-			activo,
+			u.id_usuario,
+			u.usuario,
+			u.password_hash,
+			u.nombre,
+			u.email,
+			u.activo,
       u.idtipousuario,
 			TU.tipousuario,
       u.identidadeducativa,
-			EE.entidadeducativa
+			EE.entidadeducativa,
+      u.imagen,
+      u.id_persona,
+      COALESCE(P.apellidos, '') AS apellidos,
+      COALESCE(P.nombres, '') AS nombres
 		FROM usuarios u
 		INNER JOIN  public.entidades_educativas EE ON EE.identidadeducativa = u.identidadeducativa
 		INNER JOIN  public.tipos_usuarios TU ON TU.idtipousuario = u.idtipousuario
-		WHERE usuario =  $1
-		AND activo = true
+    LEFT JOIN  public.persona P ON (P.id_persona = u.id_persona OR P.usuario = u.usuario)
+		WHERE u.usuario =  $1
+		AND u.activo = true
                     `,
         [usuario],
       );

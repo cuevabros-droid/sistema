@@ -24,6 +24,7 @@ import archivoDebitoRoutes from "./routers/routerApiArchivosAfectacion.js";
 import cors from 'cors'
 import path from 'path';
 import { fileURLToPath } from 'url';
+import routerApiMarcadores from './routers/routerApiMarcadores.js';
 
 const servidor = express()
 
@@ -97,7 +98,7 @@ servidor.use(express.static(publicPath));
 servidor.use('/public', express.static(publicPath));
 
 servidor.use("/api/archivos-debito", archivoDebitoRoutes);
-
+servidor.use('/api/marcadores', routerApiMarcadores)
 
 //multer
 multer_function()
