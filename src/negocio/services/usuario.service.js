@@ -57,8 +57,12 @@ class UsuarioService {
 
     //Actualiza Usuarios
     async UsuariosActualizar(objeto) {
+        try{
             const lista = await UsuariosActualizar(objeto)
             return lista
+        } catch (error) {
+           throw error;
+        }
     }
 
     //Actualiza Usuarios

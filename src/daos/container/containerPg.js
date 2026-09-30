@@ -2291,14 +2291,15 @@ async Usuarios(busqueda, identidadeducativa) {
           FROM persona per
           INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
           INNER JOIN tipo_documento doc        ON ptd.id_tipo_documento = doc.id_tipo_documento
-          INNER JOIN usuarios u                ON per.id_persona = u.id_persona
+          INNER JOIN usuarios u                ON per.id_persona = u.id_persona  -- <-- 2. $2 para la entidad educativa
 		      INNER JOIN tipos_usuarios tu         ON u.idtipousuario = tu.idtipousuario
           INNER JOIN persona_sexo ps           ON per.id_persona = ps.id_persona
           INNER JOIN sexo s                    ON ps.id_sexo = s.id_sexo
           LEFT JOIN  localidad ln               ON per.id_localidad_nacimiento = ln.id_localidad
           LEFT JOIN  localidad lr               ON per.id_localidad_residencia = lr.id_localidad
           LEFT JOIN  nacionalidad n             ON per.id_nacionalidad = n.id_nacionalidad
-          WHERE u.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
+          LEFT JOIN  usuario_entidades ue       ON u.id_usuario = ue.id_usuario AND ue.identidadeducativa = $2
+          --WHERE ue.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
       )
       SELECT id_usuario, id_persona, apellidos, nombres, id_localidad_nacimiento, localidad_nacimiento, id_localidad_residencia, localidad_residencia, id_nacionalidad, nacionalidad, usuario, email, "tipoDocumento", "numeroDocumento", "idTipoUsuario", "tipousuario", activo, imagen, id_sexo, sexo, fecha_nacimiento, telefono
       FROM personas_documentos
@@ -2351,7 +2352,7 @@ async TutoresSinUsuario(busqueda, identidadeducativa) {
           INNER JOIN persona_allegado pa                ON per.id_persona = pa.id_persona
           INNER JOIN alumno a                   ON a.id_alumno = pa.id_alumno
           WHERE a.id_establecimiento = $2 -- <-- 2. $2 para la entidad educativa
-          AND pa.id_persona NOT IN (SELECT id_persona FROM usuarios u WHERE u.identidadeducativa = $2)
+          AND pa.id_persona NOT IN (SELECT id_persona FROM usuarios u) --WHERE u.identidadeducativa = $2
       )
       SELECT id_persona, apellidos, nombres, "tipoDocumento", "numeroDocumento"
       FROM personas_documentos
@@ -2390,8 +2391,8 @@ async CrearUsuario(objeto) {
     // -----------------------------------------------------------------
     // PASO 1: Comprobar si el NOMBRE DE USUARIO ya existe
     // -----------------------------------------------------------------
-    const queryCheckUsuario = `SELECT id_usuario FROM usuarios WHERE usuario = $1;`;
-    const resUsuarioExistente = await client.query(queryCheckUsuario, [objeto.usuario]);
+    const queryCheckUsuario = `SELECT u.id_usuario FROM usuarios u, usuario_entidades ue WHERE u.id_usuario = ue.id_usuario AND u.usuario = $1 and ue.identidadeducativa = $2;`;
+    const resUsuarioExistente = await client.query(queryCheckUsuario, [objeto.usuario, objeto.identidadeducativa]);
 
     if (resUsuarioExistente.rows.length > 0) {
       const error = new Error("El nombre de usuario ya existe. Por favor ingrese uno diferente.");
@@ -2423,27 +2424,22 @@ async CrearUsuario(objeto) {
       }
     }
 
-
-    let usuarioExistia = false;
-
-// NOS FIJAMOS SI LA PERSONA YA NO TIENE UN USUARIO
-if (personaExistia) {
-
-  const queryCheckUsr = `
-
+    // NOS FIJAMOS SI LA PERSONA YA TIENE UN USUARIO
+    if (personaExistia) {
+      const queryCheckUsr = `
         SELECT id_persona 
-        FROM usuarios 
-        WHERE id_persona = $1;
+        FROM usuarios u, usuario_entidades ue 
+        WHERE id_persona = $1 AND u.id_usuario = ue.id_usuario AND ue.identidadeducativa = $2;
       `;
-      const resUsrExistente = await client.query(queryCheckUsr, [idPersona]);
+      const resUsrExistente = await client.query(queryCheckUsr, [idPersona, objeto.identidadeducativa]);
 
       if (resUsrExistente.rows.length > 0) {
-      const error = new Error("La persona ya tiene usuario.");
-      error.code = 'PERSONA_CON_USUARIO';
-      throw error; // Salta directamente al catch y ejecuta ROLLBACK
+        const error = new Error("La persona ya tiene usuario.");
+        error.code = 'PERSONA_CON_USUARIO';
+        throw error; // Salta directamente al catch y ejecuta ROLLBACK
+      }
     }
 
-}
     // -----------------------------------------------------------------
     // PASO 3: Si la persona NO existía, la creamos con su documento
     // -----------------------------------------------------------------
@@ -2485,61 +2481,105 @@ if (personaExistia) {
       await this.registrarDocumentoPersona(documento, client);
     }
 
+    const queryCheckUsuarioOtrainstitucion = `
+    SELECT * FROM usuarios u, persona per, persona_tipo_documento ptd, usuario_entidades ue
+    WHERE per.id_persona = ptd.id_persona 
+    and u.id_persona = per.id_persona
+    and u.id_usuario = ue.id_usuario
+    and ptd.id_tipo_documento = $1                  
+    and ptd.numero = $2                   
+    and ue.identidadeducativa != $3;`;
+    const resUsuarioExistenteOtraInstitucion = await client.query(queryCheckUsuarioOtrainstitucion, [objeto.idTipoDocumento, objeto.numeroDocumento, objeto.identidadeducativa]);
+
     // -----------------------------------------------------------------
-    // PASO 4: Crear Registro en la Tabla Usuarios
+    // PASO 4: Crear Registro en la Tabla Usuarios u obtener existente
     // -----------------------------------------------------------------
-    const queryUsuario = `
-      INSERT INTO usuarios (
-        usuario,
-        password_hash,
-        nombre,
-        email,
-        activo,
-        fecha_creacion,
-        ultimo_login,
-        idtipousuario,
-        identidadeducativa,
-        id_persona,
-        imagen
-      ) VALUES (
-        $1,
-        crypt($2, gen_salt('bf')),
-        $3,
-        $4,
-        $5,
-        clock_timestamp()::timestamp,
-        $6,
-        $7,
-        $8,
-        $9,
-        $10
-      ) 
-      RETURNING id_usuario;
-    `;
+    let id_usuario = null; // 👈 Declaramos id_usuario AQUÍ para que tenga alcance en toda la función
 
-    const nombreMostrar = objeto.nombreAMostrar || `${objeto.apellido || ''}, ${objeto.nombre || ''}`.trim();
+    if (resUsuarioExistente.rows.length === 0 && resUsuarioExistenteOtraInstitucion.rows.length === 0) {
+      const queryUsuario = `
+        INSERT INTO usuarios (
+          usuario,
+          password_hash,
+          nombre,
+          email,
+          activo,
+          fecha_creacion,
+          ultimo_login,
+          idtipousuario,
+          identidadeducativa,
+          id_persona,
+          imagen
+        ) VALUES (
+          $1,
+          crypt($2, gen_salt('bf')),
+          $3,
+          $4,
+          $5,
+          clock_timestamp()::timestamp,
+          $6,
+          $7,
+          $8,
+          $9,
+          $10
+        ) 
+        RETURNING id_usuario;
+      `;
 
-    const valoresUsuario = [
-      objeto.usuario || null,                                                // $1
-      objeto.password || null,                                               // $2
-      nombreMostrar,                                                         // $3
-      objeto.email || null,                                                  // $4
-      objeto.activo !== undefined ? objeto.activo : true,                    // $5
-      null,                                                                  // $6 (ultimo_login)
-      objeto.idTipoUsuario ? parseInt(objeto.idTipoUsuario) : null,          // $7
-      objeto.identidadeducativa ? parseInt(objeto.identidadeducativa) : null, // $8
-      idPersona,                                                             // $9
-      objeto.imagenUrl || objeto.imagen || null                              // $10
-    ];
+      const nombreMostrar = objeto.nombreAMostrar || `${objeto.apellido || ''}, ${objeto.nombre || ''}`.trim();
 
-    const resUsuario = await client.query(queryUsuario, valoresUsuario);
+      const valoresUsuario = [
+        objeto.usuario || null,
+        objeto.password || null,
+        nombreMostrar,
+        objeto.email || null,
+        objeto.activo !== undefined ? objeto.activo : true,
+        null,
+        objeto.idTipoUsuario ? parseInt(objeto.idTipoUsuario) : null,
+        objeto.identidadeducativa ? parseInt(objeto.identidadeducativa) : null,
+        idPersona,
+        objeto.imagenUrl || objeto.imagen || null
+      ];
+
+      const resUsuario = await client.query(queryUsuario, valoresUsuario);
+      id_usuario = resUsuario.rows[0].id_usuario; // 👈 Le asignamos el valor
+    } else if (resUsuarioExistenteOtraInstitucion.rows.length > 0) {
+      // 🟢 Si el usuario ya existe en otra institución, reutilizamos su ID
+      id_usuario = resUsuarioExistenteOtraInstitucion.rows[0].id_usuario; // 👈 Corrección de la variable
+    }
+
+    // Registrar en usuario_entidades si corresponde
+    if (id_usuario) {
+      const queryUsuarioEntidades = `
+        INSERT INTO usuario_entidades (
+          id_usuario,
+          identidadeducativa,
+          activo,
+          fecha_alta
+        ) VALUES (
+          $1,
+          $2,
+          $3,
+          clock_timestamp()::timestamp
+        ) 
+        RETURNING id_usuario_entidad;
+      `;
+
+      const valoresUsuarioEntidad = [
+        id_usuario,
+        objeto.identidadeducativa ? parseInt(objeto.identidadeducativa) : null,
+        true
+      ];
+
+      await client.query(queryUsuarioEntidades, valoresUsuarioEntidad);
+    }
 
     // Confirmar la transacción
     await client.query("COMMIT");
 
-    // Retornamos el id_usuario junto con el flag de si la persona ya existía
+    // Retornamos id_usuario y personaExistia al final
     return {
-      id_usuario: resUsuario.rows[0].id_usuario,
+      id_usuario: id_usuario,
       personaExistia: personaExistia
     };
 
@@ -2578,35 +2618,56 @@ async CrearUsuarioEnMasa(objeto) {
         INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
         INNER JOIN tipo_documento doc ON ptd.id_tipo_documento = doc.id_tipo_documento
         WHERE per.id_persona = ANY($1::int[])
-    )
-    INSERT INTO usuarios (
-        usuario,
-        password_hash,
-        nombre,
-        email,
-        activo,
-        fecha_creacion,
-        ultimo_login,
-        idtipousuario,
-        identidadeducativa,
-        id_persona,
-        imagen
+    ),
+    nuevos_usuarios AS (
+        INSERT INTO usuarios (
+            usuario,
+            password_hash,
+            nombre,
+            email,
+            activo,
+            fecha_creacion,
+            ultimo_login,
+            idtipousuario,
+            identidadeducativa,
+            id_persona,
+            imagen
+        )
+        SELECT 
+            pd.usuario,
+            crypt(pd.usuario, gen_salt('bf')) AS password_hash,
+            pd.nombre,
+            pd.email,
+            true AS activo,
+            clock_timestamp()::timestamp AS fecha_creacion,
+            NULL AS ultimo_login,
+            3 AS idtipousuario,
+            $2 AS identidadeducativa,
+            pd.id_persona,
+            null
+        FROM personas_documentos pd
+        WHERE pd.rn = 1
+        RETURNING id_usuario, usuario, id_persona, identidadeducativa
+    ),
+    insert_usuario_entidades AS (
+        INSERT INTO usuario_entidades (
+            id_usuario,
+            identidadeducativa,
+            activo,
+            fecha_alta
+        )
+        SELECT 
+            nu.id_usuario,
+            nu.identidadeducativa,
+            true AS activo,
+            clock_timestamp()::timestamp AS fecha_alta
+        FROM nuevos_usuarios nu
     )
     SELECT 
-        pd.usuario,
-        crypt(pd.usuario, gen_salt('bf')) AS password_hash,
-        pd.nombre,
-        pd.email,
-        true AS activo,
-        clock_timestamp()::timestamp AS fecha_creacion,
-        NULL AS ultimo_login,
-        3 AS idtipousuario,
-        $2 AS identidadeducativa,
-        pd.id_persona,
-        null
-    FROM personas_documentos pd
-    WHERE pd.rn = 1
-    RETURNING id_usuario, usuario, id_persona;
+        id_usuario, 
+        usuario, 
+        id_persona
+    FROM nuevos_usuarios;
   `;
 
   try {
@@ -2699,6 +2760,39 @@ console.log(objeto)
 
 
   try {
+
+    // 1. VALIDACIÓN PREVIA (Antes de realizar cualquier UPDATE)
+    if (idTipoUsuario !== 3 && id_persona) {
+      const existe = await pool.query(
+        `SELECT 1 
+         FROM persona_tipo_documento 
+         WHERE id_tipo_documento = $1 
+           AND numero = $2 
+           AND id_persona <> $3`,
+        [idTipoDocumento, numeroDocumento, id_persona]
+      );
+
+      // Si existe algún registro para OTRA persona, interrumpimos inmediatamente
+      if (existe.rows.length > 0) {
+        throw new Error('Ya existe una persona registrada con ese tipo y número de documento.');
+      }
+
+     const existeUsuario = await pool.query(
+        `SELECT 1 
+         FROM usuarios 
+         WHERE usuario = $1 
+           AND id_persona <> $2`,
+        [usuario, id_persona]
+      );
+
+      // Si existe algún registro con el mismo nombre de Usuario, interrumpimos inmediatamente
+      if (existeUsuario.rows.length > 0) {
+        throw new Error('Ya existe un usuario con ese nombre.');
+      }
+
+    }
+
+    
     // 1. UPDATE en la tabla 'usuarios'
     if (password && password.trim() !== '') {
       // Si el payload incluye nueva contraseña (recuerda aplicar bcrypt o hashing aquí)
@@ -2756,20 +2850,26 @@ console.log(objeto)
       );
     }
 
-    // 2. UPDATE opcional en la tabla 'personas' (si id_persona viene informado)
+  if (idTipoUsuario !== 3) {
+        // 2. UPDATE opcional en la tabla 'personas' (si id_persona viene informado)
     if (id_persona) {
       const id = await pool.query('select id_persona_tipo_documento from persona_tipo_documento where id_persona = $1', [id_persona])
-console.log(id.rows[0].id_persona_tipo_documento)
+//console.log(id.rows[0].id_persona_tipo_documento)
       persona_documento.id_persona_tipo_documento = id.rows[0].id_persona_tipo_documento;
-console.log(persona_documento)
+//console.log(persona_documento)
+      
     await this.updatePersons(persona, id_persona)
     await this.actualizarDocumentoPersona(persona_documento)
     }
 
     return 'Usuario y persona actualizados correctamente';
+  } else
+    return 'Usuario actualizado correctamente';
+
+
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
-    throw error.message;
+    throw error;
   }
 
   }

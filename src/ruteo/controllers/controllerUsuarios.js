@@ -108,12 +108,16 @@ async function controladorUsuariosCrear(req, res) {
     req.body.identidadeducativa = req.user.identidadeducativa
     req.body.usuario_sistema = req.user.usuario
 
-  try {
-    const usuarios = await usuarioService.UsuariosActualizar(req.body)
-    res.status(200).json(usuarios)
-  } catch (error) {
-    loggerError(error)
-    res.status(404).json(error)
+try {
+  const usuarios = await usuarioService.UsuariosActualizar(req.body);
+  res.status(200).json(usuarios);
+} catch (error) {
+    loggerError(error);
+
+    // Extraemos el string .message explícitamente
+    const mensaje = error.message || (typeof error === 'string' ? error : 'Error al actualizar');
+
+    return res.status(400).json({ message: mensaje });
   }
 
  }
