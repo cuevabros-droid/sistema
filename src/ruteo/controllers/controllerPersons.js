@@ -418,7 +418,7 @@ async function controllerSexo(req, res) {
 
   try {
     const pers = await persontService.sexo()
-    console.log(pers)
+    //console.log(pers)
     res.status(200).json(pers)
   } catch (error) {
     loggerError(error.message)
@@ -427,6 +427,29 @@ async function controllerSexo(req, res) {
 
 }
 
-export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF, controllerFacturaPDF, controllerSexo}
+
+async function controllerPersonaBuscarPorDocumento(req, res) {
+
+const { id_tipo_documento, numero_documento } = req.query;
+const identidadeducativa = req.user.identidadeducativa
+
+
+  if (!id_tipo_documento || !numero_documento) {
+    return res.status(400).json({ mensaje: 'Faltan parámetros requeridos' });
+  }
+
+  try {
+
+    const consulta = await persontService.BuscarPorDocumento(id_tipo_documento, numero_documento, identidadeducativa)
+    res.status(200).json(consulta);
+  } catch (error) {
+    console.error('Error al buscar persona:', error);
+    return res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+
+}
+
+
+export {controllerPersons, controllerListarPersons, controllerPersonsConFiltro, controllerPersonsUpdate, controllerPersonsUpdateEstado, controllerPersonsCreate, controllerPersonsSaldos, controllerAlumnosPorTutor, controllerAlumnosPorTutorId, controllerAlumnoTutoresId, controllerPersonsConFiltroApellidoDocumento, controllerPersonaAllegadaCreate, controllerPersonaAllegadaDelete, controllerPersonaAllegadaUpdate, controllerPersonaExcel, controllerPersonaPDF, controllerFacturaPDF, controllerSexo, controllerPersonaBuscarPorDocumento}
 
 

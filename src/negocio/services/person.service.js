@@ -14,7 +14,7 @@ import { eliminarAllegado } from '../repository/personas/person.js';
 import { listarPersonsConFiltroApellidoDocumento } from '../repository/personas/person.js';
 import { updatePersonaAllegada } from '../repository/personas/person.js';
 import { sexo } from '../repository/personas/person.js';
-
+import { BuscarPorDocumento } from '../repository/personas/person.js';
 
 
 
@@ -128,6 +128,11 @@ class PersontService {
 
     async  sexo() {
         const listarSexo = await sexo()
+        return listarSexo
+    }
+
+    async  BuscarPorDocumento(id, numero, identidadeducativa) {
+        const listarSexo = await BuscarPorDocumento(id, numero, identidadeducativa)
         return listarSexo
     }
 
