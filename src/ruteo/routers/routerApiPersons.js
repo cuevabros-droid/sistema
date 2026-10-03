@@ -17,6 +17,7 @@ import {controllerPersonaExcel} from '../controllers/controllerPersons.js';
 import {controllerPersonaPDF} from '../controllers/controllerPersons.js';
 import {controllerFacturaPDF} from '../controllers/controllerPersons.js';
 import {controllerSexo} from '../controllers/controllerPersons.js';
+import {controllerPersonaBuscarPorDocumento} from '../controllers/controllerPersons.js';
 
 
 const routerApiPersona = express.Router();
@@ -26,6 +27,7 @@ routerApiPersona.post('/pdf', autenticacion, controllerPersonaPDF);
 routerApiPersona.post('/factura-pdf', autenticacion, controllerFacturaPDF); 
 routerApiPersona.get('/', autenticacion, controllerPersons); 
 routerApiPersona.get('/sexo', autenticacion, controllerSexo); 
+routerApiPersona.get('/buscar-por-documento', autenticacion, controllerPersonaBuscarPorDocumento);
 routerApiPersona.get('/:texto', autenticacion, controllerPersonsConFiltro); 
 routerApiPersona.put('/:id', autenticacion, controllerPersonsUpdate); 
 routerApiPersona.patch('/:id', autenticacion, controllerPersonsUpdateEstado); 
@@ -38,7 +40,6 @@ routerApiPersona.get('/apellidodocumento/:apellidodocumento', autenticacion, con
 routerApiPersona.post('/AlumnoTutores/', autenticacion, controllerPersonaAllegadaCreate); 
 routerApiPersona.delete('/AlumnoTutores/:id', autenticacion, controllerPersonaAllegadaDelete); 
 routerApiPersona.put('/AlumnoTutores/:id', autenticacion, controllerPersonaAllegadaUpdate); 
-
 
 
 

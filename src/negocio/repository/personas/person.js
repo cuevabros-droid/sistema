@@ -196,3 +196,13 @@ export async function PersonaAllegadaCreate(objeto) {
             return error
         }       
     }
+
+
+    export async function BuscarPorDocumento(id, numero, identidadeducativa) {
+        try {
+          const resul = await pg.BuscarPorDocumento(id, numero, identidadeducativa)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }

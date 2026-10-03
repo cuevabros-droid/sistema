@@ -125,9 +125,13 @@ try {
     async function controladorUsuariosEliminar(req, res){
 
     req.body.identidadeducativa = req.user.identidadeducativa
+
+    const id = req.params.id
+
+    req.body.id = id
   
   try {
-    const usuarios = await usuarioService.UsuariosEliminar(id)
+    const usuarios = await usuarioService.UsuariosEliminar(req.body)
     res.status(200).json(usuarios)
   } catch (error) {
     loggerError(error)

@@ -19,7 +19,7 @@ routerApiUser.get('/perfil', autenticacion, controladorUsuarioPerfil);
 routerApiUser.put('/perfil', autenticacion, controladorUsuarioActualizarPerfil);
 routerApiUser.post('/', autenticacion, controladorUsuariosCrear);
 routerApiUser.put('/:id', autenticacion, controladorUsuariosActualizar);
-routerApiUser.delete('/id', autenticacion, controladorUsuariosEliminar);
+routerApiUser.delete('/:id', autenticacion, controladorUsuariosEliminar);
 routerApiUser.get('/tipo_usuarios', autenticacion, controladorTipoUsuarios);
 routerApiUser.get('/tutores-sin-usuario', autenticacion, controladorTutoresSinUsuario);
 routerApiUser.post('/tutores-sin-usuario/procesar', autenticacion, controladorUsuariosCrearEnMasa);

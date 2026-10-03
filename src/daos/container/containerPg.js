@@ -981,7 +981,7 @@ ORDER BY ${ordenSQL};
                 ) AS rn
             FROM Persona P
             INNER JOIN persona_allegado pa ON pa.id_persona = P.id_persona
-            INNER JOIN alumno A ON A.id_alumno = pa.id_alumno AND A.Regular = 'S'    
+            INNER JOIN alumno A ON A.id_alumno = pa.id_alumno --AND A.Regular = 'S'    
             INNER JOIN tipo_allegado ta ON pa.id_tipo_allegado = ta.id_tipo_allegado
             INNER JOIN persona PAlumno ON PAlumno.id_persona = a.id_persona
             -- JOIN con los documentos DEL TUTOR (P):
@@ -1324,6 +1324,8 @@ ORDER BY ${ordenSQL};
 
   async updateAcademica(objeto) {
     try {
+      await pool.query("BEGIN");
+
       const resultados = [];
 
       // 1. Validamos que exista el historial y sea un array recorrible
@@ -1370,10 +1372,11 @@ ORDER BY ${ordenSQL};
           resultados.push(resQuery.rows[0]);
         }
       }
-
+      await pool.query("COMMIT");
       return resultados;
     } catch (error) {
       console.error("Error en ContainerPg.updateAcademica:", error);
+      await pool.query("ROLLBACK");
       throw error;
     }
   }
@@ -1559,6 +1562,8 @@ async generarArchivoDebito() {
 
   async updatePago(objeto) {
     try {
+      pool.query("BEGIN");
+
       if (
         Number(objeto.id_medio_pago) === 1 ||
         Number(objeto.id_medio_pago) === 2 ||
@@ -1598,11 +1603,12 @@ async generarArchivoDebito() {
 
       // 3. Ejecutamos la consulta en tu pool de base de datos
       const resultados = await pool.query(queryText, queryValues); 
-      
+    pool.query("COMMIT");
     return resultados;
 
   } catch (error) {
     console.error("Error en ContainerPg.updateAcademica:", error);
+    pool.query("ROLLBACK");
     throw error;
   }
 }
@@ -2379,7 +2385,7 @@ async TutoresSinUsuario(busqueda, identidadeducativa) {
 
 
 async CrearUsuario(objeto) {
-  console.log("Objeto recibido para alta:", objeto);
+  //console.log("Objeto recibido para alta:", objeto);
 
   // 1. Solicitar un cliente dedicado del pool para manejar la transacción
   const client = await pool.connect();
@@ -2671,6 +2677,8 @@ async CrearUsuarioEnMasa(objeto) {
   `;
 
   try {
+        await pool.query("BEGIN");
+
     // Normaliza el array de IDs (soporta [45, 46] o [{id_persona: 45}, ...])
     const idsArray = objeto.tutoresIds
       .map((item) => parseInt(typeof item === 'object' ? (item.id_persona ?? item.id) : item))
@@ -2687,11 +2695,14 @@ async CrearUsuarioEnMasa(objeto) {
     ]);
 
     console.log(`✅ Usuarios creados exitosamente: ${resultado.rowCount}`);
+    
+    await pool.query("COMMIT");
 
     return resultado.rows;
 
   } catch (error) {
     console.error("❌ Error al crear usuarios en masa en PostgreSQL:", error);
+    await pool.query("ROLLBACK");
     throw error;
   }
 }
@@ -2710,7 +2721,7 @@ async CrearUsuarioEnMasa(objeto) {
 
 
   async ActualizarUsuario(objeto) {
-console.log(objeto)
+//console.log(objeto)
   const {
     id_persona,
     id_usuario,
@@ -2760,6 +2771,7 @@ console.log(objeto)
 
 
   try {
+    await pool.query("BEGIN");
 
     // 1. VALIDACIÓN PREVIA (Antes de realizar cualquier UPDATE)
     if (idTipoUsuario !== 3 && id_persona) {
@@ -2861,6 +2873,7 @@ console.log(objeto)
     await this.updatePersons(persona, id_persona)
     await this.actualizarDocumentoPersona(persona_documento)
     }
+    await pool.query("COMMIT");
 
     return 'Usuario y persona actualizados correctamente';
   } else
@@ -2869,22 +2882,48 @@ console.log(objeto)
 
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
+    await client.query("ROLLBACK");
     throw error;
   }
 
   }
 
 
-  async EliminarUsuario(id) {
+  async EliminarUsuario(objeto) {
+   //console.log(objeto)
     try {
-      const objetoBuscado = await pool.query(
-        `select * from sexo`
-      );
+
+     //  await pool.query("BEGIN")
+
+      const objetoBuscado = await pool.query(`select * from usuarios u left join usuario_entidades ue ON u.id_usuario = ue.id_usuario
+                                                            where u.id_usuario = $1`, [objeto.id]);
+      const tipoUsuario = await pool.query(`select idtipousuario from usuarios where id_usuario = $1`, [objeto.id]);
+      const id_persona = await pool.query(`select id_persona from usuarios where id_usuario = $1`, [objeto.id]);
+
+
+      if (objetoBuscado.rows.length > 1) {
+        await pool.query(`delete from usuario_entidades where id_usuario = $1 and identidadeducativa = $2`, [objeto.id, objeto.identidadeducativa]);
+      } else {
+         if(objetoBuscado.rows.length === 1) {
+           await pool.query(`delete from usuario_entidades where id_usuario = $1 and identidadeducativa = $2`, [objeto.id, objeto.identidadeducativa]);
+           await pool.query(`delete from usuarios where id_usuario = $1 and identidadeducativa = $2`, [objeto.id, objeto.identidadeducativa]);
+         }
+      }
+
+      if (tipoUsuario.rows.length > 0 && Number(tipoUsuario.rows[0].idtipousuario) !== 3) {
+            await pool.query(`delete from persona_sexo where id_persona = $1`, [id_persona.rows[0].id_persona]);
+            await pool.query(`delete from persona_tipo_documento where id_persona = $1`, [id_persona.rows[0].id_persona]);
+            await pool.query(`delete from persona where id_persona = $1`, [id_persona.rows[0].id_persona]);
+      }
+
+   //   await pool.query("COMMIT");
       return objetoBuscado.rows;
     } catch (error) {
+    //  await pool.query("ROLLBACK");
       return error;
     }
   }
+
 
   async getPerfilUsuario(id_usuario) {
     try {
@@ -2930,6 +2969,8 @@ console.log(objeto)
 
   async actualizarPerfilUsuario(id_usuario, { imagenUrl, password }) {
     try {
+          await pool.query("BEGIN");
+
       if (password && password.trim() !== '') {
         await pool.query(
           `UPDATE usuarios
@@ -2946,11 +2987,41 @@ console.log(objeto)
           [imagenUrl || null, id_usuario]
         );
       }
+          await pool.query("COMMIT");
+
       return await this.getPerfilUsuario(id_usuario);
     } catch (error) {
+      await pool.query("ROLLBACK");
       throw error;
     }
   }
+
+
+
+  async BuscarPorDocumento(id_tipo_documento, numero_documento, identidadeducativa) {
+      try {
+          const consulta = await pool.query(
+            `SELECT p.*, ps.*, u.*, ue.*, pd.id_tipo_documento 
+            FROM persona p
+            INNER JOIN persona_tipo_documento pd ON p.id_persona = pd.id_persona
+            INNER JOIN persona_sexo ps ON p.id_persona = ps.id_persona
+            LEFT JOIN usuarios u ON p.id_persona = u.id_persona
+            LEFT JOIN usuario_entidades ue ON u.id_usuario = ue.id_usuario and ue.identidadeducativa = $3
+            WHERE pd.id_tipo_documento = $1 AND pd.numero = $2`,
+            [id_tipo_documento, numero_documento, identidadeducativa]
+          );
+
+          if (consulta.rows.length > 0) {
+            return ({ existe: true, persona: consulta.rows[0] });
+          }
+
+          return ({ existe: false });
+        } catch (error) {
+          console.error('Error al buscar persona:', error);
+          return ({ mensaje: 'Error interno del servidor' });
+        }
+  }
+
 
 }
 
