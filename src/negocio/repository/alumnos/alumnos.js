@@ -5,9 +5,9 @@ import  {ContainerPg}  from '../../../daos/container/containerPg.js'
 
 const pg = new ContainerPg
 
-    export async function listarAlumnos() {
+    export async function listarAlumnos(id_establecimiento) {
         try {
-          const resul = await pg.getAll()
+          const resul = await pg.getAll(id_establecimiento)
           return resul
         } catch (error) {
             return error

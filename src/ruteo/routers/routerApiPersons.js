@@ -32,7 +32,7 @@ routerApiPersona.get('/:texto', autenticacion, controllerPersonsConFiltro);
 routerApiPersona.put('/:id', autenticacion, controllerPersonsUpdate); 
 routerApiPersona.patch('/:id', autenticacion, controllerPersonsUpdateEstado); 
 routerApiPersona.post('/', autenticacion, controllerPersonsCreate); 
-routerApiPersona.post('/SaldoAlumno/:id_alumno', controllerPersonsSaldos ); 
+routerApiPersona.post('/SaldoAlumno/:id_alumno', autenticacion, controllerPersonsSaldos ); 
 routerApiPersona.post('/AlumnosTutor/:usuario', autenticacion, controllerAlumnosPorTutor);
 routerApiPersona.get('/AlumnosTutorId/:id', autenticacion, controllerAlumnosPorTutorId);
 routerApiPersona.get('/AlumnoTutoresId/:id',  autenticacion, controllerAlumnoTutoresId);

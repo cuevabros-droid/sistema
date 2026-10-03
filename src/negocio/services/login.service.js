@@ -56,6 +56,40 @@ class LoginService {
       throw error;
     }
   }
+
+  // Devuelve todas las instituciones activas a las que pertenece el usuario
+  // (usuario_entidades + la institución principal de la tabla usuarios)
+  async buscar_entidades(id_usuario) {
+    const result = await pool.query(
+      `
+      SELECT DISTINCT EE.identidadeducativa, EE.entidadeducativa, EE.logo
+      FROM entidades_educativas EE
+      WHERE EE.identidadeducativa IN (
+          SELECT ue.identidadeducativa
+          FROM usuario_entidades ue
+          WHERE ue.id_usuario = $1
+            AND COALESCE(ue.activo, true) = true
+          UNION
+          SELECT u.identidadeducativa
+          FROM usuarios u
+          WHERE u.id_usuario = $1
+      )
+      ORDER BY EE.entidadeducativa
+      `,
+      [id_usuario],
+    );
+    return result.rows;
+  }
+
+  // Verifica que el usuario pertenezca a la institución indicada y la devuelve
+  async buscar_entidad_de_usuario(id_usuario, identidadeducativa) {
+    const entidades = await this.buscar_entidades(id_usuario);
+    return (
+      entidades.find(
+        (e) => Number(e.identidadeducativa) === Number(identidadeducativa),
+      ) || null
+    );
+  }
 }
 
 export const loginService = new LoginService();

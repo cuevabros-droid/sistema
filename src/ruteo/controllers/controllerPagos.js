@@ -238,7 +238,11 @@ async function controllerEstadoDeuda({ params: { id }, user, body} , res) {
 async function controllerAlumnosPendientes(req, res) {
    
   try {
-    const resul = await pagosService.AlumnosPendientes(req.query);
+    const filtros = {
+      ...req.query,
+      id_establecimiento: req.user?.identidadeducativa
+    };
+    const resul = await pagosService.AlumnosPendientes(filtros);
 
     return res.status(200).json(resul);
   } catch (error) {
