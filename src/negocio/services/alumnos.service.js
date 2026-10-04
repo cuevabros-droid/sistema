@@ -11,8 +11,8 @@ class AlumnosService {
 
 
     //Lista los datos de todos los productos
-    async listarAlumnos() {
-            const listadoPersonas = await listarAlumnos()
+    async listarAlumnos(id_establecimiento) {
+            const listadoPersonas = await listarAlumnos(id_establecimiento)
             return listadoPersonas
         }
 

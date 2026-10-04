@@ -35,6 +35,9 @@ async function controladorLoginp(req, res) {
       });
     }
 
+    // INSTITUCIONES A LAS QUE PERTENECE EL USUARIO
+    const entidades = await loginService.buscar_entidades(usuario.id_usuario);
+
     // PAYLOAD DEL TOKEN
     const payload = {
 
@@ -81,6 +84,7 @@ async function controladorLoginp(req, res) {
         id_persona: usuario.id_persona,
         apellidos: usuario.apellidos,
         nombres: usuario.nombres,
+        entidades,
       },
     });
   } catch (error) {
@@ -94,4 +98,41 @@ async function controladorLoginp(req, res) {
   }
 }
 
-export { controladorLoginp };
+// Genera un nuevo token para la institución seleccionada por el usuario
+async function controladorCambiarInstitucion(req, res) {
+  try {
+    const { identidadeducativa } = req.body;
+    const entidad = await loginService.buscar_entidad_de_usuario(
+      req.user.id_usuario,
+      identidadeducativa,
+    );
+
+    if (!entidad) {
+      return res.status(403).json({
+        ok: false,
+        mensaje: "El usuario no pertenece a la institución seleccionada",
+      });
+    }
+
+    const payload = {
+      ...req.user,
+      identidadeducativa: entidad.identidadeducativa,
+      entidadeducativa: entidad.entidadeducativa,
+    };
+
+    const token = createToken(payload);
+
+    return res.status(200).json({
+      ok: true,
+      token,
+      identidadeducativa: entidad.identidadeducativa,
+      entidadeducativa: entidad.entidadeducativa,
+      logo: entidad.logo,
+    });
+  } catch (error) {
+    loggerError(error);
+    return res.status(500).json({ ok: false, mensaje: "Error interno del servidor" });
+  }
+}
+
+export { controladorLoginp, controladorCambiarInstitucion };
