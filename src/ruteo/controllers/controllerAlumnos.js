@@ -6,7 +6,7 @@ import {pool} from '../../daos/db/pgClient.js';
  async function controllerAlumnos(req, res) {
 
   try {
-    const resul = await alumnosService.listarAlumnos()
+    const resul = await alumnosService.listarAlumnos(req.user?.identidadeducativa)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)

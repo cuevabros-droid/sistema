@@ -9,8 +9,11 @@ import QRCode from 'qrcode'; // o const QRCode = require('qrcode');
  async function controllerPersons(req, res) {
 
 try {
-    // req.query contiene los QueryParams que mandó React: { search, esAlumno, esTutor, estado }
-    const personas = await persontService.listarPersonas(req.query);
+    const filtros = {
+      ...req.query,
+      identidadeducativa: req.user?.identidadeducativa
+    };
+    const personas = await persontService.listarPersonas(filtros);
     res.json(personas);
   } catch (error) {
     res.status(500).json({ error: "Error al obtener las personas" });

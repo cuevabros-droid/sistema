@@ -60,8 +60,18 @@ class ContainerPg {
     }
   }
 
-  async getAll() {
+  async getAll(id_establecimiento) {
     try {
+      const params = [];
+      let where = "WHERE persona.activo <> 'B'";
+      let joinAlumno = "LEFT JOIN alumno ON alumno.id_persona = persona.id_persona";
+
+      if (id_establecimiento) {
+        params.push(id_establecimiento);
+        joinAlumno += ` AND alumno.id_establecimiento = $${params.length}`;
+        where += ` AND alumno.id_alumno IS NOT NULL`;
+      }
+
       const objetoBuscado = await pool.query(` SELECT * FROM (
             SELECT DISTINCT ON (persona.id_persona) 
                 persona.*, 
@@ -78,18 +88,18 @@ class ContainerPg {
             FROM persona 
             INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
             INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
-            LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+            ${joinAlumno}
             LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
             LEFT JOIN alumno_datos_cursada ON alumno_datos_cursada.id_alumno = alumno.id_alumno
 	        LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
 	        LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
-		WHERE persona.activo <> 'B' 
+		${where} 
             ORDER BY 
                 persona.id_persona, 
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
                 persona_tipo_documento.fecha_alta ASC
         ) subconsulta 
-        ORDER BY apellidos ASC, nombres ASC; `);
+        ORDER BY apellidos ASC, nombres ASC; `, params);
       return objetoBuscado.rows;
     } catch (error) {
       throw error;
@@ -131,11 +141,21 @@ class ContainerPg {
     incluirSaldo,
     idNivel,
     idGrado,
-    idDivision 
+    idDivision,
+    identidadeducativa 
   } = filtros;
 
   const conditions = ["persona.activo <> 'B' AND persona.es_alumno IS NOT NULL"];
   const params = [];
+
+  let joinAlumno = "LEFT JOIN alumno ON alumno.id_persona = persona.id_persona";
+  let paramEntidad = null;
+
+  if (identidadeducativa) {
+    params.push(identidadeducativa);
+    paramEntidad = `$${params.length}`;
+    joinAlumno += ` AND alumno.id_establecimiento = ${paramEntidad}`;
+  }
 
   if (search && search.trim() !== "") {
     params.push(`%${search.trim()}%`);
@@ -153,7 +173,27 @@ class ContainerPg {
   }
 
   if (String(esTutor) === "true") {
-    conditions.push(`es_alumno = 'N'`);
+    conditions.push(`persona.es_alumno = 'N'`);
+    if (paramEntidad) {
+      conditions.push(`EXISTS (
+        SELECT 1 FROM persona_allegado pa 
+        INNER JOIN alumno al ON pa.id_alumno = al.id_alumno 
+        WHERE pa.id_persona = persona.id_persona 
+          AND al.id_establecimiento = ${paramEntidad}
+      )`);
+    }
+  }
+
+  if (paramEntidad && String(esAlumno) !== "true" && String(esTutor) !== "true") {
+    conditions.push(`(
+      alumno.id_alumno IS NOT NULL 
+      OR EXISTS (
+        SELECT 1 FROM persona_allegado pa 
+        INNER JOIN alumno al ON pa.id_alumno = al.id_alumno 
+        WHERE pa.id_persona = persona.id_persona 
+          AND al.id_establecimiento = ${paramEntidad}
+      )
+    )`);
   }
 
   if (String(esAlumno) === "true" && estado === "activo") {
@@ -221,7 +261,7 @@ class ContainerPg {
         FROM persona 
         INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
         INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
-        LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
+        ${joinAlumno}
         LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion
         
         LEFT JOIN LATERAL (
@@ -1981,10 +2021,13 @@ const obtenerParametroDeudaQuery = `
 }
 
 
-async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
+async AlumnosPendientes({ cuota, anio, incluirNoRegulares, id_establecimiento }) {
 
     const parametro = 'importe_mensual_cuota';
-    const resultParam = await pool.query(`select valor from parametros_sistema where parametro = $1`, [parametro]);
+    const resultParam = await pool.query(
+      `select valor from parametros_sistema where parametro = $1 and ($2::int IS NULL or id_establecimiento = $2)`, 
+      [parametro, id_establecimiento || null]
+    );
     const importeActualVal = Number(resultParam.rows[0]?.valor).toFixed(2);
 
     let sql = `
@@ -2033,6 +2076,11 @@ async AlumnosPendientes({ cuota, anio, incluirNoRegulares }) {
     `;
 
     const values = [];
+
+    if (id_establecimiento) {
+        values.push(id_establecimiento);
+        sql += ` AND alu.id_establecimiento = $${values.length}`;
+    }
 
     // Filtro por alumnos regulares ('S')
     if (incluirNoRegulares !== 'true' && incluirNoRegulares !== true) {

@@ -7,6 +7,7 @@ import {controladorUsuariosCrearEnMasa} from '../controllers/controllerUsuarios.
 import {controladorUsuariosActualizar} from '../controllers/controllerUsuarios.js';
 import {controladorUsuariosEliminar} from '../controllers/controllerUsuarios.js';
 import {controladorUsuarioPerfil, controladorUsuarioActualizarPerfil} from '../controllers/controllerUsuarios.js';
+import {controladorCambiarInstitucion} from '../controllers/controllerLogin.js';
 import {esAdmin} from '../../negocio/middlewares/esAdmin.js';
 import  { autenticacion } from '../../negocio/middlewares/autenticacion.js';
 import upload from '../../negocio/utils/multer.js'; // O la ruta donde tengas configurado multer
@@ -17,6 +18,7 @@ const routerApiUser = express.Router();
 routerApiUser.get('/', autenticacion, controladorUsuarios);
 routerApiUser.get('/perfil', autenticacion, controladorUsuarioPerfil);
 routerApiUser.put('/perfil', autenticacion, controladorUsuarioActualizarPerfil);
+routerApiUser.post('/cambiar-institucion', autenticacion, controladorCambiarInstitucion);
 routerApiUser.post('/', autenticacion, controladorUsuariosCrear);
 routerApiUser.put('/:id', autenticacion, controladorUsuariosActualizar);
 routerApiUser.delete('/:id', autenticacion, controladorUsuariosEliminar);
