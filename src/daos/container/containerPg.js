@@ -1091,7 +1091,7 @@ ORDER BY ${ordenSQL};
             INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
             LEFT JOIN alumno ON alumno.id_persona = persona.id_persona
             LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
-            WHERE persona.activo <> 'B' and es_alumno = 'N'  and (apellidos ILIKE $1 or numero ILIKE $1)
+            WHERE persona.activo <> 'B' and (apellidos ILIKE $1 or numero ILIKE $1) --and es_alumno = 'N'
             ORDER BY 
                 persona.id_persona, 
                 CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
@@ -2353,7 +2353,7 @@ async Usuarios(busqueda, identidadeducativa) {
           LEFT JOIN  localidad lr               ON per.id_localidad_residencia = lr.id_localidad
           LEFT JOIN  nacionalidad n             ON per.id_nacionalidad = n.id_nacionalidad
           LEFT JOIN  usuario_entidades ue       ON u.id_usuario = ue.id_usuario AND ue.identidadeducativa = $2
-          --WHERE ue.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
+          WHERE ue.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
       )
       SELECT id_usuario, id_persona, apellidos, nombres, id_localidad_nacimiento, localidad_nacimiento, id_localidad_residencia, localidad_residencia, id_nacionalidad, nacionalidad, usuario, email, "tipoDocumento", "numeroDocumento", "idTipoUsuario", "tipousuario", activo, imagen, id_sexo, sexo, fecha_nacimiento, telefono
       FROM personas_documentos
