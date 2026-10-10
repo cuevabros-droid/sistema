@@ -1491,7 +1491,7 @@ WHERE a.id_alumno = $1
   }
 
   // ALTA MÚLTIPLE
-  async createPago(objeto) {
+/*  async createPago(objeto) {
     const query = `
     INSERT INTO alumno_tarjeta (
         id_alumno, id_medio_pago, id_marca_tarjeta, id_entidad_bancaria, 
@@ -1542,7 +1542,100 @@ WHERE a.id_alumno = $1
       );
       throw error;
     }
+  }*/
+
+ 
+// ALTA / ACTUALIZACIÓN DE MEDIO DE PAGO
+async createPago(objeto) {
+  console.log("👉 Objeto recibido en createPago:", objeto);
+
+  // Capturamos la PK ya sea que el frontend envíe id_alumno_tarjeta o la clave anterior
+  const idTarjeta = 
+    objeto.id_alumno_tarjeta || 
+    objeto.id_persona_forma_pago || 
+    objeto.id_persona_tarjeta || 
+    objeto.id_tarjeta || 
+    objeto.id;
+
+  const insertQuery = `
+    INSERT INTO alumno_tarjeta (
+        id_alumno, id_medio_pago, id_marca_tarjeta, id_entidad_bancaria, 
+        numero_tarjeta, activo, nombre_titular
+    ) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+  `;
+
+  const updateQuery = `
+    UPDATE alumno_tarjeta 
+    SET 
+        id_medio_pago = $1, 
+        id_marca_tarjeta = $2, 
+        id_entidad_bancaria = $3, 
+        numero_tarjeta = $4, 
+        activo = $5, 
+        nombre_titular = $6
+    WHERE id_alumno_tarjeta = $7
+    RETURNING *;
+  `;
+
+  try {
+    await pool.query("BEGIN");
+
+    // Limpieza para medios de pago sin tarjeta (Efectivo, Transferencia, etc.)
+    if (
+      Number(objeto.id_medio_pago) === 1 ||
+      Number(objeto.id_medio_pago) === 2 ||
+      Number(objeto.id_medio_pago) === 5 ||
+      Number(objeto.id_medio_pago) === 6
+    ) {
+      objeto.id_marca_tarjeta = null;
+      objeto.id_entidad_bancaria = null;
+      objeto.numero_tarjeta = null;
+      objeto.activo = null;
+      objeto.nombre_titular = null;
+    }
+
+    let resultado;
+
+    if (idTarjeta) {
+      // 🔄 UPDATE si existe la clave primaria
+      const valoresUpdate = [
+        objeto.id_medio_pago,
+        objeto.id_marca_tarjeta,
+        objeto.id_entidad_bancaria,
+        objeto.numero_tarjeta,
+        objeto.activo,
+        objeto.nombre_titular,
+        idTarjeta
+      ];
+      console.log("✅ Ejecutando UPDATE para id_alumno_tarjeta:", idTarjeta);
+      resultado = await pool.query(updateQuery, valoresUpdate);
+    } else {
+      // ➕ INSERT si es un registro realmente nuevo
+      const valoresInsert = [
+        objeto.id_alumno,
+        objeto.id_medio_pago,
+        objeto.id_marca_tarjeta,
+        objeto.id_entidad_bancaria,
+        objeto.numero_tarjeta,
+        objeto.activo,
+        objeto.nombre_titular,
+      ];
+      console.log("➕ Ejecutando INSERT nuevo para id_alumno:", objeto.id_alumno);
+      resultado = await pool.query(insertQuery, valoresInsert);
+    }
+
+    await pool.query("COMMIT");
+    return resultado;
+
+  } catch (error) {
+    await pool.query("ROLLBACK");
+    console.error("❌ Error al procesar pago en Postgres:", error);
+    throw error;
   }
+}
+
 
   async deletePago(id) {
     try {
