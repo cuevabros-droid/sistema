@@ -1,9 +1,12 @@
 // src/negocio/utils/afip.js
 import path from 'path';
 import fs from 'fs';
-import { Arca, FileSystemTicketStorage } from '@arcasdk/core'; // <--- Se agrega FileSystemTicketStorage
+import { Arca, FileSystemTicketStorage } from '@arcasdk/core';
+import { ContainerPg } from '../../daos/container/containerPg.js';
 
-
+// ===================================================
+// 1. CARGA DE CERTIFICADOS Y CARPETAS SEGÚN ENTORNO
+// ===================================================
 const esProduccion = process.env.ENVIRONMENT === 'produccion';
 const certFolder = esProduccion ? 'afip_certs' : 'afip_certs_homologacion';
 
@@ -13,33 +16,62 @@ const keyPath = path.resolve(`src/${certFolder}/clave.key`);
 const cert = fs.readFileSync(certPath, 'utf8');
 const key = fs.readFileSync(keyPath, 'utf8');
 
-const cuit = Number(esProduccion ? process.env.AFIP_CUIT_PROD : process.env.AFIP_CUIT_TEST);
-
-
-// 1. Crear carpeta local para guardar los tickets de WSAA si no existe
 const ticketFolder = path.resolve('src/afip_tickets');
 if (!fs.existsSync(ticketFolder)) {
   fs.mkdirSync(ticketFolder, { recursive: true });
 }
 
-// 2. Configurar la persistencia de tickets en disco
-const ticketStorage = new FileSystemTicketStorage({
-  ticketPath: ticketFolder,
-  cuit,
-  production: esProduccion
-});
+// ===================================================
+// 2. OBTENER INSTANCIA DE ARCA SEGÚN ENTORNO Y CUIT
+// ===================================================
+async function obtenerInstanciaArca(identidadeducativa) {
+  if (!identidadeducativa) {
+    throw new Error('No se especificó la identidadeducativa para obtener los parámetros de AFIP.');
+  }
 
-// 3. Pasar 'ticketStorage' a la instancia de Arca
-const arca = new Arca({
-  cuit,
-  cert,
-  key,
-  production: esProduccion,
-  useHttpsAgent: esProduccion,
-  ticketStorage // <--- Se agrega aquí
-});
+  const containerPg = new ContainerPg();
+  const parametros = await containerPg.parametros(identidadeducativa);
 
-export async function emitirFacturaAFIP(datosFactura) {
+  // Búsqueda de ambos parámetros
+  const cuit_institucion = parametros.find(p => p.parametro === 'cuit_institucion');
+  const cuit_institucion_testeo = parametros.find(p => p.parametro === 'cuit_institucion_testeo');
+
+  // Selección dinámica según entorno
+  const cuitObjeto = esProduccion ? cuit_institucion : cuit_institucion_testeo;
+  //const cuit = Number(esProduccion ? process.env.AFIP_CUIT_PROD : process.env.AFIP_CUIT_TEST);
+  const cuitValor = cuitObjeto?.valor ?? cuitObjeto?.val ?? cuitObjeto;
+  const cuit = Number(cuitValor);
+
+  if (!cuit) {
+    const parametroNombre = esProduccion ? 'cuit_institucion' : 'cuit_institucion_testeo';
+    throw new Error(`No se encontró el parámetro '${parametroNombre}' para la identidad educativa: ${identidadeducativa}`);
+  }
+
+  const ticketStorage = new FileSystemTicketStorage({
+    ticketPath: ticketFolder,
+    cuit,
+    production: esProduccion
+  });
+
+  return new Arca({
+    cuit,
+    cert,
+    key,
+    production: esProduccion,
+    useHttpsAgent: esProduccion,
+    ticketStorage
+  });
+}
+
+// ===================================================
+// 3. EMISIÓN DE FACTURA AFIP
+// ===================================================
+export async function emitirFacturaAFIP(datosFactura, identidadeducativaParam) {
+  const identidadeducativa = identidadeducativaParam || datosFactura?.identidadeducativa;
+
+  // Se crea/obtiene la instancia de Arca con el CUIT correcto (prod o test)
+  const arca = await obtenerInstanciaArca(identidadeducativa);
+
   const tipoComprobante = Number(datosFactura.tipoComprobante || 11);
   const esFacturaC = [11, 12, 13].includes(tipoComprobante);
 
