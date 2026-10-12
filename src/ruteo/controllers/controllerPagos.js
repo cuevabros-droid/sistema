@@ -171,7 +171,7 @@ try {
       impNeto: montoAbsoluto,
       impIva: 0,
       condicionIvaReceptorId: body.condicionIvaReceptorId || 5
-    });
+    }, user.identidadeducativa);
 
         // 3. Inyección de los datos devueltos por AFIP en el objeto 'body'
     body.cae = datosAfip?.cae;
