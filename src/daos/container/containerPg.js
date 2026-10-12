@@ -60,51 +60,57 @@ class ContainerPg {
     }
   }
 
-  async getAll(id_establecimiento) {
-    try {
-      const params = [];
-      let where = "WHERE persona.activo <> 'B'";
-      let joinAlumno = "LEFT JOIN alumno ON alumno.id_persona = persona.id_persona";
+async getAll(id_establecimiento) {
+  try {
+    const params = [];
+    // 1. Permite activo NULL o distinto de 'B'
+    let where = "WHERE (persona.activo IS NULL OR persona.activo <> 'B')";
+    let joinAlumno = "LEFT JOIN alumno ON alumno.id_persona = persona.id_persona";
 
-      if (id_establecimiento) {
-        params.push(id_establecimiento);
-        joinAlumno += ` AND alumno.id_establecimiento = $${params.length}`;
-        where += ` AND alumno.id_alumno IS NOT NULL`;
-      }
-
-      const objetoBuscado = await pool.query(` SELECT * FROM (
-            SELECT DISTINCT ON (persona.id_persona) 
-                persona.*, 
-                persona_tipo_documento.id_tipo_documento, 
-                persona_tipo_documento.numero, 
-                td.nombre_corto,
-                alumno.id_alumno,
-                regular,
-                motivo_desercion.nombre AS motivo_desercion, -- <-- Se agrega el campo nombre asignándole un alias claro
-	            alumno_datos_cursada.id_grado as id_grado,
-	            grado.nombre as grado,
-	            grado.id_nivel as id_nivel,
-	            nivel.nombre as nivel	       
-            FROM persona 
-            INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
-            INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
-            ${joinAlumno}
-            LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion -- <-- LEFT JOIN agregado
-            LEFT JOIN alumno_datos_cursada ON alumno_datos_cursada.id_alumno = alumno.id_alumno
-	        LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
-	        LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
-		${where} 
-            ORDER BY 
-                persona.id_persona, 
-                CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
-                persona_tipo_documento.fecha_alta ASC
-        ) subconsulta 
-        ORDER BY apellidos ASC, nombres ASC; `, params);
-      return objetoBuscado.rows;
-    } catch (error) {
-      throw error;
+    if (id_establecimiento) {
+      params.push(id_establecimiento);
+      joinAlumno += ` AND alumno.id_establecimiento = $${params.length}`;
+      // 2. Acepta si tiene registro en la tabla alumno O si persona.es_alumno es 'S'
+      where += ` AND (alumno.id_alumno IS NOT NULL OR persona.es_alumno = 'S')`;
+    } else {
+      where += ` AND persona.es_alumno = 'S'`;
     }
+
+    const objetoBuscado = await pool.query(` SELECT * FROM (
+          SELECT DISTINCT ON (persona.id_persona) 
+              persona.*, 
+              persona_tipo_documento.id_tipo_documento, 
+              persona_tipo_documento.numero, 
+              td.nombre_corto,
+              alumno.id_alumno,
+              regular,
+              motivo_desercion.nombre AS motivo_desercion,
+              alumno_datos_cursada.id_grado as id_grado,
+              grado.nombre as grado,
+              grado.id_nivel as id_nivel,
+              nivel.nombre as nivel        
+          FROM persona 
+          -- 3. AMBOS deben ser LEFT JOIN para no descartar personas sin documento
+          LEFT JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+          LEFT JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+          ${joinAlumno}
+          LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion
+          LEFT JOIN alumno_datos_cursada ON alumno_datos_cursada.id_alumno = alumno.id_alumno
+          LEFT JOIN grado ON grado.id_grado = alumno_datos_cursada.id_grado
+          LEFT JOIN nivel ON nivel.id_nivel = grado.id_nivel
+          ${where} 
+          ORDER BY 
+              persona.id_persona, 
+              CASE WHEN persona_tipo_documento.id_tipo_documento = 8 THEN 0 ELSE 1 END ASC, 
+              persona_tipo_documento.fecha_alta ASC
+      ) subconsulta 
+      ORDER BY apellidos ASC, nombres ASC; `, params);
+
+    return objetoBuscado.rows;
+  } catch (error) {
+    throw error;
   }
+}
 
   async getAllById(id) {
     try {
