@@ -138,7 +138,7 @@ async getAll(id_establecimiento) {
   }
 
   
-  async getAllWithFilters(filtros = {}) {
+async getAllWithFilters(filtros = {}) {
   const { 
     search, 
     esAlumno, 
@@ -151,7 +151,11 @@ async getAll(id_establecimiento) {
     identidadeducativa 
   } = filtros;
 
-  const conditions = ["persona.activo <> 'B' AND persona.es_alumno IS NOT NULL"];
+  // 1. Excluir dados de baja ('B') pero permitir NULLs, y requerir un documento de identidad válido (descarta registros prueba/vacíos)
+  const conditions = [
+    "persona.activo IS DISTINCT FROM 'B'",
+    "NULLIF(TRIM(persona_tipo_documento.numero), '') IS NOT NULL"
+  ];
   const params = [];
 
   let joinAlumno = "LEFT JOIN alumno ON alumno.id_persona = persona.id_persona";
@@ -179,7 +183,8 @@ async getAll(id_establecimiento) {
   }
 
   if (String(esTutor) === "true") {
-    conditions.push(`persona.es_alumno = 'N'`);
+    // 2. Contemplar 'N' y NULL para alinearlo con la tabla 'persona'
+    conditions.push(`(persona.es_alumno = 'N' OR persona.es_alumno IS NULL)`);
     if (paramEntidad) {
       conditions.push(`EXISTS (
         SELECT 1 FROM persona_allegado pa 
@@ -265,8 +270,9 @@ async getAll(id_establecimiento) {
             COALESCE(divisiones.division, alumno_datos_cursada.division) AS division
             ${selectDeudaFields}
         FROM persona 
-        INNER JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
-        INNER JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
+        -- 3. LEFT JOIN para no descartar personas sin documento vinculado en la tabla secundaria
+        LEFT JOIN persona_tipo_documento ON persona.id_persona = persona_tipo_documento.id_persona 
+        LEFT JOIN tipo_documento td ON td.id_tipo_documento = persona_tipo_documento.id_tipo_documento
         ${joinAlumno}
         LEFT JOIN motivo_desercion ON motivo_desercion.id_motivo_desercion = alumno.id_motivo_desercion
         
@@ -2369,65 +2375,78 @@ async ActualizarImporte(objeto) {
 async Usuarios(busqueda, identidadeducativa) {
   try { // 1. Abrir el bloque try
     const query = `
-      WITH personas_documentos AS (
-          SELECT 
-              u.id_usuario AS id_usuario,
-              per.id_persona AS id_persona,
-              per.apellidos,
-              per.nombres,
-              per.id_localidad_nacimiento AS id_localidad_nacimiento,
-              ln.nombre AS localidad_nacimiento,
-              per.id_localidad_residencia AS id_localidad_residencia,
-              lr.nombre AS localidad_residencia,
-              per.id_nacionalidad AS id_nacionalidad,
-              n.nombre AS nacionalidad,
-              u.usuario,
-              u.email,
-              doc.nombre_corto AS "tipoDocumento",
-              ptd.numero AS "numeroDocumento",
-              u.idtipousuario AS "idTipoUsuario",
-              tu.tipousuario AS "tipousuario",
-              u.activo,
-              u.imagen,
-              s.id_sexo,
-              s.nombre AS "sexo",
-              per.fecha_nacimiento AS fecha_nacimiento,
-              per.telefono AS telefono,
-              ROW_NUMBER() OVER (
-                  PARTITION BY per.id_persona 
-                  ORDER BY 
-                      CASE UPPER(doc.nombre_corto)
-                          WHEN 'DNI'  THEN 1
-                          WHEN 'CUIL' THEN 2
-                          WHEN 'CUIT' THEN 3
-                          ELSE 4
-                      END
-              ) AS rn
-          FROM persona per
-          INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
-          INNER JOIN tipo_documento doc        ON ptd.id_tipo_documento = doc.id_tipo_documento
-          INNER JOIN usuarios u                ON per.id_persona = u.id_persona  -- <-- 2. $2 para la entidad educativa
-		      INNER JOIN tipos_usuarios tu         ON u.idtipousuario = tu.idtipousuario
-          INNER JOIN persona_sexo ps           ON per.id_persona = ps.id_persona
-          INNER JOIN sexo s                    ON ps.id_sexo = s.id_sexo
-          LEFT JOIN  localidad ln               ON per.id_localidad_nacimiento = ln.id_localidad
-          LEFT JOIN  localidad lr               ON per.id_localidad_residencia = lr.id_localidad
-          LEFT JOIN  nacionalidad n             ON per.id_nacionalidad = n.id_nacionalidad
-          LEFT JOIN  usuario_entidades ue       ON u.id_usuario = ue.id_usuario AND ue.identidadeducativa = $2
-          WHERE ue.identidadeducativa = $2 -- <-- 2. $2 para la entidad educativa
-      )
-      SELECT id_usuario, id_persona, apellidos, nombres, id_localidad_nacimiento, localidad_nacimiento, id_localidad_residencia, localidad_residencia, id_nacionalidad, nacionalidad, usuario, email, "tipoDocumento", "numeroDocumento", "idTipoUsuario", "tipousuario", activo, imagen, id_sexo, sexo, fecha_nacimiento, telefono
-      FROM personas_documentos
-      WHERE rn = 1
-        AND (
-            $1::text IS NULL 
-            OR $1::text = '' 
-            OR apellidos ILIKE '%' || $1 || '%'
-            OR nombres ILIKE '%' || $1 || '%'
-            OR usuario ILIKE '%' || $1 || '%'
-            OR "numeroDocumento" ILIKE '%' || $1 || '%'
-        ) -- <-- 3. $1 para la búsqueda
-      ORDER BY apellidos, nombres;
+WITH personas_documentos AS (
+    SELECT 
+        u.id_usuario AS id_usuario,
+        per.id_persona AS id_persona,
+        per.apellidos,
+        per.nombres,
+        per.id_localidad_nacimiento AS id_localidad_nacimiento,
+        ln.nombre AS localidad_nacimiento,
+        per.id_localidad_residencia AS id_localidad_residencia,
+        lr.nombre AS localidad_residencia,
+        per.id_nacionalidad AS id_nacionalidad,
+        n.nombre AS nacionalidad,
+        u.usuario,
+        u.email,
+        doc.nombre_corto AS "tipoDocumento",
+        ptd.numero AS "numeroDocumento",
+        u.idtipousuario AS "idTipoUsuario",
+        tu.tipousuario AS "tipousuario",
+        u.activo,
+        u.imagen,
+        s.id_sexo,
+        s.nombre AS "sexo",
+        per.fecha_nacimiento AS fecha_nacimiento,
+        per.telefono AS telefono,
+        ROW_NUMBER() OVER (
+            PARTITION BY u.id_usuario 
+            ORDER BY 
+                CASE UPPER(doc.nombre_corto)
+                    WHEN 'DNI'  THEN 1
+                    WHEN 'CUIL' THEN 2
+                    WHEN 'CUIT' THEN 3
+                    ELSE 4
+                END
+        ) AS rn
+    FROM usuarios u
+    INNER JOIN persona per          ON per.id_persona = u.id_persona
+    INNER JOIN tipos_usuarios tu    ON u.idtipousuario = tu.idtipousuario
+    -- 1. Relación con persona_allegado y alumno
+    LEFT JOIN persona_allegado pa   ON per.id_persona = pa.id_persona
+    LEFT JOIN alumno a              ON pa.id_alumno = a.id_alumno
+    -- 2. Relación con usuario_entidades
+    LEFT JOIN usuario_entidades ue  ON u.id_usuario = ue.id_usuario
+    -- 3. Datos complementarios (LEFT JOINs)
+    LEFT JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
+    LEFT JOIN tipo_documento doc        ON ptd.id_tipo_documento = doc.id_tipo_documento
+    LEFT JOIN persona_sexo ps           ON per.id_persona = ps.id_persona
+    LEFT JOIN sexo s                    ON ps.id_sexo = s.id_sexo
+    LEFT JOIN localidad ln              ON per.id_localidad_nacimiento = ln.id_localidad
+    LEFT JOIN localidad lr              ON per.id_localidad_residencia = lr.id_localidad
+    LEFT JOIN nacionalidad n            ON per.id_nacionalidad = n.id_nacionalidad
+    -- 4. Filtro por establecimiento $2 (ya sea por entidad del usuario o por establecimiento del alumno)
+    WHERE (ue.identidadeducativa = $2 OR a.id_establecimiento = $2)
+)
+SELECT 
+    id_usuario, id_persona, apellidos, nombres, 
+    id_localidad_nacimiento, localidad_nacimiento, 
+    id_localidad_residencia, localidad_residencia, 
+    id_nacionalidad, nacionalidad, usuario, email, 
+    "tipoDocumento", "numeroDocumento", "idTipoUsuario", 
+    "tipousuario", activo, imagen, id_sexo, sexo, 
+    fecha_nacimiento, telefono
+FROM personas_documentos
+WHERE rn = 1
+  AND (
+      $1::text IS NULL 
+      OR $1::text = '' 
+      OR apellidos ILIKE '%' || $1 || '%'
+      OR nombres ILIKE '%' || $1 || '%'
+      OR usuario ILIKE '%' || $1 || '%'
+      OR "numeroDocumento" ILIKE '%' || $1 || '%'
+  )
+ORDER BY apellidos, nombres;
     `;
 
     // 4. Un solo arreglo con ambos parámetros: [$1, $2]
@@ -2444,42 +2463,62 @@ async Usuarios(busqueda, identidadeducativa) {
 async TutoresSinUsuario(busqueda, identidadeducativa) {
   try { // 1. Abrir el bloque try
     const query = `
-      WITH personas_documentos AS (
-          SELECT 
-              per.id_persona,
-              per.apellidos,
-              per.nombres,
-              doc.nombre_corto AS "tipoDocumento",
-              ptd.numero AS "numeroDocumento",
-              ROW_NUMBER() OVER (
-                  PARTITION BY per.id_persona 
-                  ORDER BY 
-                      CASE UPPER(doc.nombre_corto)
-                          WHEN 'DNI'  THEN 1
-                          WHEN 'CUIL' THEN 2
-                          WHEN 'CUIT' THEN 3
-                          ELSE 4
-                      END
-              ) AS rn
-          FROM persona per
-          INNER JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
-          INNER JOIN tipo_documento doc        ON ptd.id_tipo_documento = doc.id_tipo_documento
-          INNER JOIN persona_allegado pa                ON per.id_persona = pa.id_persona
-          INNER JOIN alumno a                   ON a.id_alumno = pa.id_alumno
-          WHERE a.id_establecimiento = $2 -- <-- 2. $2 para la entidad educativa
-          AND pa.id_persona NOT IN (SELECT id_persona FROM usuarios u) --WHERE u.identidadeducativa = $2
+WITH tutores_id AS (
+    -- Etapa 1: Obtiene IDs únicos de personas vinculadas a alumnos de la sede $2
+    -- (Elimina duplicación por tener múltiples hijos/allegados)
+    SELECT DISTINCT pa.id_persona
+    FROM persona_allegado pa
+    INNER JOIN alumno a ON a.id_alumno = pa.id_alumno
+    WHERE a.id_establecimiento = $2
+      AND NOT EXISTS (
+          SELECT 1 
+          FROM usuarios u 
+          WHERE u.id_persona = pa.id_persona
       )
-      SELECT id_persona, apellidos, nombres, "tipoDocumento", "numeroDocumento"
-      FROM personas_documentos
-      WHERE rn = 1
-        AND (
-            $1::text IS NULL 
-            OR $1::text = '' 
-            OR apellidos ILIKE '%' || $1 || '%'
-            OR nombres ILIKE '%' || $1 || '%'
-            OR "numeroDocumento" ILIKE '%' || $1 || '%'
-        ) -- <-- 3. $1 para la búsqueda
-      ORDER BY apellidos, nombres;
+),
+tutores_con_documento AS (
+    -- Etapa 2: Le asigna EXACTAMENTE 1 documento a cada id_persona (priorizando DNI)
+    -- (Elimina duplicación por tener DNI + CUIL + CUIT)
+    SELECT DISTINCT ON (t.id_persona)
+        per.id_persona,
+        per.apellidos,
+        per.nombres,
+        doc.nombre_corto AS "tipoDocumento",
+        ptd.numero AS "numeroDocumento"
+    FROM tutores_id t
+    INNER JOIN persona per ON per.id_persona = t.id_persona AND activo <> 'B'
+    LEFT JOIN persona_tipo_documento ptd ON per.id_persona = ptd.id_persona
+    LEFT JOIN tipo_documento doc ON ptd.id_tipo_documento = doc.id_tipo_documento
+    ORDER BY 
+        t.id_persona,
+        CASE UPPER(doc.nombre_corto)
+            WHEN 'DNI'  THEN 1
+            WHEN 'CUIL' THEN 2
+            WHEN 'CUIT' THEN 3
+            ELSE 4
+        END ASC
+),
+tutores_unicos_dni AS (
+    -- Etapa 3: Colapsa personas físicas repetidas en la base con diferente id_persona pero mismo DNI
+    SELECT DISTINCT ON (COALESCE(NULLIF("numeroDocumento", ''), id_persona::text))
+        id_persona,
+        apellidos,
+        nombres,
+        "tipoDocumento",
+        "numeroDocumento"
+    FROM tutores_con_documento
+    ORDER BY COALESCE(NULLIF("numeroDocumento", ''), id_persona::text), id_persona ASC
+)
+SELECT id_persona, apellidos, nombres, "tipoDocumento", "numeroDocumento"
+FROM tutores_unicos_dni
+WHERE (
+    $1::text IS NULL 
+    OR $1::text = '' 
+    OR apellidos ILIKE '%' || $1 || '%'
+    OR nombres ILIKE '%' || $1 || '%'
+    OR "numeroDocumento" ILIKE '%' || $1 || '%'
+)
+ORDER BY apellidos, nombres;
     `;
 
     // 4. Un solo arreglo con ambos parámetros: [$1, $2]
