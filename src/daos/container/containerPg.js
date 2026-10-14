@@ -2252,6 +2252,121 @@ async GenerarPagos(objeto) {
   }
 }
 
+
+
+async AlumnosPendientes({ cuota, anio, incluirNoRegulares, id_establecimiento }) {
+
+    const parametro = 'importe_mensual_cuota';
+    const resultParam = await pool.query(
+      `select valor from parametros_sistema where parametro = $1 and ($2::int IS NULL or id_establecimiento = $2)`, 
+      [parametro, id_establecimiento || null]
+    );
+    const importeActualVal = Number(resultParam.rows[0]?.valor).toFixed(2);
+
+    let sql = `
+        WITH doc_priorizado AS (
+            SELECT 
+                persdoc.id_persona,
+                persdoc.numero,
+                tipdoc.nombre_corto AS tipo_documento,
+                ROW_NUMBER() OVER (
+                    PARTITION BY persdoc.id_persona 
+                    ORDER BY 
+                        CASE 
+                            WHEN UPPER(tipdoc.nombre) = 'DNI' THEN 1
+                            WHEN UPPER(tipdoc.nombre) = 'CUIL' THEN 2
+                            ELSE 3 
+                        END
+                ) AS orden_prioridad
+            FROM persona_tipo_documento persdoc
+            INNER JOIN tipo_documento tipdoc ON persdoc.id_tipo_documento = tipdoc.id_tipo_documento
+        )
+        SELECT 
+            acc.id_alumno_cc,
+            alu.id_alumno,
+            pers.apellidos AS apellido, 
+            pers.nombres AS nombre,
+            doc.tipo_documento AS tipo_documento,
+            doc.numero AS documento,
+            acc.descripcion AS cuota,
+            acc.cuota AS cuotaid,
+            tcc_pos.importe AS "importeActual"
+        FROM alumno_cuenta_corriente acc
+        INNER JOIN alumno alu ON acc.id_alumno = alu.id_alumno
+        INNER JOIN persona pers ON alu.id_persona = pers.id_persona
+        LEFT JOIN doc_priorizado doc ON pers.id_persona = doc.id_persona AND doc.orden_prioridad = 1
+        INNER JOIN transaccion_cuenta_corriente tcc_pos 
+            ON acc.id_alumno_cc = tcc_pos.id_alumno_cc 
+           AND tcc_pos.importe > 0
+        WHERE acc.id_cargo_cuenta_corriente = 2 
+          AND NOT EXISTS (
+            SELECT 1 
+            FROM transaccion_cuenta_corriente tcc 
+            WHERE tcc.id_alumno_cc = acc.id_alumno_cc 
+              AND (tcc.importe < 0 OR tcc.importe = ${importeActualVal})
+          )
+          AND UPPER(TRIM(pers.activo)) = 'S'
+    `;
+
+    const values = [];
+
+    if (id_establecimiento) {
+        values.push(id_establecimiento);
+        sql += ` AND alu.id_establecimiento = $${values.length}`;
+    }
+
+    // Filtro por alumnos regulares ('S')
+    if (incluirNoRegulares !== 'true' && incluirNoRegulares !== true) {
+        sql += ` AND UPPER(TRIM(alu.regular)) = 'S'`;
+    }
+
+    const strCuota = cuota ? String(cuota).trim() : '';
+    const strAnio = anio ? String(anio).trim() : '';
+
+    if (strCuota !== '' && strAnio !== '') {
+        const cuotaConCero = strCuota.padStart(2, '0');
+        const cuotaNum = Number(strCuota);
+        const codigoCuota = `${cuotaConCero}${strAnio}`;
+
+        values.push(codigoCuota);
+        const p1 = values.length;
+
+        values.push(`%${cuotaNum}%${strAnio}%`);
+        const p2 = values.length;
+
+        sql += ` AND (TRIM(acc.cuota) = $${p1} OR acc.descripcion ILIKE $${p2})`;
+
+    } else if (strCuota !== '') {
+        const cuotaConCero = strCuota.padStart(2, '0');
+        const cuotaNum = Number(strCuota);
+
+        values.push(`${cuotaConCero}%`);
+        const p1 = values.length;
+
+        values.push(`%${cuotaNum}%`);
+        const p2 = values.length;
+
+        sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p2})`;
+
+    } else if (strAnio !== '') {
+        values.push(`%${strAnio}%`);
+        const p1 = values.length;
+
+        sql += ` AND (TRIM(acc.cuota) LIKE $${p1} OR acc.descripcion ILIKE $${p1})`;
+    }
+
+    // Agregar el ordenamiento por apellido, nombre y cuota
+    sql += ` ORDER BY pers.apellidos ASC, pers.nombres ASC, acc.cuota ASC`;
+
+    // Ejecución utilizando la conexión propia del ContainerPg (this.pool o pool)
+    const queryExec = this.pool ? this.pool : pool;
+    const result = await queryExec.query(sql, values);
+    
+    return result.rows;
+}
+
+
+
 async ActualizarImporte(objeto) {
  // console.log("Procesando actualización:", objeto);
 
