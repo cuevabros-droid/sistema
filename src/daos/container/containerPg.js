@@ -1877,24 +1877,14 @@ RETURNING id_transaccion_cc;
 async GenerarPagos(objeto) {
   const client = await pool.connect();
 
-  const checkExistenciaQuery = `
-    SELECT 1 
-    FROM alumno_cuenta_corriente 
-    WHERE id_alumno = $1 
-      AND id_cargo_cuenta_corriente = $2 
-      AND (
-        ($2 = 3 AND descripcion = $4)
-        OR 
-        ($2 <> 3 AND cuota = $3)
-      )
-    LIMIT 1;
-  `;
-
+  // 1. Excluye el cargo de inscripción (id_cargo_cuenta_corriente <> 1) para evitar que la cuota 1
+  // detecte sus propias cuotas subsiguientes del mismo lote como "deuda impaga"
   const checkDeudaQuery = `
     SELECT 1 
     FROM transaccion_cuenta_corriente tcc
     INNER JOIN alumno_cuenta_corriente acc ON acc.id_alumno_cc = tcc.id_alumno_cc
     WHERE acc.id_alumno = $1
+      AND acc.id_cargo_cuenta_corriente <> 1
     GROUP BY acc.id_alumno
     HAVING SUM(tcc.importe) > 0
     LIMIT 1;
@@ -1959,7 +1949,7 @@ async GenerarPagos(objeto) {
     ? (objeto.usuario_sistema || 'SISTEMA')
     : 'SISTEMA';
 
-  // Obtener el ID de la institución (id_establecimiento)
+  // Obtener el ID del establecimiento
   const idEstablecimiento = 
     (objeto && typeof objeto === 'object' && !Array.isArray(objeto) 
       ? (objeto.id_establecimiento || objeto.identidadeducativa) 
@@ -1974,11 +1964,11 @@ async GenerarPagos(objeto) {
   try {
     await client.query("BEGIN");
 
-    // Lectura de parámetros usando exclusivamente la columna `id_establecimiento`
+    // 2. Lectura priorizando el id_establecimiento exacto mediante CASE WHEN
     const paramsMap = {};
     try {
       let sqlParams = `
-        SELECT parametro, valor 
+        SELECT parametro, valor, id_establecimiento
         FROM parametros_sistema 
         WHERE parametro IN (
           'valida_cuotas_impagas_pago_inscripcion',
@@ -1986,37 +1976,42 @@ async GenerarPagos(objeto) {
           'importe_inscripcion_primario',
           'importe_cuota_uno_nivel_inicial',
           'importe_cuota_dos_nivel_inicial',
+          'importe_cuota_tres_nivel_inicial',
           'importe_cuota_uno_nivel_primario',
-          'importe_cuota_dos_nivel_primario'
+          'importe_cuota_dos_nivel_primario',
+          'importe_cuota_tres_nivel_primario'
         )
       `;
       const queryValues = [];
 
       if (idEstablecimiento) {
-        sqlParams += ` AND (id_establecimiento = $1 OR id_establecimiento IS NULL) ORDER BY id_establecimiento DESC NULLS LAST`;
+        sqlParams += ` AND (id_establecimiento = $1 OR id_establecimiento IS NULL) 
+                       ORDER BY CASE WHEN id_establecimiento = $1 THEN 0 ELSE 1 END ASC`;
         queryValues.push(idEstablecimiento);
       }
 
       const resParams = await client.query(sqlParams, queryValues);
       resParams.rows.forEach(r => {
         if (paramsMap[r.parametro] === undefined) {
-          paramsMap[r.parametro] = r.valor;
+          paramsMap[r.parametro] = String(r.valor).trim();
         }
       });
     } catch (eParams) {
       console.error("Error al leer parametros_sistema:", eParams);
     }
 
-    const validaParametroDeuda = ['S', 'SI', 'TRUE', '1'].includes(
-      String(paramsMap['valida_cuotas_impagas_pago_inscripcion'] || '').toUpperCase()
-    );
+    const valorRawDeuda = paramsMap['valida_cuotas_impagas_pago_inscripcion'] || 'N';
+    const validaParametroDeuda = ['S', 'SI', 'TRUE', '1'].includes(String(valorRawDeuda).toUpperCase());
+
+    // Set para rastrear alumnos que procesan inscripción en esta misma ejecución
+    const alumnosInscritosEnEsteProceso = new Set();
 
     for (const item of listaItems) {
       const idCargo = Number(item.id_cargo_cuenta_corriente);
       const descCargo = String(item.descripcion || '').toLowerCase();
       const esInscripcion = idCargo === 1 || descCargo.includes('inscripci');
 
-      // 1. Obtener datos del alumno
+      // Obtener datos del alumno
       const resDatosAlumno = await client.query(obtenerAlumnoQuery, [item.id_alumno]);
       const infoAlumno = resDatosAlumno.rows[0] || {
         apellidos: 'Alumno',
@@ -2025,7 +2020,7 @@ async GenerarPagos(objeto) {
         numero_documento: ''
       };
 
-      // 2. Materiales solo aplica a Nivel Inicial (id_nivel = 1)
+      // Materiales solo aplica a Nivel Inicial
       if (idCargo === 3 && Number(item.id_nivel) !== 1) {
         noGenerados++;
         detallesNoGenerados.push({
@@ -2035,26 +2030,75 @@ async GenerarPagos(objeto) {
         continue;
       }
 
-      // 3. Validar duplicidad de cargo
-      const existeCargo = await client.query(checkExistenciaQuery, [
-        item.id_alumno,
-        idCargo,
-        item.cuota || null,
-        item.descripcion || null
-      ]);
+      // 3. VALIDACIÓN DE DUPLICIDAD INTELIGENTE DE INSCRIPCIÓN
+      if (esInscripcion) {
+        if (!alumnosInscritosEnEsteProceso.has(item.id_alumno)) {
+          // Si es la primera cuota de este alumno en la corrida, verificamos si YA tiene cualquier inscripción previa en el año
+          const inscripcionPrevia = await client.query(
+            `SELECT 1 FROM alumno_cuenta_corriente 
+             WHERE id_alumno = $1 
+               AND id_cargo_cuenta_corriente = $2 
+               AND cuota = $3 
+             LIMIT 1;`,
+            [item.id_alumno, idCargo, item.cuota]
+          );
 
-      if (existeCargo.rows.length > 0) {
-        noGenerados++;
-        detallesNoGenerados.push({
-          ...infoAlumno,
-          motivo: 'Ya tiene el cargo o cuota generada'
-        });
-        continue;
+          if (inscripcionPrevia.rows.length > 0) {
+            noGenerados++;
+            detallesNoGenerados.push({
+              ...infoAlumno,
+              motivo: `Ya posee un cargo de Inscripción generado para el año ${item.cuota}`
+            });
+            continue;
+          }
+
+          alumnosInscritosEnEsteProceso.add(item.id_alumno);
+        } else {
+          // Si es la cuota 2/3 o 3/3 de la MISMA corrida, validamos solo que no esté duplicada la cuota exacta
+          const existeExacto = await client.query(
+            `SELECT 1 FROM alumno_cuenta_corriente 
+             WHERE id_alumno = $1 
+               AND id_cargo_cuenta_corriente = $2 
+               AND descripcion = $3 
+             LIMIT 1;`,
+            [item.id_alumno, idCargo, item.descripcion]
+          );
+
+          if (existeExacto.rows.length > 0) {
+            noGenerados++;
+            detallesNoGenerados.push({
+              ...infoAlumno,
+              motivo: 'Ya tiene el cargo o cuota generada'
+            });
+            continue;
+          }
+        }
+      } else {
+        // Validación estándar para Cuotas Mensuales o Materiales
+        const existeCargo = await client.query(
+          `SELECT 1 FROM alumno_cuenta_corriente 
+           WHERE id_alumno = $1 
+             AND id_cargo_cuenta_corriente = $2 
+             AND (
+               ($2 = 3 AND descripcion = $4) 
+               OR ($2 <> 3 AND cuota = $3)
+             ) 
+           LIMIT 1;`,
+          [item.id_alumno, idCargo, item.cuota || null, item.descripcion || null]
+        );
+
+        if (existeCargo.rows.length > 0) {
+          noGenerados++;
+          detallesNoGenerados.push({
+            ...infoAlumno,
+            motivo: 'Ya tiene el cargo o cuota generada'
+          });
+          continue;
+        }
       }
 
-      // 4. LÓGICA DINÁMICA DE INSCRIPCIÓN (BASADA EN TABLA 'grado' Y 'id_grado_siguiente')
+      // 4. LÓGICA DE INSCRIPCIÓN Y PROYECCIÓN DE GRADO
       if (esInscripcion) {
-        // A) Obtener id_grado actual desde alumno_datos_cursada
         let idGradoActual = item.id_grado || null;
         try {
           const resCursada = await client.query(`
@@ -2069,10 +2113,9 @@ async GenerarPagos(objeto) {
             idGradoActual = resCursada.rows[0].id_grado;
           }
         } catch (eCursada) {
-          // Fallback a item.id_grado
+          // Fallback
         }
 
-        // B) Consultar id_grado_siguiente e id_nivel en la tabla 'grado'
         let idGradoSiguiente = null;
         let idNivelSiguiente = null;
 
@@ -2102,7 +2145,7 @@ async GenerarPagos(objeto) {
           }
         }
 
-        // C) Si id_grado_siguiente es NULL o 0 -> El alumno es EGRESADO
+        // Si id_grado_siguiente es NULL o 0 -> El alumno es EGRESADO
         if (!idGradoSiguiente || Number(idGradoSiguiente) === 0) {
           noGenerados++;
           detallesNoGenerados.push({
@@ -2112,26 +2155,30 @@ async GenerarPagos(objeto) {
           continue;
         }
 
-        // D) Asignar importe según el id_nivel del grado entrante (1 = Inicial, 2 = Primario)
+        // Asignación de importes dinámicos para 1, 2 o 3 cuotas
         if (idNivelSiguiente === 2) { // Nivel Primario
-          if (descCargo.includes('1/2')) {
+          if (descCargo.includes('1/2') || descCargo.includes('1/3')) {
             item.importe = Number(paramsMap['importe_cuota_uno_nivel_primario'] || item.importe);
-          } else if (descCargo.includes('2/2')) {
+          } else if (descCargo.includes('2/2') || descCargo.includes('2/3')) {
             item.importe = Number(paramsMap['importe_cuota_dos_nivel_primario'] || item.importe);
+          } else if (descCargo.includes('3/3')) {
+            item.importe = Number(paramsMap['importe_cuota_tres_nivel_primario'] || item.importe);
           } else {
             item.importe = Number(paramsMap['importe_inscripcion_primario'] || item.importe);
           }
         } else if (idNivelSiguiente === 1) { // Nivel Inicial
-          if (descCargo.includes('1/2')) {
+          if (descCargo.includes('1/2') || descCargo.includes('1/3')) {
             item.importe = Number(paramsMap['importe_cuota_uno_nivel_inicial'] || item.importe);
-          } else if (descCargo.includes('2/2')) {
+          } else if (descCargo.includes('2/2') || descCargo.includes('2/3')) {
             item.importe = Number(paramsMap['importe_cuota_dos_nivel_inicial'] || item.importe);
+          } else if (descCargo.includes('3/3')) {
+            item.importe = Number(paramsMap['importe_cuota_tres_nivel_inicial'] || item.importe);
           } else {
             item.importe = Number(paramsMap['importe_inscripcion_inicial'] || item.importe);
           }
         }
 
-        // E) Validar cuotas impagas (únicamente si validaParametroDeuda es true para id_establecimiento)
+        // Validar cuotas impagas en otros cargos
         if (validaParametroDeuda) {
           const tieneDeuda = await client.query(checkDeudaQuery, [item.id_alumno]);
           if (tieneDeuda.rows.length > 0) {
@@ -2144,7 +2191,7 @@ async GenerarPagos(objeto) {
           }
         }
       } else {
-        // Cuotas / Materiales: exige cursado cargado en el año
+        // Exige datos de cursada cargados en el año lectivo
         const existeAnio = await client.query(obtenerAnioCursado, [item.id_alumno, item.id_anio]);
         if (existeAnio.rowCount === 0) {
           noGenerados++;
@@ -2179,7 +2226,11 @@ async GenerarPagos(objeto) {
       ];
       await client.query(query2, valores2);
 
-      detallesGenerados.push(infoAlumno);
+      detallesGenerados.push({
+        ...infoAlumno,
+        descripcion: item.descripcion
+      });
+      
       generados++;
     }
 
