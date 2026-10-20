@@ -18,6 +18,19 @@ import { escuelaService } from '../../negocio/services/escuela.service.js';
 }
 
 
-export {controllerEscuela}
+ async function controllerEscuelas(req, res) {
+
+  try {
+    const resul = await escuelaService.listarEscuelas()
+    res.status(201).json(resul)
+  } catch (error) {
+    loggerError(error.message)
+    res.status(404).json({error: error.message})
+  }
+
+  
+}
+
+export {controllerEscuela, controllerEscuelas}
 
 

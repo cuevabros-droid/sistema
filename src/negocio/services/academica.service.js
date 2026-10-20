@@ -25,8 +25,8 @@ class AcademicaService {
             return lista
     }
 
-    async listarAnioCursado() {
-            const lista = await listarAnioCursado()
+    async listarAnioCursado(id_establecimiento) {
+            const lista = await listarAnioCursado(id_establecimiento)
             return lista
     }
 

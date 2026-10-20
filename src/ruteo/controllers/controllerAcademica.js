@@ -33,9 +33,9 @@ import { academicaService } from '../../negocio/services/academica.service.js';
   }
 }
 
- async function controllerAnioCursado(req, res) {
+ async function controllerAnioCursado({user}, res) {
   try {
-    const resul = await academicaService.listarAnioCursado()
+    const resul = await academicaService.listarAnioCursado(user.identidadeducativa)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)

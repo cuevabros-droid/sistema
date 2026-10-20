@@ -30,9 +30,9 @@ const pg = new ContainerPg
         }       
     }
     
-    export async function listarAnioCursado() {
+    export async function listarAnioCursado(id_establecimiento) {
         try {
-          const resul = await pg.getAnioCursado()
+          const resul = await pg.getAnioCursado(id_establecimiento)
           return resul
         } catch (error) {
             return error
