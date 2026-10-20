@@ -12,3 +12,11 @@ const pg = new ContainerPg
         }       
     }
     
+        export async function listarEscuelas() {
+        try {
+          const resul = await pg.getEscuelas()
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }

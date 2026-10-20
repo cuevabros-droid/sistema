@@ -1273,10 +1273,11 @@ async getSaldosPorAlumno(id) {
     }
   }
 
-  async getAnioCursado() {
+  async getAnioCursado(id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
-        `select id_anio, anio from anio order by anio desc`,
+        `select id_anio, anio from anio where id_establecimiento = $1 order by anio desc`,
+        [id_establecimiento],
       );
       return objetoBuscado.rows;
     } catch (error) {
@@ -1763,6 +1764,17 @@ async generarArchivoDebito() {
       return error;
     }
   }
+
+  async getEscuelas() {
+  try {
+    const objetoBuscado = await pool.query(
+      `select * from entidades_educativas order by entidadeducativa`
+    );
+    return objetoBuscado.rows; // Devuelve la lista completa (Array)
+  } catch (error) {
+    return error;
+  }
+}
 
 
     async parametros(id) {
