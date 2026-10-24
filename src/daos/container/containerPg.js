@@ -1665,14 +1665,15 @@ async createPago(objeto) {
     }
   }
 
-async generarArchivoDebito() {
+async generarArchivoDebito(idEstablecimiento = null) {
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
     const resultado = await client.query(
-      `SELECT * FROM spcreacionarchivodebitobuffers()`
+      `SELECT * FROM spcreacionarchivodebitobuffers($1)`,
+      [idEstablecimiento ? parseInt(idEstablecimiento, 10) : null]
     );
 
     await client.query("COMMIT");
@@ -3349,6 +3350,19 @@ async CrearUsuarioEnMasa(objeto) {
   }
 
 
+
+  async ejecutarReporte(tipoReporte, parametros) {
+    try {
+      const res = await pool.query(
+        'SELECT fn_obtener_listado($1, $2::jsonb) AS fila;',
+        [tipoReporte, JSON.stringify(parametros || {})]
+      );
+      return res.rows.map(r => r.fila);
+    } catch (error) {
+      console.error('Error en ejecutarReporte:', error);
+      throw error;
+    }
+  }
 }
 
 export { ContainerPg };

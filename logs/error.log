@@ -93072,3 +93072,54 @@
 {"level":40,"time":1792279722886,"pid":2556,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215911) segundos para que la sesion se expire"}
 {"level":40,"time":1792279724115,"pid":2556,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215909) segundos para que la sesion se expire"}
 {"level":40,"time":1792279724164,"pid":2556,"hostname":"DESKTOP-G8F9RK0","msg":"Le queda (215909) segundos para que la sesion se expire"}
+{"level":50,"time":1792869049407,"pid":12748,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1792869052377,"pid":12748,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1792869056446,"pid":12748,"hostname":"German","msg":"Password incorrecto"}
+{"level":40,"time":1792869079580,"pid":12748,"hostname":"German","msg":"Le queda (215985) segundos para que la sesion se expire"}
+{"level":40,"time":1792869079800,"pid":12748,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792869081404,"pid":12748,"hostname":"German","msg":"Le queda (215997) segundos para que la sesion se expire"}
+{"level":40,"time":1792869081411,"pid":12748,"hostname":"German","msg":"Le queda (215997) segundos para que la sesion se expire"}
+{"level":40,"time":1792870126704,"pid":12116,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792870126773,"pid":12116,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792870328329,"pid":14648,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792870328404,"pid":14648,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792870430262,"pid":16616,"hostname":"German","msg":"Le queda (215897) segundos para que la sesion se expire"}
+{"level":40,"time":1792870441178,"pid":16616,"hostname":"German","msg":"Le queda (215886) segundos para que la sesion se expire"}
+{"level":40,"time":1792870823962,"pid":14532,"hostname":"German","msg":"Le queda (215504) segundos para que la sesion se expire"}
+{"level":40,"time":1792870848012,"pid":14532,"hostname":"German","msg":"Le queda (215997) segundos para que la sesion se expire"}
+{"level":40,"time":1792870848098,"pid":14532,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792870849904,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792870849955,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792870866580,"pid":14532,"hostname":"German","msg":"Le queda (215981) segundos para que la sesion se expire"}
+{"level":40,"time":1792870875889,"pid":14532,"hostname":"German","msg":"Le queda (215972) segundos para que la sesion se expire"}
+{"level":40,"time":1792870903203,"pid":14532,"hostname":"German","msg":"Le queda (215944) segundos para que la sesion se expire"}
+{"level":40,"time":1792879308472,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879308545,"pid":14532,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792879309578,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879309629,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879312233,"pid":14532,"hostname":"German","msg":"Le queda (215995) segundos para que la sesion se expire"}
+{"level":50,"time":1792879903680,"pid":14532,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1792879914928,"pid":14532,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1792879949008,"pid":14532,"hostname":"German","msg":"Password incorrecto"}
+{"level":50,"time":1792879952718,"pid":14532,"hostname":"German","msg":"Password incorrecto"}
+{"level":40,"time":1792879956204,"pid":14532,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792879961329,"pid":14532,"hostname":"German","msg":"Le queda (215994) segundos para que la sesion se expire"}
+{"level":40,"time":1792879961337,"pid":14532,"hostname":"German","msg":"Le queda (215994) segundos para que la sesion se expire"}
+{"level":40,"time":1792879981449,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879981508,"pid":14532,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792879982930,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879982975,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879984836,"pid":14532,"hostname":"German","msg":"Le queda (215996) segundos para que la sesion se expire"}
+{"level":40,"time":1792879995641,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879995704,"pid":14532,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792879996687,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879996737,"pid":14532,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792879997967,"pid":14532,"hostname":"German","msg":"Le queda (215997) segundos para que la sesion se expire"}
+{"level":40,"time":1792880077739,"pid":14532,"hostname":"German","msg":"Le queda (215917) segundos para que la sesion se expire"}
+{"level":40,"time":1792880084549,"pid":14532,"hostname":"German","msg":"Le queda (215910) segundos para que la sesion se expire"}
+{"level":40,"time":1792883095088,"pid":12084,"hostname":"German","msg":"Le queda (215996) segundos para que la sesion se expire"}
+{"level":40,"time":1792883095164,"pid":12084,"hostname":"German","msg":"Le queda (215999) segundos para que la sesion se expire"}
+{"level":40,"time":1792883096974,"pid":12084,"hostname":"German","msg":"Le queda (215998) segundos para que la sesion se expire"}
+{"level":40,"time":1792883097040,"pid":12084,"hostname":"German","msg":"Le queda (215997) segundos para que la sesion se expire"}
+{"level":40,"time":1792883099557,"pid":12084,"hostname":"German","msg":"Le queda (215995) segundos para que la sesion se expire"}
+{"level":40,"time":1792883159860,"pid":12084,"hostname":"German","msg":"Le queda (215935) segundos para que la sesion se expire"}
