@@ -3,9 +3,15 @@ import { academicaService } from '../../negocio/services/academica.service.js';
 
 
 
- async function controllerGrado({user}, res) {
+ async function controllerGrado({user, query}, res) {
+  
   try {
-    const resul = await academicaService.listarGrado(user.identidadeducativa)
+    // Toma id_establecimiento de query si está presente; de lo contrario usa el del usuario
+    const idEstablecimiento = query?.id_establecimiento 
+      ? Number(query.id_establecimiento) 
+      : Number(user?.identidadeducativa);
+
+    const resul = await academicaService.listarGrado(idEstablecimiento)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)
@@ -13,9 +19,14 @@ import { academicaService } from '../../negocio/services/academica.service.js';
   }
 }
 
- async function controllerNivel({user}, res) {
+ async function controllerNivel({user, query}, res) {
   try {
-    const resul = await academicaService.listarNivel(user.identidadeducativa)
+        // Toma id_establecimiento de query si está presente; de lo contrario usa el del usuario
+    const idEstablecimiento = query?.id_establecimiento 
+      ? Number(query.id_establecimiento) 
+      : Number(user?.identidadeducativa);
+
+    const resul = await academicaService.listarNivel(idEstablecimiento)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)
@@ -23,9 +34,12 @@ import { academicaService } from '../../negocio/services/academica.service.js';
   }
 }
 
- async function controllerDivision({user}, res) {
+ async function controllerDivision({user, query}, res) {
   try {
-    const resul = await academicaService.listarDivision(user.identidadeducativa)
+        // Toma id_establecimiento de query si está presente; de lo contrario usa el del usuario
+    const idEstablecimiento = query?.id_establecimiento || user?.identidadeducativa
+
+    const resul = await academicaService.listarDivision(idEstablecimiento)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)
@@ -33,9 +47,12 @@ import { academicaService } from '../../negocio/services/academica.service.js';
   }
 }
 
- async function controllerAnioCursado({user}, res) {
+ async function controllerAnioCursado({user, query}, res) {
   try {
-    const resul = await academicaService.listarAnioCursado(user.identidadeducativa)
+            // Toma id_establecimiento de query si está presente; de lo contrario usa el del usuario
+    const idEstablecimiento = query?.id_establecimiento || user?.identidadeducativa
+
+    const resul = await academicaService.listarAnioCursado(idEstablecimiento)
     res.status(201).json(resul)
   } catch (error) {
     loggerError(error.message)

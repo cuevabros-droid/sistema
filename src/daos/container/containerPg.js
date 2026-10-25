@@ -1240,7 +1240,7 @@ async getSaldosPorAlumno(id) {
   async getGrado(id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
-        `select id_grado, nombre, id_nivel from grado where id_establecimiento = $1 order by id_grado`,
+        `select g.jerarquia, g.id_grado, g.nombre, g.id_nivel, g.nombre_corto, n.nombre as nombre_nivel  from grado g, nivel n where g.id_nivel = n.id_nivel and g.id_establecimiento = $1 and n.id_establecimiento = $1 order by id_grado`,
         [id_establecimiento],
       );
       return objetoBuscado.rows;
@@ -1252,7 +1252,7 @@ async getSaldosPorAlumno(id) {
   async getNivel(id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
-        `select id_nivel, nombre, id_establecimiento from nivel where id_establecimiento = $1 order by id_nivel`,
+        `select id_nivel, nombre, nombre_corto, observaciones, id_establecimiento from nivel where id_establecimiento = $1 order by id_nivel`,
         [id_establecimiento],
       );
       return objetoBuscado.rows;
@@ -1276,7 +1276,7 @@ async getSaldosPorAlumno(id) {
   async getAnioCursado(id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
-        `select id_anio, anio from anio where id_establecimiento = $1 order by anio desc`,
+        `select id_anio, anio, fecha_inicio, fecha_fin, estado from anio where id_establecimiento = $1 order by anio desc`,
         [id_establecimiento],
       );
       return objetoBuscado.rows;
