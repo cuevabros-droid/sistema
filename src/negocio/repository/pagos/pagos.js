@@ -86,10 +86,9 @@ export async function updatePago(objeto) {
     }
 }
 
-export async function generarArchivoDebito() {
+export async function generarArchivoDebito(idEstablecimiento = null) {
     try {
-        
-        const resul = await pg.generarArchivoDebito();
+        const resul = await pg.generarArchivoDebito(idEstablecimiento);
 
         // Comprobar correctamente si es un array vacío
         if (Array.isArray(resul) && resul.length === 0) {
