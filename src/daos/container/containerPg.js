@@ -1240,7 +1240,7 @@ async getSaldosPorAlumno(id) {
   async getGrado(id_establecimiento) {
     try {
       const objetoBuscado = await pool.query(
-        `select g.jerarquia, g.id_grado, g.nombre, g.id_nivel, g.nombre_corto, n.nombre as nombre_nivel  from grado g, nivel n where g.id_nivel = n.id_nivel and g.id_establecimiento = $1 and n.id_establecimiento = $1 order by id_grado`,
+        `select g.jerarquia, g.id_grado, g.nombre, g.id_nivel, g.observaciones, g.id_grado_siguiente, g.nombre_corto, n.nombre as nombre_nivel  from grado g, nivel n where g.id_nivel = n.id_nivel and g.id_establecimiento = $1 and n.id_establecimiento = $1 order by id_grado`,
         [id_establecimiento],
       );
       return objetoBuscado.rows;
@@ -3363,6 +3363,322 @@ async CrearUsuarioEnMasa(objeto) {
       throw error;
     }
   }
+
+
+  async crearNivel(objeto) {
+    const query = `
+    INSERT INTO nivel (
+        nombre, nombre_corto, observaciones, id_establecimiento
+    ) 
+    VALUES ($1, $2, $3, $4)
+    RETURNING *;
+    `;
+
+    // Array para guardar los resultados de cada inserción
+    const resultadosInsertados = [];
+
+    try {
+      await pool.query("BEGIN");
+
+      const valores = [
+          objeto.nombre,
+          objeto.nombre_corto,
+          objeto.observaciones,
+          objeto.id_establecimiento
+        ];
+
+         console.log("Intentando insertar registro con los valores:", valores);
+
+        const resultado = await pool.query(query, valores);
+        resultadosInsertados.push(resultado.rows[0]);
+      
+
+      await pool.query("COMMIT");
+      console.log(
+        "Todos los registros se guardaron correctamente. Cantidad:",
+        resultadosInsertados.length,
+      );
+
+      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+      return resultadosInsertados;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar registros en Postgres:",
+        error,
+      );
+      throw error;
+    }
+  }
+
+
+   //ACTUALIZA DATOS DE UNA PERSONA
+async updateNivel(objeto) {
+
+    try {
+      await pool.query("BEGIN");
+
+      const objetoBuscado = await pool.query(
+        `update nivel set nombre = $2, nombre_corto = $3, observaciones = $4, id_establecimiento = $5 where id_nivel=$1`,
+        [
+          objeto.id,
+          objeto.nombre,
+          objeto.nombre_corto,
+          objeto.observaciones,
+          objeto.id_establecimiento
+        ],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;  
+    }
+  }
+
+
+    async deleteNivel(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from nivel where id_nivel=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
+
+
+    async crearDivision(objeto) {
+    const query = `
+    INSERT INTO divisiones (
+        division, id_establecimiento
+    ) 
+    VALUES ($1, $2)
+    RETURNING *;
+    `;
+
+    // Array para guardar los resultados de cada inserción
+    const resultadosInsertados = [];
+
+    try {
+      await pool.query("BEGIN");
+
+      const valores = [
+          objeto.division,
+          objeto.id_establecimiento
+        ];
+
+         console.log("Intentando insertar registro con los valores:", valores);
+
+        const resultado = await pool.query(query, valores);
+        resultadosInsertados.push(resultado.rows[0]);
+      
+
+      await pool.query("COMMIT");
+      console.log(
+        "Todos los registros se guardaron correctamente. Cantidad:",
+        resultadosInsertados.length,
+      );
+
+      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+      return resultadosInsertados;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar registros en Postgres:",
+        error,
+      );
+      throw error;
+    }
+  }
+
+
+   //ACTUALIZA DATOS DE UNA PERSONA
+async updateDivision(objeto) {
+  
+    try {
+      await pool.query("BEGIN");
+
+      const objetoBuscado = await pool.query(
+        `update divisiones set division = $2, id_establecimiento = $3 where id_division=$1`,
+        [
+          objeto.id,
+          objeto.division,
+          objeto.id_establecimiento
+        ],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;  
+    }
+  }
+
+
+    async deleteDivision(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from divisiones where id_division=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
+
+
+  async crearGrado(objeto) {
+    const query = `
+    INSERT INTO grado (
+        nombre, nombre_corto, observaciones, id_nivel, jerarquia, id_grado_siguiente, id_establecimiento
+    ) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    RETURNING *;
+    `;
+
+    // Array para guardar los resultados de cada inserción
+    const resultadosInsertados = [];
+
+    try {
+      await pool.query("BEGIN");
+
+      const valores = [
+          objeto.nombre,
+          objeto.nombre_corto,
+          objeto.observaciones,
+          objeto.id_nivel,
+          objeto.jerarquia,
+          objeto.id_grado_siguiente,
+          objeto.id_establecimiento
+        ];
+
+         console.log("Intentando insertar registro con los valores:", valores);
+
+        const resultado = await pool.query(query, valores);
+        resultadosInsertados.push(resultado.rows[0]);
+      
+
+      await pool.query("COMMIT");
+      console.log(
+        "Todos los registros se guardaron correctamente. Cantidad:",
+        resultadosInsertados.length,
+      );
+
+      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+      return resultadosInsertados;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar registros en Postgres:",
+        error,
+      );
+      throw error;
+    }
+  }
+
+
+   //ACTUALIZA DATOS DE UNA PERSONA
+async updateGrado(objeto) {
+  //console.log(objeto)
+    try {
+      await pool.query("BEGIN");
+
+      const objetoBuscado = await pool.query(
+        `update grado set nombre = $2, nombre_corto = $3, observaciones = $4, id_nivel = $5, jerarquia = $6, id_grado_siguiente = $7, id_establecimiento = $8 where id_grado=$1`,
+        [
+          objeto.id,
+          objeto.nombre,
+          objeto.nombre_corto,
+          objeto.observaciones,
+          objeto.id_nivel,
+          objeto.jerarquia,
+          objeto.id_grado_siguiente,
+          objeto.id_establecimiento
+        ],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;  
+    }
+  }
+
+
+    async deleteGrado(id) {
+    try {
+      await pool.query("BEGIN");
+      const objetoBuscado = await pool.query(
+        `delete from grado where id_grado=$1`,
+        [id],
+      );
+      await pool.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      return error;
+    }
+  }
+
+    
+async crearAnioCursado(objeto) {
+  console.log(objeto)
+    const query = `
+    INSERT INTO anio (
+        anio, estado, fecha_inicio, fecha_fin, id_establecimiento
+    ) 
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *;
+    `;
+
+    // Array para guardar los resultados de cada inserción
+    const resultadosInsertados = [];
+
+    try {
+      await pool.query("BEGIN");
+
+      const valores = [
+          objeto.anio,
+          objeto.estado,
+          objeto.fecha_inicio,
+          objeto.fecha_fin,
+          objeto.id_establecimiento
+        ];
+
+         console.log("Intentando insertar registro con los valores:", valores);
+
+        const resultado = await pool.query(query, valores);
+        resultadosInsertados.push(resultado.rows[0]);
+      
+
+      await pool.query("COMMIT");
+      console.log(
+        "Todos los registros se guardaron correctamente. Cantidad:",
+        resultadosInsertados.length,
+      );
+
+      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
+      return resultadosInsertados;
+    } catch (error) {
+      await pool.query("ROLLBACK");
+      console.error(
+        "❌ Error al insertar registros en Postgres:",
+        error,
+      );
+      throw error;
+    }
+  }
+
 }
 
 export { ContainerPg };
