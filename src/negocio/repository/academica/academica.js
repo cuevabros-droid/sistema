@@ -12,6 +12,46 @@ const pg = new ContainerPg
         }       
     }
 
+
+    export async function crearGrado(body) {
+        try {
+          const resul = await pg.crearGrado(body)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
+
+
+    export async function updateGrado(objeto) {
+      try {
+
+        const resul = await pg.updateGrado(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
+
+      export async function deleteGrado(objeto) {
+      try {
+
+        const resul = await pg.deleteGrado(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
     export async function listarNivel(id_establecimiento) {
         try {
           const resul = await pg.getNivel(id_establecimiento)
@@ -21,6 +61,46 @@ const pg = new ContainerPg
         }       
     }
     
+
+    export async function crearNivel(body) {
+        try {
+          const resul = await pg.crearNivel(body)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
+
+
+    export async function updateNivel(objeto) {
+      try {
+
+        const resul = await pg.updateNivel(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
+
+      export async function deleteNivel(objeto) {
+      try {
+
+        const resul = await pg.deleteNivel(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
     export async function listarDivision(id_establecimiento) {
         try {
           const resul = await pg.getDivision(id_establecimiento)
@@ -29,6 +109,46 @@ const pg = new ContainerPg
             return error
         }       
     }
+
+
+    export async function crearDivision(body) {
+        try {
+          const resul = await pg.crearDivision(body)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
+
+
+    export async function updateDivision(objeto) {
+      try {
+
+        const resul = await pg.updateDivision(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
+
+      export async function deleteDivision(objeto) {
+      try {
+
+        const resul = await pg.deleteDivision(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
     
     export async function listarAnioCursado(id_establecimiento) {
         try {
@@ -87,3 +207,44 @@ export async function createAcademica(objeto) {
           return error
       }       
   }
+
+
+      export async function crearAnioCursado(body) {
+        try {
+          const resul = await pg.crearAnioCursado(body)
+          return resul
+        } catch (error) {
+            return error
+        }       
+    }
+
+
+    export async function updateAnioCursado(objeto) {
+      try {
+
+        const resul = await pg.updateAnioCursado(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+
+
+      export async function deleteAnioCursado(objeto) {
+      try {
+
+        const resul = await pg.deleteAnioCursado(objeto)
+
+        if (resul ==  []){
+          return null
+        } else 
+          return resul
+      } catch (error) {
+          return error
+      }       
+  }
+

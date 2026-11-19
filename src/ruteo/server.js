@@ -17,6 +17,7 @@ import routerApiEscuela from './routers/routerApiEscuela.js';
 import routerApiAfip from './routers/RouterApiAfip.js';
 import routerApiParametros from './routers/RouterApiParametros.js';
 import routerApiUsuarios from './routers/routerApiUsuarios.js';
+import routerApiReportes from './routers/routerApiReportes.js';
 import {PUERTO_POR_DEFECTO} from '../config/config.js'
 import parseArgs from 'yargs/yargs'
 import { multer_function } from '../negocio/utils/multer.js'
@@ -87,6 +88,7 @@ servidor.use('/api/escuela', routerApiEscuela)
 servidor.use('/api/', routerApiAfip)
 servidor.use('/api/parametros', routerApiParametros)
 servidor.use('/api/usuarios', routerApiUsuarios)
+servidor.use('/api/reportes', routerApiReportes)
 //servidor.use(express.static('public'));
 //servidor.use('/public', express.static('public'));
 //const __filename = fileURLToPath(import.meta.url);

@@ -112,7 +112,8 @@ async function controllerArchivoDebito(req, res) {
     const objeto = req.body;
 
     try {
-        const resul = await pagosService.generarArchivoDebito(objeto);
+        const idEstablecimiento = req.body?.id_establecimiento || req.body?.idEstablecimiento || req.body?.identidadeducativa || req.user?.identidadeducativa || req.user?.id_establecimiento || null;
+        const resul = await pagosService.generarArchivoDebito(idEstablecimiento);
 
         res.status(201).json(resul);
     } catch (error) {

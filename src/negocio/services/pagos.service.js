@@ -67,9 +67,9 @@ class PagosService {
     }
   }
 
-  async generarArchivoDebito() {
+  async generarArchivoDebito(idEstablecimiento = null) {
     try {
-      const resul = await generarArchivoDebito();
+      const resul = await generarArchivoDebito(idEstablecimiento);
       return resul;
     } catch (error) {
       return error;
