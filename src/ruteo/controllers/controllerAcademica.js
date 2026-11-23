@@ -187,7 +187,7 @@ async function controllerGradoPost({ user, body }, res) {
 }
 
   async function controllerAnioCursadoPut({ params: { id }, user, body }, res) {
-
+   //console.log(body)
     try {
       body.usuario_sistema= user.usuario
       body.id = id
