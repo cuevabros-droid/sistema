@@ -1,6 +1,12 @@
 import { pool } from "../../daos/db/pgClient.js";
 import { format } from "date-fns";
 
+// Helper para lanzar errores HTTP controlados hacia el controlador
+function crearErrorValidacion(mensaje, statusCode = 409) {
+  const err = new Error(mensaje);
+  err.statusCode = statusCode;
+  return err;
+}
 
 class ContainerPg {
 
@@ -3365,317 +3371,844 @@ async CrearUsuarioEnMasa(objeto) {
   }
 
 
+// =========================================================
+  // HELPERS DE VALIDACIÓN ACADÉMICA
+  // =========================================================
+
+  async _divisionEnUso(client, id_division, id_establecimiento, nombreDivision) {
+    const { rowCount } = await client.query(
+      `SELECT 1
+       FROM alumno_datos_cursada adc
+       LEFT JOIN alumno a ON a.id_alumno = adc.id_alumno
+       WHERE adc.id_division = $1
+          OR (
+            adc.id_division IS NULL
+            AND a.id_establecimiento = $2
+            AND LOWER(TRIM(adc.division)) = LOWER(TRIM($3))
+          )
+       LIMIT 1`,
+      [id_division, id_establecimiento, nombreDivision || ""]
+    );
+    return rowCount > 0;
+  }
+
+  async _nivelEnUso(client, id_nivel) {
+    // 1. Verificar si tiene grados asociados
+    const enGrados = await client.query(
+      `SELECT 1 FROM grado WHERE id_nivel = $1 LIMIT 1`,
+      [id_nivel]
+    );
+    if (enGrados.rowCount > 0) return true;
+
+    // 2. Verificar si está en cursada a través de algún grado
+    const enCursada = await client.query(
+      `SELECT 1
+       FROM alumno_datos_cursada adc
+       INNER JOIN grado g ON g.id_grado = adc.id_grado
+       WHERE g.id_nivel = $1
+       LIMIT 1`,
+      [id_nivel]
+    );
+    return enCursada.rowCount > 0;
+  }
+
+  async _gradoEnUso(client, id_grado) {
+    // 1. Verificar si tiene alumnos en cursada
+    const enCursada = await client.query(
+      `SELECT 1 FROM alumno_datos_cursada WHERE id_grado = $1 LIMIT 1`,
+      [id_grado]
+    );
+    if (enCursada.rowCount > 0) return true;
+
+    // 2. Verificar si otro grado lo tiene configurado como grado siguiente
+    const comoSiguiente = await client.query(
+      `SELECT 1 FROM grado WHERE id_grado_siguiente = $1 LIMIT 1`,
+      [id_grado]
+    );
+    return comoSiguiente.rowCount > 0;
+  }
+
+  async _anioEnUso(client, id_anio, id_establecimiento, anioNumero) {
+    const { rowCount } = await client.query(
+      `SELECT 1
+       FROM alumno_datos_cursada adc
+       LEFT JOIN alumno a ON a.id_alumno = adc.id_alumno
+       WHERE adc.anio_cursada = $1
+          OR (a.id_establecimiento = $2 AND adc.anio_cursada = $3)
+       LIMIT 1`,
+      [id_anio, id_establecimiento, anioNumero]
+    );
+    return rowCount > 0;
+  }
+
+  // =========================================================
+  // 1. NIVELES
+  // =========================================================
+
   async crearNivel(objeto) {
-    const query = `
-    INSERT INTO nivel (
-        nombre, nombre_corto, observaciones, id_establecimiento
-    ) 
-    VALUES ($1, $2, $3, $4)
-    RETURNING *;
-    `;
-
-    // Array para guardar los resultados de cada inserción
-    const resultadosInsertados = [];
-
+    const client = await pool.connect();
     try {
-      await pool.query("BEGIN");
+      await client.query("BEGIN");
 
-      const valores = [
-          objeto.nombre,
-          objeto.nombre_corto,
-          objeto.observaciones,
-          objeto.id_establecimiento
-        ];
+      const nombre = String(objeto.nombre || "").trim();
+      const nombreCorto = String(objeto.nombre_corto || "").trim();
+      const idEstablecimiento = Number(objeto.id_establecimiento);
 
-         console.log("Intentando insertar registro con los valores:", valores);
+      if (!nombre || !nombreCorto || !idEstablecimiento) {
+        throw crearErrorValidacion("Complete nombre, nombre corto y establecimiento.", 400);
+      }
 
-        const resultado = await pool.query(query, valores);
-        resultadosInsertados.push(resultado.rows[0]);
-      
-
-      await pool.query("COMMIT");
-      console.log(
-        "Todos los registros se guardaron correctamente. Cantidad:",
-        resultadosInsertados.length,
+      const duplicado = await client.query(
+        `SELECT 1 FROM nivel
+         WHERE id_establecimiento = $1
+           AND (LOWER(TRIM(nombre)) = LOWER($2) OR LOWER(TRIM(nombre_corto)) = LOWER($3))
+         LIMIT 1`,
+        [idEstablecimiento, nombre, nombreCorto]
       );
 
-      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
-      return resultadosInsertados;
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `Ya existe un nivel con ese nombre o nombre corto en el establecimiento seleccionado.`
+        );
+      }
+
+      const resultado = await client.query(
+        `INSERT INTO nivel (nombre, nombre_corto, observaciones, id_establecimiento)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [nombre, nombreCorto, objeto.observaciones || null, idEstablecimiento]
+      );
+
+      await client.query("COMMIT");
+      return [resultado.rows[0]];
     } catch (error) {
-      await pool.query("ROLLBACK");
-      console.error(
-        "❌ Error al insertar registros en Postgres:",
-        error,
-      );
+      await client.query("ROLLBACK");
+      console.error("❌ Error en crearNivel:", error.message);
       throw error;
+    } finally {
+      client.release();
     }
   }
 
-
-   //ACTUALIZA DATOS DE UNA PERSONA
-async updateNivel(objeto) {
-
+  async updateNivel(objeto) {
+    const client = await pool.connect();
     try {
-      await pool.query("BEGIN");
+      await client.query("BEGIN");
 
-      const objetoBuscado = await pool.query(
-        `update nivel set nombre = $2, nombre_corto = $3, observaciones = $4, id_establecimiento = $5 where id_nivel=$1`,
-        [
-          objeto.id,
-          objeto.nombre,
-          objeto.nombre_corto,
-          objeto.observaciones,
-          objeto.id_establecimiento
-        ],
+      const idNivel = Number(objeto.id || objeto.id_nivel);
+      const nombre = String(objeto.nombre || "").trim();
+      const nombreCorto = String(objeto.nombre_corto || "").trim();
+      const nuevoEstablecimiento = Number(objeto.id_establecimiento);
+
+      const actualRes = await client.query(
+        `SELECT id_nivel, nombre, nombre_corto, id_establecimiento FROM nivel WHERE id_nivel = $1`,
+        [idNivel]
       );
-      await pool.query("COMMIT");
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("El nivel educativo no existe.", 404);
+      }
+
+      const actual = actualRes.rows[0];
+
+      // No cambiar de establecimiento si ya está siendo usado
+      if (Number(actual.id_establecimiento) !== nuevoEstablecimiento) {
+        const enUso = await this._nivelEnUso(client, idNivel);
+        if (enUso) {
+          throw crearErrorValidacion(
+            "No se puede cambiar de establecimiento porque este nivel ya tiene grados o alumnos asociados."
+          );
+        }
+      }
+
+      // No duplicar nombre o nombre corto en el establecimiento destino
+      const duplicado = await client.query(
+        `SELECT 1 FROM nivel
+         WHERE id_establecimiento = $1
+           AND id_nivel <> $2
+           AND (LOWER(TRIM(nombre)) = LOWER($3) OR LOWER(TRIM(nombre_corto)) = LOWER($4))
+         LIMIT 1`,
+        [nuevoEstablecimiento, idNivel, nombre, nombreCorto]
+      );
+
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `Ya existe otro nivel con ese nombre o nombre corto en el establecimiento seleccionado.`
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `UPDATE nivel
+         SET nombre = $2, nombre_corto = $3, observaciones = $4, id_establecimiento = $5
+         WHERE id_nivel = $1
+         RETURNING *`,
+        [idNivel, nombre, nombreCorto, objeto.observaciones || null, nuevoEstablecimiento]
+      );
+
+      await client.query("COMMIT");
       return objetoBuscado;
     } catch (error) {
-      await pool.query("ROLLBACK");
-      return error;  
-    }
-  }
-
-
-    async deleteNivel(id) {
-    try {
-      await pool.query("BEGIN");
-      const objetoBuscado = await pool.query(
-        `delete from nivel where id_nivel=$1`,
-        [id],
-      );
-      await pool.query("COMMIT");
-      return objetoBuscado;
-    } catch (error) {
-      await pool.query("ROLLBACK");
-      return error;
-    }
-  }
-
-
-    async crearDivision(objeto) {
-    const query = `
-    INSERT INTO divisiones (
-        division, id_establecimiento
-    ) 
-    VALUES ($1, $2)
-    RETURNING *;
-    `;
-
-    // Array para guardar los resultados de cada inserción
-    const resultadosInsertados = [];
-
-    try {
-      await pool.query("BEGIN");
-
-      const valores = [
-          objeto.division,
-          objeto.id_establecimiento
-        ];
-
-         console.log("Intentando insertar registro con los valores:", valores);
-
-        const resultado = await pool.query(query, valores);
-        resultadosInsertados.push(resultado.rows[0]);
-      
-
-      await pool.query("COMMIT");
-      console.log(
-        "Todos los registros se guardaron correctamente. Cantidad:",
-        resultadosInsertados.length,
-      );
-
-      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
-      return resultadosInsertados;
-    } catch (error) {
-      await pool.query("ROLLBACK");
-      console.error(
-        "❌ Error al insertar registros en Postgres:",
-        error,
-      );
+      await client.query("ROLLBACK");
+      console.error("❌ Error en updateNivel:", error.message);
       throw error;
+    } finally {
+      client.release();
     }
   }
 
-
-   //ACTUALIZA DATOS DE UNA PERSONA
-async updateDivision(objeto) {
-  
+  async deleteNivel(id) {
+    const client = await pool.connect();
     try {
-      await pool.query("BEGIN");
+      await client.query("BEGIN");
 
-      const objetoBuscado = await pool.query(
-        `update divisiones set division = $2, id_establecimiento = $3 where id_division=$1`,
-        [
-          objeto.id,
-          objeto.division,
-          objeto.id_establecimiento
-        ],
+      const idNivel = Number(id);
+      const actualRes = await client.query(
+        `SELECT id_nivel FROM nivel WHERE id_nivel = $1`,
+        [idNivel]
       );
-      await pool.query("COMMIT");
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("El nivel educativo no existe.", 404);
+      }
+
+      const enUso = await this._nivelEnUso(client, idNivel);
+      if (enUso) {
+        throw crearErrorValidacion(
+          "No se puede eliminar el nivel educativo porque tiene grados o cursadas de alumnos asociados."
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `DELETE FROM nivel WHERE id_nivel = $1 RETURNING *`,
+        [idNivel]
+      );
+
+      await client.query("COMMIT");
       return objetoBuscado;
     } catch (error) {
-      await pool.query("ROLLBACK");
-      return error;  
+      await client.query("ROLLBACK");
+      console.error("❌ Error en deleteNivel:", error.message);
+      throw error;
+    } finally {
+      client.release();
     }
   }
 
+  // =========================================================
+  // 2. DIVISIONES
+  // =========================================================
 
-    async deleteDivision(id) {
+  async crearDivision(objeto) {
+    const client = await pool.connect();
     try {
-      await pool.query("BEGIN");
-      const objetoBuscado = await pool.query(
-        `delete from divisiones where id_division=$1`,
-        [id],
+      await client.query("BEGIN");
+
+      const division = String(objeto.division || "").trim();
+      const idEstablecimiento = Number(objeto.id_establecimiento);
+
+      if (!division || !idEstablecimiento) {
+        throw crearErrorValidacion("Debe ingresar el nombre de la división y el establecimiento.", 400);
+      }
+
+      const duplicado = await client.query(
+        `SELECT 1 FROM divisiones
+         WHERE id_establecimiento = $1
+           AND LOWER(TRIM(division)) = LOWER($2)
+         LIMIT 1`,
+        [idEstablecimiento, division]
       );
-      await pool.query("COMMIT");
+
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `Ya existe la división "${division}" en el establecimiento seleccionado.`
+        );
+      }
+
+      const resultado = await client.query(
+        `INSERT INTO divisiones (division, id_establecimiento)
+         VALUES ($1, $2)
+         RETURNING *`,
+        [division, idEstablecimiento]
+      );
+
+      await client.query("COMMIT");
+      return [resultado.rows[0]];
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en crearDivision:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateDivision(objeto) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const idDivision = Number(objeto.id || objeto.id_division);
+      const division = String(objeto.division || "").trim();
+      const nuevoEstablecimiento = Number(objeto.id_establecimiento);
+
+      const actualRes = await client.query(
+        `SELECT id_division, division, id_establecimiento
+         FROM divisiones
+         WHERE id_division = $1`,
+        [idDivision]
+      );
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("La división no existe.", 404);
+      }
+
+      const actual = actualRes.rows[0];
+
+      // No cambiar de establecimiento si está usada en alumno_datos_cursada
+      if (Number(actual.id_establecimiento) !== nuevoEstablecimiento) {
+        const enUso = await this._divisionEnUso(
+          client,
+          idDivision,
+          actual.id_establecimiento,
+          actual.division
+        );
+        if (enUso) {
+          throw crearErrorValidacion(
+            "No se puede cambiar de establecimiento porque esta división ya está siendo utilizada en la cursada de alumnos."
+          );
+        }
+      }
+
+      // No duplicar división en el establecimiento destino
+      const duplicado = await client.query(
+        `SELECT 1 FROM divisiones
+         WHERE id_establecimiento = $1
+           AND id_division <> $2
+           AND LOWER(TRIM(division)) = LOWER($3)
+         LIMIT 1`,
+        [nuevoEstablecimiento, idDivision, division]
+      );
+
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `Ya existe la división "${division}" en el establecimiento seleccionado.`
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `UPDATE divisiones
+         SET division = $2, id_establecimiento = $3
+         WHERE id_division = $1
+         RETURNING *`,
+        [idDivision, division, nuevoEstablecimiento]
+      );
+
+      await client.query("COMMIT");
       return objetoBuscado;
     } catch (error) {
-      await pool.query("ROLLBACK");
-      return error;
+      await client.query("ROLLBACK");
+      console.error("❌ Error en updateDivision:", error.message);
+      throw error;
+    } finally {
+      client.release();
     }
   }
 
+  async deleteDivision(id) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const idDivision = Number(id);
+      const actualRes = await client.query(
+        `SELECT id_division, division, id_establecimiento
+         FROM divisiones
+         WHERE id_division = $1`,
+        [idDivision]
+      );
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("La división no existe.", 404);
+      }
+
+      const actual = actualRes.rows[0];
+
+      const enUso = await this._divisionEnUso(
+        client,
+        idDivision,
+        actual.id_establecimiento,
+        actual.division
+      );
+
+      if (enUso) {
+        throw crearErrorValidacion(
+          "No se puede eliminar la división porque ya está asignada a alumnos en cursada."
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `DELETE FROM divisiones WHERE id_division = $1 RETURNING *`,
+        [idDivision]
+      );
+
+      await client.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en deleteDivision:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  // =========================================================
+  // 3. GRADOS
+  // =========================================================
 
   async crearGrado(objeto) {
-    const query = `
-    INSERT INTO grado (
-        nombre, nombre_corto, observaciones, id_nivel, jerarquia, id_grado_siguiente, id_establecimiento
-    ) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING *;
-    `;
-
-    // Array para guardar los resultados de cada inserción
-    const resultadosInsertados = [];
-
+    const client = await pool.connect();
     try {
-      await pool.query("BEGIN");
+      await client.query("BEGIN");
 
-      const valores = [
-          objeto.nombre,
-          objeto.nombre_corto,
-          objeto.observaciones,
-          objeto.id_nivel,
-          objeto.jerarquia,
-          objeto.id_grado_siguiente,
-          objeto.id_establecimiento
-        ];
+      const nombre = String(objeto.nombre || "").trim();
+      const nombreCorto = String(objeto.nombre_corto || "").trim();
+      const idNivel = Number(objeto.id_nivel);
+      const jerarquia = Number(objeto.jerarquia || 0);
+      const idGradoSiguiente = objeto.id_grado_siguiente ? Number(objeto.id_grado_siguiente) : null;
+      const idEstablecimiento = Number(objeto.id_establecimiento);
 
-         console.log("Intentando insertar registro con los valores:", valores);
+      if (!nombre || !nombreCorto || !idNivel || !idEstablecimiento) {
+        throw crearErrorValidacion("Complete los campos obligatorios del grado.", 400);
+      }
 
-        const resultado = await pool.query(query, valores);
-        resultadosInsertados.push(resultado.rows[0]);
-      
+      // Validar que el nivel pertenezca al mismo establecimiento
+      const nivelValido = await client.query(
+        `SELECT 1 FROM nivel WHERE id_nivel = $1 AND id_establecimiento = $2`,
+        [idNivel, idEstablecimiento]
+      );
+      if (nivelValido.rowCount === 0) {
+        throw crearErrorValidacion(
+          "El nivel académico seleccionado no pertenece al establecimiento elegido.",
+          400
+        );
+      }
 
-      await pool.query("COMMIT");
-      console.log(
-        "Todos los registros se guardaron correctamente. Cantidad:",
-        resultadosInsertados.length,
+      // Validar grado siguiente en el mismo establecimiento
+      if (idGradoSiguiente) {
+        const sigValido = await client.query(
+          `SELECT 1 FROM grado WHERE id_grado = $1 AND id_establecimiento = $2`,
+          [idGradoSiguiente, idEstablecimiento]
+        );
+        if (sigValido.rowCount === 0) {
+          throw crearErrorValidacion(
+            "El grado siguiente seleccionado no pertenece al establecimiento elegido.",
+            400
+          );
+        }
+      }
+
+      // No duplicar nombre de grado dentro del mismo establecimiento
+      const duplicado = await client.query(
+        `SELECT 1 FROM grado
+         WHERE id_establecimiento = $1
+           AND LOWER(TRIM(nombre)) = LOWER($2)
+         LIMIT 1`,
+        [idEstablecimiento, nombre]
       );
 
-      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
-      return resultadosInsertados;
-    } catch (error) {
-      await pool.query("ROLLBACK");
-      console.error(
-        "❌ Error al insertar registros en Postgres:",
-        error,
-      );
-      throw error;
-    }
-  }
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `Ya existe el grado "${nombre}" en el establecimiento seleccionado.`
+        );
+      }
 
-
-   //ACTUALIZA DATOS DE UNA PERSONA
-async updateGrado(objeto) {
-  //console.log(objeto)
-    try {
-      await pool.query("BEGIN");
-
-      const objetoBuscado = await pool.query(
-        `update grado set nombre = $2, nombre_corto = $3, observaciones = $4, id_nivel = $5, jerarquia = $6, id_grado_siguiente = $7, id_establecimiento = $8 where id_grado=$1`,
+      const resultado = await client.query(
+        `INSERT INTO grado (
+           nombre, nombre_corto, observaciones, id_nivel, jerarquia, id_grado_siguiente, id_establecimiento
+         )
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
         [
-          objeto.id,
-          objeto.nombre,
-          objeto.nombre_corto,
-          objeto.observaciones,
-          objeto.id_nivel,
-          objeto.jerarquia,
-          objeto.id_grado_siguiente,
-          objeto.id_establecimiento
-        ],
+          nombre,
+          nombreCorto,
+          objeto.observaciones || null,
+          idNivel,
+          jerarquia,
+          idGradoSiguiente,
+          idEstablecimiento,
+        ]
       );
-      await pool.query("COMMIT");
-      return objetoBuscado;
+
+      await client.query("COMMIT");
+      return [resultado.rows[0]];
     } catch (error) {
-      await pool.query("ROLLBACK");
-      return error;  
-    }
-  }
-
-
-    async deleteGrado(id) {
-    try {
-      await pool.query("BEGIN");
-      const objetoBuscado = await pool.query(
-        `delete from grado where id_grado=$1`,
-        [id],
-      );
-      await pool.query("COMMIT");
-      return objetoBuscado;
-    } catch (error) {
-      await pool.query("ROLLBACK");
-      return error;
-    }
-  }
-
-    
-async crearAnioCursado(objeto) {
-  console.log(objeto)
-    const query = `
-    INSERT INTO anio (
-        anio, estado, fecha_inicio, fecha_fin, id_establecimiento
-    ) 
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING *;
-    `;
-
-    // Array para guardar los resultados de cada inserción
-    const resultadosInsertados = [];
-
-    try {
-      await pool.query("BEGIN");
-
-      const valores = [
-          objeto.anio,
-          objeto.estado,
-          objeto.fecha_inicio,
-          objeto.fecha_fin,
-          objeto.id_establecimiento
-        ];
-
-         console.log("Intentando insertar registro con los valores:", valores);
-
-        const resultado = await pool.query(query, valores);
-        resultadosInsertados.push(resultado.rows[0]);
-      
-
-      await pool.query("COMMIT");
-      console.log(
-        "Todos los registros se guardaron correctamente. Cantidad:",
-        resultadosInsertados.length,
-      );
-
-      // Devolvemos el array con todos los registros creados o el primero si tu frontend espera solo un objeto
-      return resultadosInsertados;
-    } catch (error) {
-      await pool.query("ROLLBACK");
-      console.error(
-        "❌ Error al insertar registros en Postgres:",
-        error,
-      );
+      await client.query("ROLLBACK");
+      console.error("❌ Error en crearGrado:", error.message);
       throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateGrado(objeto) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const idGrado = Number(objeto.id || objeto.id_grado);
+      const nombre = String(objeto.nombre || "").trim();
+      const nombreCorto = String(objeto.nombre_corto || "").trim();
+      const idNivel = Number(objeto.id_nivel);
+      const jerarquia = Number(objeto.jerarquia || 0);
+      const idGradoSiguiente = objeto.id_grado_siguiente ? Number(objeto.id_grado_siguiente) : null;
+      const nuevoEstablecimiento = Number(objeto.id_establecimiento);
+
+      const actualRes = await client.query(
+        `SELECT id_grado, id_establecimiento FROM grado WHERE id_grado = $1`,
+        [idGrado]
+      );
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("El grado no existe.", 404);
+      }
+
+      const actual = actualRes.rows[0];
+
+      // No cambiar de establecimiento si está usado en alumno_datos_cursada o como grado siguiente
+      if (Number(actual.id_establecimiento) !== nuevoEstablecimiento) {
+        const enUso = await this._gradoEnUso(client, idGrado);
+        if (enUso) {
+          throw crearErrorValidacion(
+            "No se puede cambiar de establecimiento porque este grado ya está en uso en cursadas o como grado siguiente."
+          );
+        }
+      }
+
+      // Validar nivel perteneciente al establecimiento destino
+      const nivelValido = await client.query(
+        `SELECT 1 FROM nivel WHERE id_nivel = $1 AND id_establecimiento = $2`,
+        [idNivel, nuevoEstablecimiento]
+      );
+      if (nivelValido.rowCount === 0) {
+        throw crearErrorValidacion(
+          "El nivel académico seleccionado no pertenece al establecimiento elegido.",
+          400
+        );
+      }
+
+      if (idGradoSiguiente) {
+        if (idGradoSiguiente === idGrado) {
+          throw crearErrorValidacion("Un grado no puede ser su propio grado siguiente.", 400);
+        }
+        const sigValido = await client.query(
+          `SELECT 1 FROM grado WHERE id_grado = $1 AND id_establecimiento = $2`,
+          [idGradoSiguiente, nuevoEstablecimiento]
+        );
+        if (sigValido.rowCount === 0) {
+          throw crearErrorValidacion(
+            "El grado siguiente seleccionado no pertenece al establecimiento elegido.",
+            400
+          );
+        }
+      }
+
+      // No duplicar nombre en el establecimiento destino
+      const duplicado = await client.query(
+        `SELECT 1 FROM grado
+         WHERE id_establecimiento = $1
+           AND id_grado <> $2
+           AND LOWER(TRIM(nombre)) = LOWER($3)
+         LIMIT 1`,
+        [nuevoEstablecimiento, idGrado, nombre]
+      );
+
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `Ya existe el grado "${nombre}" en el establecimiento seleccionado.`
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `UPDATE grado
+         SET nombre = $2, nombre_corto = $3, observaciones = $4,
+             id_nivel = $5, jerarquia = $6, id_grado_siguiente = $7, id_establecimiento = $8
+         WHERE id_grado = $1
+         RETURNING *`,
+        [
+          idGrado,
+          nombre,
+          nombreCorto,
+          objeto.observaciones || null,
+          idNivel,
+          jerarquia,
+          idGradoSiguiente,
+          nuevoEstablecimiento,
+        ]
+      );
+
+      await client.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en updateGrado:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteGrado(id) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const idGrado = Number(id);
+      const actualRes = await client.query(
+        `SELECT id_grado FROM grado WHERE id_grado = $1`,
+        [idGrado]
+      );
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("El grado no existe.", 404);
+      }
+
+      const enUso = await this._gradoEnUso(client, idGrado);
+      if (enUso) {
+        throw crearErrorValidacion(
+          "No se puede eliminar el grado porque tiene alumnos en cursada o está configurado como grado siguiente."
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `DELETE FROM grado WHERE id_grado = $1 RETURNING *`,
+        [idGrado]
+      );
+
+      await client.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en deleteGrado:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  // =========================================================
+  // 4. AÑOS LECTIVOS (Con control de único Activo)
+  // =========================================================
+
+  async crearAnioCursado(objeto) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const anioNum = Number(objeto.anio);
+      const estado = String(objeto.estado || "A").trim().toUpperCase();
+      const idEstablecimiento = Number(objeto.id_establecimiento);
+      const fechaInicio = objeto.fecha_inicio;
+      const fechaFin = objeto.fecha_fin;
+
+      if (!anioNum || !fechaInicio || !fechaFin || !idEstablecimiento) {
+        throw crearErrorValidacion("Complete todos los campos obligatorios del año lectivo.", 400);
+      }
+
+      if (fechaInicio > fechaFin) {
+        throw crearErrorValidacion("La fecha de inicio no puede ser posterior a la fecha de fin.", 400);
+      }
+
+      // 1. No permitir año duplicado en el mismo establecimiento
+      const duplicado = await client.query(
+        `SELECT 1 FROM anio
+         WHERE id_establecimiento = $1 AND anio = $2
+         LIMIT 1`,
+        [idEstablecimiento, anioNum]
+      );
+
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `El año lectivo ${anioNum} ya existe en el establecimiento seleccionado.`
+        );
+      }
+
+      // 2. Control: solo puede haber UN año Activo ('A') por establecimiento
+      if (estado === "A") {
+        const activoExistente = await client.query(
+          `SELECT anio FROM anio
+           WHERE id_establecimiento = $1 AND TRIM(estado) = 'A'
+           LIMIT 1`,
+          [idEstablecimiento]
+        );
+
+        if (activoExistente.rowCount > 0) {
+          throw crearErrorValidacion(
+            `Ya existe un año lectivo Activo (${activoExistente.rows[0].anio}) en este establecimiento. Debe desactivarlo antes de activar otro.`
+          );
+        }
+      }
+
+      const resultado = await client.query(
+        `INSERT INTO anio (anio, estado, fecha_inicio, fecha_fin, id_establecimiento)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [anioNum, estado, fechaInicio, fechaFin, idEstablecimiento]
+      );
+
+      await client.query("COMMIT");
+      return [resultado.rows[0]];
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en crearAnioCursado:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async updateAnioCursado(objeto) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const idAnio = Number(objeto.id || objeto.id_anio);
+      const anioNum = Number(objeto.anio);
+      const estado = String(objeto.estado || "A").trim().toUpperCase();
+      const nuevoEstablecimiento = Number(objeto.id_establecimiento);
+      const fechaInicio = objeto.fecha_inicio;
+      const fechaFin = objeto.fecha_fin;
+
+      if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
+        throw crearErrorValidacion("La fecha de inicio no puede ser posterior a la fecha de fin.", 400);
+      }
+
+      const actualRes = await client.query(
+        `SELECT id_anio, anio, estado, id_establecimiento
+         FROM anio
+         WHERE id_anio = $1`,
+        [idAnio]
+      );
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("El año lectivo no existe.", 404);
+      }
+
+      const actual = actualRes.rows[0];
+
+      // 1. No cambiar de establecimiento si está usado en alumno_datos_cursada
+      if (Number(actual.id_establecimiento) !== nuevoEstablecimiento) {
+        const enUso = await this._anioEnUso(
+          client,
+          idAnio,
+          actual.id_establecimiento,
+          actual.anio
+        );
+        if (enUso) {
+          throw crearErrorValidacion(
+            "No se puede cambiar de establecimiento porque este año lectivo ya tiene alumnos con cursada registrada."
+          );
+        }
+      }
+
+      // 2. No permitir año duplicado en el establecimiento destino
+      const duplicado = await client.query(
+        `SELECT 1 FROM anio
+         WHERE id_establecimiento = $1
+           AND id_anio <> $2
+           AND anio = $3
+         LIMIT 1`,
+        [nuevoEstablecimiento, idAnio, anioNum]
+      );
+
+      if (duplicado.rowCount > 0) {
+        throw crearErrorValidacion(
+          `El año lectivo ${anioNum} ya existe en el establecimiento seleccionado.`
+        );
+      }
+
+      // 3. Control: solo puede haber UN año Activo ('A') por establecimiento
+      if (estado === "A") {
+        const activoExistente = await client.query(
+          `SELECT anio FROM anio
+           WHERE id_establecimiento = $1
+             AND id_anio <> $2
+             AND TRIM(estado) = 'A'
+           LIMIT 1`,
+          [nuevoEstablecimiento, idAnio]
+        );
+
+        if (activoExistente.rowCount > 0) {
+          throw crearErrorValidacion(
+            `Ya existe un año lectivo Activo (${activoExistente.rows[0].anio}) en este establecimiento. Debe desactivarlo antes de activar otro.`
+          );
+        }
+      }
+
+      const objetoBuscado = await client.query(
+        `UPDATE anio
+         SET anio = $2, estado = $3, fecha_inicio = $4, fecha_fin = $5, id_establecimiento = $6
+         WHERE id_anio = $1
+         RETURNING *`,
+        [idAnio, anioNum, estado, fechaInicio, fechaFin, nuevoEstablecimiento]
+      );
+
+      await client.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en updateAnioCursado:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async deleteAnioCursado(id) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const idAnio = Number(id);
+      const actualRes = await client.query(
+        `SELECT id_anio, anio, id_establecimiento
+         FROM anio
+         WHERE id_anio = $1`,
+        [idAnio]
+      );
+
+      if (actualRes.rowCount === 0) {
+        throw crearErrorValidacion("El año lectivo no existe.", 404);
+      }
+
+      const actual = actualRes.rows[0];
+
+      const enUso = await this._anioEnUso(
+        client,
+        idAnio,
+        actual.id_establecimiento,
+        actual.anio
+      );
+
+      if (enUso) {
+        throw crearErrorValidacion(
+          "No se puede eliminar el año lectivo porque tiene cursadas de alumnos registradas."
+        );
+      }
+
+      const objetoBuscado = await client.query(
+        `DELETE FROM anio WHERE id_anio = $1 RETURNING *`,
+        [idAnio]
+      );
+
+      await client.query("COMMIT");
+      return objetoBuscado;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("❌ Error en deleteAnioCursado:", error.message);
+      throw error;
+    } finally {
+      client.release();
     }
   }
 

@@ -39,7 +39,7 @@ class AcademicaService {
               lista = await updateGrado(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -48,7 +48,7 @@ class AcademicaService {
               lista = await deleteGrado(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -68,7 +68,7 @@ class AcademicaService {
               lista = await updateNivel(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -77,7 +77,7 @@ class AcademicaService {
               lista = await deleteNivel(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
     
@@ -94,7 +94,7 @@ class AcademicaService {
               lista = await updateDivision(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -103,7 +103,7 @@ class AcademicaService {
               lista = await deleteDivision(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -129,7 +129,7 @@ class AcademicaService {
               lista = await updateAnioCursado(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -138,7 +138,7 @@ class AcademicaService {
               lista = await deleteAnioCursado(objeto)
                 return lista  
             } catch (error) {
-                return error
+                throw error
             }
     } 
 
@@ -153,7 +153,7 @@ class AcademicaService {
               updatePerson = await updateAcademica(objeto)
                 return updatePerson  
             } catch (error) {
-                return error
+                throw error
             }
         } 
     
@@ -162,7 +162,7 @@ class AcademicaService {
               const createPerson = await createAcademica(objeto)
                 return createPerson  
             } catch (error) {
-                return error
+                throw error
             }
         } 
 
@@ -171,7 +171,7 @@ class AcademicaService {
               const createPerson = await deleteAcademica(objeto)
                 return createPerson  
             } catch (error) {
-                return error
+                throw error
             }
         } 
 

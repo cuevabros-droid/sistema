@@ -4,9 +4,12 @@
   "version": "1.0.0",
   "description": "Trabajo Final",
   "main": "src/main.js",
-  "scripts": {
-    "start": "nodemon main.js"
-  },
+"scripts": {
+  "start": "start /B npm run tunnel && nodemon main.js",
+  "tunnel": "ssh -L 5434:127.0.0.1:5433 root@76.13.167.174 -N -o ExitOnForwardFailure=yes",
+  "dev": "start /B npm run tunnel && npm start",
+  "main": "start /B npm run tunnel && node main.js"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cuevagit/backendTrabajoFinal.git"
@@ -59,5 +62,8 @@
     "react": "^18.3.1",
     "sqlite3": "^5.1.4",
     "yargs": "^17.7.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
