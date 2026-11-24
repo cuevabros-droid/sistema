@@ -7,7 +7,7 @@ export async function listarMedios() {
         const resul = await pg.getMedios();
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -16,7 +16,7 @@ export async function listarMarcas() {
         const resul = await pg.getMarcas();
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -25,7 +25,7 @@ export async function listarEntidades() {
         const resul = await pg.getEntidades();
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -34,7 +34,7 @@ export async function listarCargos() {
         const resul = await pg.getCargos();
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -43,7 +43,7 @@ export async function listado(id, id_establecimiento) {
         const resul = await pg.getListadoPagos(id, id_establecimiento);
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -58,7 +58,7 @@ export async function createPago(objeto) {
 
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -67,7 +67,7 @@ export async function deletePago(id) {
         const resul = await pg.deletePago(id);
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -82,7 +82,7 @@ export async function updatePago(objeto) {
 
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -97,7 +97,7 @@ export async function generarArchivoDebito(idEstablecimiento = null) {
 
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -112,7 +112,7 @@ export async function createPagoCuota(objeto) {
 
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -127,7 +127,7 @@ export async function GenerarPagos(objeto) {
 
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 
@@ -142,7 +142,7 @@ export async function EstadoDeuda(objeto) {
 
         return resul;
     } catch (error) {
-        return error;
+        throw error;
     }
 }
 

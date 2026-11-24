@@ -8,7 +8,7 @@ const pg = new ContainerPg
           const resul = await pg.getDocumentos()
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     
@@ -17,7 +17,7 @@ const pg = new ContainerPg
           const resul = await pg.getDocumentosPersona(id)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -27,7 +27,7 @@ const pg = new ContainerPg
           const resul = await pg.registrarDocumentoPersona(objeto)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -36,7 +36,7 @@ const pg = new ContainerPg
           const resul = await pg.actualizarDocumentoPersona(objeto)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     
@@ -45,7 +45,7 @@ const pg = new ContainerPg
           const resul = await pg.eliminarDocumentoPersona(id)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -55,6 +55,6 @@ const pg = new ContainerPg
           const resul = await pg.ExistePersona(tipo, numero)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }

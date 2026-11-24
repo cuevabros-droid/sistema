@@ -10,7 +10,7 @@ const pg = new ContainerPg
           const resul = await pg.TipoUsuarios()
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -19,7 +19,7 @@ const pg = new ContainerPg
           const resul = await pg.Usuarios(busqueda, identidadeducativa)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -29,7 +29,7 @@ const pg = new ContainerPg
           const resul = await pg.TutoresSinUsuario(objeto, identidadeducativa)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -49,7 +49,7 @@ const pg = new ContainerPg
           const resul = await pg.CrearUsuarioEnMasa(objeto)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
   

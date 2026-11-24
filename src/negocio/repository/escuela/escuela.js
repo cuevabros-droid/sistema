@@ -8,7 +8,7 @@ const pg = new ContainerPg
           const resul = await pg.getEscuela(id)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     
@@ -17,6 +17,6 @@ const pg = new ContainerPg
           const resul = await pg.getEscuelas()
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }

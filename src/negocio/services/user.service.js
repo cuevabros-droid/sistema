@@ -21,7 +21,7 @@ class UserService {
 
             return registroUser  
         } catch (error) {
-            return error
+            throw error
         }
     }
 
@@ -36,7 +36,7 @@ class UserService {
            } else
             return null
         } catch (error) {
-            return error
+            throw error
         }
     }
 

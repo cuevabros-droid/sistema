@@ -14,7 +14,7 @@ export class user {
             const resul = await this.#dao.save(usuario.datos())
             return resul
         } catch(error) {
-            return error
+            throw error
         }
     }
 
@@ -29,7 +29,7 @@ export class user {
             return null
 
         } catch(error) {
-            return error
+            throw error
         }
     }
 
@@ -44,7 +44,7 @@ export class user {
             return null
             
         } catch(error) {
-            return error
+            throw error
         }
     }        
     

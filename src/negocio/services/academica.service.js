@@ -36,7 +36,7 @@ class AcademicaService {
 
     async updateGrado(objeto) {
             try {
-              lista = await updateGrado(objeto)
+              const lista = await updateGrado(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -45,7 +45,7 @@ class AcademicaService {
 
     async deleteGrado(objeto) {
             try {
-              lista = await deleteGrado(objeto)
+              const lista = await deleteGrado(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -65,7 +65,7 @@ class AcademicaService {
 
     async updateNivel(objeto) {
             try {
-              lista = await updateNivel(objeto)
+              const lista = await updateNivel(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -74,7 +74,7 @@ class AcademicaService {
 
     async deleteNivel(objeto) {
             try {
-              lista = await deleteNivel(objeto)
+              const lista = await deleteNivel(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -91,7 +91,7 @@ class AcademicaService {
 
     async updateDivision(objeto) {
             try {
-              lista = await updateDivision(objeto)
+              const lista = await updateDivision(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -100,7 +100,7 @@ class AcademicaService {
 
     async deleteDivision(objeto) {
             try {
-              lista = await deleteDivision(objeto)
+              const lista = await deleteDivision(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -126,7 +126,7 @@ class AcademicaService {
 
     async updateAnioCursado(objeto) {
             try {
-              lista = await updateAnioCursado(objeto)
+              const lista = await updateAnioCursado(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -135,7 +135,7 @@ class AcademicaService {
 
     async deleteAnioCursado(objeto) {
             try {
-              lista = await deleteAnioCursado(objeto)
+              const lista = await deleteAnioCursado(objeto)
                 return lista  
             } catch (error) {
                 throw error
@@ -150,7 +150,7 @@ class AcademicaService {
 
     async updateAcademica(objeto) {
             try {
-              updatePerson = await updateAcademica(objeto)
+              const updatePerson = await updateAcademica(objeto)
                 return updatePerson  
             } catch (error) {
                 throw error

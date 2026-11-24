@@ -17,7 +17,7 @@ class ContainerMongodb{
             return objeto
         } 
         catch (error){
-            return error
+            throw error
         } 
 
       }
@@ -39,7 +39,7 @@ class ContainerMongodb{
         }
 
         catch(error){
-            return error
+            throw error
         } 
 
     }
@@ -61,7 +61,7 @@ class ContainerMongodb{
         }
 
         catch(error){
-            return error
+            throw error
         } 
 
      }
@@ -83,7 +83,7 @@ class ContainerMongodb{
         }
 
         catch(error){
-            return error
+            throw error
         } 
 
     }
@@ -103,7 +103,7 @@ class ContainerMongodb{
         }
 
         catch(error){
-            return error
+            throw error
         } 
 
     }
@@ -117,7 +117,7 @@ class ContainerMongodb{
             return objeto;
         }
         catch(error){
-            return error
+            throw error
         } 
     }
 
@@ -129,7 +129,7 @@ class ContainerMongodb{
             return objeto;
         }
         catch(error){
-            return error
+            throw error
         } 
     }
 
@@ -141,7 +141,7 @@ class ContainerMongodb{
             return carritoVaciado
         }
         catch(error){
-           return error
+           throw error
         } 
     }
 
@@ -155,7 +155,7 @@ class ContainerMongodb{
             return eliminado
         }
         catch(error){
-            return error
+            throw error
         } 
     }
 
@@ -176,7 +176,7 @@ class ContainerMongodb{
         }
 
         catch(error){
-            return error
+            throw error
         } 
 
      }

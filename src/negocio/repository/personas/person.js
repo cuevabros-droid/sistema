@@ -11,7 +11,7 @@ const pg = new ContainerPg
          const resul = await pg.getAllWithFilters(filtro)
           return resul
         } catch (error) {
-            return error
+            throw error
         }    
        }   
           
@@ -25,7 +25,7 @@ const pg = new ContainerPg
         else 
         return resul
       } catch (error) {
-          return error
+          throw error
       }     
      }  
      
@@ -40,7 +40,7 @@ const pg = new ContainerPg
         else 
         return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -54,7 +54,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -70,7 +70,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -86,7 +86,7 @@ export async function PersonsCreate(objeto) {
             return resul;
         }
     } catch (error) {
-        return error;
+        throw error;
     }       
 }
 
@@ -97,7 +97,7 @@ export async function listarSaldoAlumnoPorId(id) {
       return null;
     } else return resul;
   } catch (error) {
-    return error;
+    throw error;
   }
 }
 
@@ -108,7 +108,7 @@ export async function listarAlumnosPorUsuario(usuario) {
       return null;
     } else return resul;
   } catch (error) {
-    return error;
+    throw error;
   }
 }
 
@@ -144,7 +144,7 @@ export async function listarTutoresPorId(id) {
         else 
         return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -159,7 +159,7 @@ export async function PersonaAllegadaCreate(objeto) {
             return resul;
         }
     } catch (error) {
-        return error;
+        throw error;
     }       
 }
 
@@ -169,7 +169,7 @@ export async function PersonaAllegadaCreate(objeto) {
           const resul = await pg.eliminarAllegado(id)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -183,7 +183,7 @@ export async function PersonaAllegadaCreate(objeto) {
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -193,7 +193,7 @@ export async function PersonaAllegadaCreate(objeto) {
           const resul = await pg.sexo()
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -203,6 +203,6 @@ export async function PersonaAllegadaCreate(objeto) {
           const resul = await pg.BuscarPorDocumento(id, numero, identidadeducativa)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }

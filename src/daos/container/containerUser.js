@@ -19,7 +19,7 @@ class ContainerUser{
             return objeto
         } 
         catch (error){
-            return error
+            throw error
             } 
     
     }
@@ -31,7 +31,7 @@ class ContainerUser{
             const user = await this.coleccion.findOne({email: usuario})
             return user
         } catch (error) {
-            return error
+            throw error
         }
    }
 
@@ -42,7 +42,7 @@ class ContainerUser{
             const user = await this.coleccion.findOne({_id: usuario})
             return user
         } catch (error) {
-            return error
+            throw error
         }
     }
 

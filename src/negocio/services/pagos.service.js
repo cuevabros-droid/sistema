@@ -45,7 +45,7 @@ class PagosService {
       resul = await updatePago(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -54,7 +54,7 @@ class PagosService {
       const resul = await createPago(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -63,7 +63,7 @@ class PagosService {
       const resul = await deletePago(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -72,7 +72,7 @@ class PagosService {
       const resul = await generarArchivoDebito(idEstablecimiento);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -82,7 +82,7 @@ class PagosService {
       const resul = await createPagoCuota(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -91,7 +91,7 @@ class PagosService {
       const resul = await GenerarPagos(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -100,7 +100,7 @@ class PagosService {
       const resul = await EstadoDeuda(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -111,7 +111,7 @@ class PagosService {
       const resul = await AlumnosPendientes(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
 
   }
@@ -122,7 +122,7 @@ class PagosService {
       const resul = await ActualizarImporte(objeto);
       return resul;
     } catch (error) {
-      return error;
+      throw error;
     }
     
   }

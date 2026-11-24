@@ -10,7 +10,7 @@ const pg = new ContainerPg
           const resul = await pg.getAll(id_establecimiento)
           return resul
         } catch (error) {
-            return error
+            throw error
         }    
        }   
           
@@ -24,7 +24,7 @@ const pg = new ContainerPg
         else 
         return resul
       } catch (error) {
-          return error
+          throw error
       }     
      }  
      
@@ -39,7 +39,7 @@ const pg = new ContainerPg
         else 
         return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -53,7 +53,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -69,7 +69,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -85,7 +85,7 @@ export async function AlumnosCreate(objeto) {
             return resul;
         }
     } catch (error) {
-        return error;
+        throw error;
     }       
 }
 

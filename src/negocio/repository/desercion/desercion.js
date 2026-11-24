@@ -8,7 +8,7 @@ const pg = new ContainerPg
           const resul = await pg.getDesercion()
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     
