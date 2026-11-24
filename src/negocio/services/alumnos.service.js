@@ -33,20 +33,20 @@ class AlumnosService {
     //Actualiza los datos de una Persona dada
     async updateAlumnos(objeto) {
         try {
-          updatePerson = await updateAlumnos(objeto)
+          const updatePerson = await updateAlumnos(objeto)
             return updatePerson  
         } catch (error) {
-            return error
+            throw error
         }
     } 
     
         //Actualiza el Estado de una Persona dada
     async updateAlumnosEstado(objeto) {
         try {
-          updatePerson = await updateAlumnosEstado(objeto)
+          const updatePerson = await updateAlumnosEstado(objeto)
             return updatePerson  
         } catch (error) {
-            return error
+            throw error
         }
     } 
 
@@ -55,7 +55,7 @@ class AlumnosService {
           const createPerson = await AlumnosCreate(objeto)
             return createPerson  
         } catch (error) {
-            return error
+            throw error
         }
     } 
 

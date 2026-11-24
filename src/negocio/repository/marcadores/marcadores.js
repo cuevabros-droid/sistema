@@ -9,7 +9,7 @@ const pg = new ContainerPg
           //console.log(resul)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     

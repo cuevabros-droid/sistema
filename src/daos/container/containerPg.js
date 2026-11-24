@@ -45,7 +45,7 @@ class ContainerPg {
       return (objetoBuscado, objetoBuscado2);
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -62,7 +62,7 @@ class ContainerPg {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -126,7 +126,7 @@ async getAll(id_establecimiento) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -139,7 +139,7 @@ async getAll(id_establecimiento) {
 
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -321,7 +321,7 @@ async getAllWithFilters(filtros = {}) {
       const objetoBuscado = await pool.query(`select * from localidad`);
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -330,7 +330,7 @@ async getAllWithFilters(filtros = {}) {
       const objetoBuscado = await pool.query(`select * from motivo_desercion`);
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -339,7 +339,7 @@ async getAllWithFilters(filtros = {}) {
       const objetoBuscado = await pool.query(`select * from nacionalidad`);
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -350,7 +350,7 @@ async getAllWithFilters(filtros = {}) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -361,7 +361,7 @@ async getAllWithFilters(filtros = {}) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -372,7 +372,7 @@ async getAllWithFilters(filtros = {}) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -383,7 +383,7 @@ async getAllWithFilters(filtros = {}) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -395,7 +395,7 @@ async getAllWithFilters(filtros = {}) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -404,7 +404,7 @@ async getAllWithFilters(filtros = {}) {
       const objetoBuscado = await pool.query(`select * from marcadoresmapa`);
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -425,7 +425,7 @@ async getAllWithFilters(filtros = {}) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -440,7 +440,7 @@ async getAllWithFilters(filtros = {}) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -474,7 +474,7 @@ async getAllWithFilters(filtros = {}) {
       return resultado.rows;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -658,7 +658,7 @@ async getAllWithFilters(filtros = {}) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;  
+      throw error;  
     }
   }
 
@@ -1114,66 +1114,73 @@ async getSaldosPorAlumno(id) {
 
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
-  //ALTA
+// ALTA / ACTUALIZACIÓN DE PERSONA ALLEGADA
   async createPersonaAllegada(objeto) {
-    //console.log(objeto)
-    // Formato estándar de base de datos sin offset de zona horaria
-    // const fechaActual = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
-    // Resultado: "2026-05-25 14:20:00"
-    //console.log("este es el DAO"  + objeto.usuario)
     const fechaActual = format(new Date(), "yyyy-MM-dd HH:mm:ss");
 
-    const query = `
+    try {
+      await pool.query("BEGIN");
+
+      // Si no viene id_tipo_allegado, verificamos si la relación ya existe en la BD
+      if (!objeto.id_tipo_allegado) {
+        const existe = await pool.query(
+          `SELECT * FROM persona_allegado WHERE id_persona = $1 AND id_alumno = $2`,
+          [objeto.id_persona, objeto.id_alumno]
+        );
+        if (existe.rows.length > 0) {
+          await pool.query("COMMIT");
+          return existe.rows[0]; // Ya existe y no tiene datos nuevos para actualizar
+        }
+      }
+
+      const query = `
         INSERT INTO persona_allegado (
             id_persona, id_alumno, id_tipo_allegado, id_estudio_alcanzado, 
             id_ocupacion, tutor, activo, 
             fecha_alta, usuario_alta, fecha_ultima_modificacion, usuario_ultima_modificacion
-
         ) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT (id_persona, id_alumno) 
+        DO UPDATE SET
+            id_tipo_allegado = COALESCE(EXCLUDED.id_tipo_allegado, persona_allegado.id_tipo_allegado),
+            id_estudio_alcanzado = COALESCE(EXCLUDED.id_estudio_alcanzado, persona_allegado.id_estudio_alcanzado),
+            id_ocupacion = COALESCE(EXCLUDED.id_ocupacion, persona_allegado.id_ocupacion),
+            tutor = COALESCE(EXCLUDED.tutor, persona_allegado.tutor),
+            activo = COALESCE(EXCLUDED.activo, persona_allegado.activo),
+            fecha_ultima_modificacion = EXCLUDED.fecha_ultima_modificacion,
+            usuario_ultima_modificacion = EXCLUDED.usuario_ultima_modificacion
         RETURNING *;
-        `;
+      `;
 
-    const valores = [
-      objeto.id_persona,
-      objeto.id_alumno,
-      objeto.id_tipo_allegado,
-      objeto.id_estudio_alcanzado,
-      objeto.id_ocupacion,
-      objeto.tutor,
-      objeto.activo,
-      fechaActual,
-      objeto.usuario_sistema,
-      fechaActual,
-      objeto.usuario_sistema,
-    ];
+      const valores = [
+        objeto.id_persona,
+        objeto.id_alumno,
+        objeto.id_tipo_allegado || null,
+        objeto.id_estudio_alcanzado || null,
+        objeto.id_ocupacion || null,
+        objeto.tutor,
+        objeto.activo,
+        fechaActual,
+        objeto.usuario_sistema,
+        fechaActual,
+        objeto.usuario_sistema,
+      ];
 
-    try {
-      console.log("Intentando ejecutar la consulta con los valores:", valores);
-
-      await pool.query("BEGIN");
-
-      // 1. Insertar el alumno
       const resultado = await pool.query(query, valores);
-      const allegadosCreado = resultado.rows[0]; // Aquí está el id_alumno generado
-
       await pool.query("COMMIT");
-
-      console.log("Datos que Postgres dice haber guardado:", allegadosCreado);
-
-      // 🌟 CORREGIDO: Devolvemos la fila completa de la persona.
-      // Al llevar 'id_persona', el frontend lo leerá automáticamente.
-      return allegadosCreado;
+      return resultado.rows[0];
     } catch (error) {
       await pool.query("ROLLBACK");
-      console.error("❌ Error al insertar en Postgres:", error);
+      console.error("❌ Error al insertar/actualizar allegado en Postgres:", error);
       throw error;
     }
   }
+
+
 
   async eliminarAllegado(id) {
     try {
@@ -1186,7 +1193,7 @@ async getSaldosPorAlumno(id) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -1239,7 +1246,7 @@ async getSaldosPorAlumno(id) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -1251,7 +1258,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1263,7 +1270,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1275,7 +1282,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1287,7 +1294,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1303,7 +1310,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1371,7 +1378,7 @@ async getSaldosPorAlumno(id) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -1441,7 +1448,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1452,7 +1459,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1463,7 +1470,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1474,7 +1481,7 @@ async getSaldosPorAlumno(id) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1505,7 +1512,7 @@ WHERE a.id_alumno = $1
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1667,7 +1674,7 @@ async createPago(objeto) {
       return objetoBuscado;
     } catch (error) {
       await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 
@@ -1768,7 +1775,7 @@ async generarArchivoDebito(idEstablecimiento = null) {
       );
       return objetoBuscado.rows[0];
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -1779,7 +1786,7 @@ async generarArchivoDebito(idEstablecimiento = null) {
     );
     return objetoBuscado.rows; // Devuelve la lista completa (Array)
   } catch (error) {
-    return error;
+    throw error;
   }
 }
 
@@ -1791,7 +1798,7 @@ async generarArchivoDebito(idEstablecimiento = null) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -2553,7 +2560,7 @@ async ActualizarImporte(objeto) {
       const objetoBuscado = await pool.query(`select * from tipos_usuarios`);
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -3048,7 +3055,7 @@ async CrearUsuarioEnMasa(objeto) {
       );
       return objetoBuscado.rows;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -3253,7 +3260,7 @@ async CrearUsuarioEnMasa(objeto) {
       return objetoBuscado.rows;
     } catch (error) {
     //  await pool.query("ROLLBACK");
-      return error;
+      throw error;
     }
   }
 

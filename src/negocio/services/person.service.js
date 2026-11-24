@@ -45,17 +45,17 @@ class PersontService {
     //Actualiza los datos de una Persona dada
     async updatePersons(objeto, id) {
         try {
-          updatePerson = await updatePersons(objeto, id)
+           const  updatePerson = await updatePersons(objeto, id)
             return updatePerson  
         } catch (error) {
-            return error
+            throw error
         }
     } 
     
         //Actualiza el Estado de una Persona dada
     async updatePersonsEstado(objeto) {
         try {
-          updatePerson = await updatePersonsEstado(objeto)
+          const updatePerson = await updatePersonsEstado(objeto)
             return updatePerson  
         } catch (error) {
             return error
@@ -119,7 +119,7 @@ class PersontService {
         //Actualiza los datos de una Persona dada
     async updatePersonaAllegada(body, id) {
         try {
-          updatePersonaAllegada = await updatePersonaAllegada(body, id)
+          const updatePersonaAllegada = await updatePersonaAllegada(body, id)
             return updatePersonaAllegada  
         } catch (error) {
             return error

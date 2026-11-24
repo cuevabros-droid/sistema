@@ -8,7 +8,7 @@ const pg = new ContainerPg
           const resul = await pg.getGrado(id_establecimiento)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -18,7 +18,7 @@ const pg = new ContainerPg
           const resul = await pg.crearGrado(body)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -33,7 +33,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -48,7 +48,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -57,7 +57,7 @@ const pg = new ContainerPg
           const resul = await pg.getNivel(id_establecimiento)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     
@@ -67,7 +67,7 @@ const pg = new ContainerPg
           const resul = await pg.crearNivel(body)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -82,7 +82,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -97,7 +97,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -106,7 +106,7 @@ const pg = new ContainerPg
           const resul = await pg.getDivision(id_establecimiento)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -116,7 +116,7 @@ const pg = new ContainerPg
           const resul = await pg.crearDivision(body)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -131,7 +131,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -146,7 +146,7 @@ const pg = new ContainerPg
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
     
@@ -155,7 +155,7 @@ const pg = new ContainerPg
           const resul = await pg.getAnioCursado(id_establecimiento)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
     
@@ -164,7 +164,7 @@ const pg = new ContainerPg
           const resul = await pg.getListado(id, id_establecimiento)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -180,7 +180,7 @@ export async function createAcademica(objeto) {
             return resul;
         }
     } catch (error) {
-        return error;
+        throw error;
     }       
 }
 
@@ -190,7 +190,7 @@ export async function createAcademica(objeto) {
           const resul = await pg.deleteAcademica(id)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -204,7 +204,7 @@ export async function createAcademica(objeto) {
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -214,7 +214,7 @@ export async function createAcademica(objeto) {
           const resul = await pg.crearAnioCursado(body)
           return resul
         } catch (error) {
-            return error
+            throw error
         }       
     }
 
@@ -229,7 +229,7 @@ export async function createAcademica(objeto) {
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
@@ -244,7 +244,7 @@ export async function createAcademica(objeto) {
         } else 
           return resul
       } catch (error) {
-          return error
+          throw error
       }       
   }
 
