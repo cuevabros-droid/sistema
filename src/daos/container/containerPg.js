@@ -444,31 +444,53 @@ async getAllWithFilters(filtros = {}) {
     }
   }
 
-  async registrarDocumentoPersona(objeto) {
-    // Formato estándar de base de datos sin offset de zona horaria
+async registrarDocumentoPersona(objeto) {
     const fecha_alta = format(new Date(), "yyyy-MM-dd HH:mm:ss");
-    // Resultado: "2026-05-25 14:20:00"registrarDocumentoPersona
 
-    const query = `
+    try {
+      await pool.query("BEGIN");
+
+      // Si viene id_persona_tipo_documento, actualizamos directamente
+      if (objeto.id_persona_tipo_documento) {
+        const resUpdate = await pool.query(
+          `UPDATE persona_tipo_documento 
+           SET id_tipo_documento = $2, numero = $3, activo = $4 
+           WHERE id_persona_tipo_documento = $1 
+           RETURNING *;`,
+          [
+            objeto.id_persona_tipo_documento,
+            objeto.id_tipo_documento,
+            objeto.numero,
+            objeto.activo || 'S',
+          ]
+        );
+        await pool.query("COMMIT");
+        return resUpdate.rows;
+      }
+
+      // Si no viene el ID de la relación, hacemos UPSERT por la restricción única
+      const query = `
         INSERT INTO persona_tipo_documento (
             id_persona, id_tipo_documento, numero, activo, 
             fecha_alta, usuario_alta
         ) 
         VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT ON CONSTRAINT persona_documento_uq
+        DO UPDATE SET
+            numero = EXCLUDED.numero,
+            activo = EXCLUDED.activo
         RETURNING *;
-        `;
+      `;
 
-    const valores = [
-      objeto.id_persona,
-      objeto.id_tipo_documento,
-      objeto.numero,
-      objeto.activo,
-      fecha_alta, //LOCALTIMESTAMP,                  // Fecha alta
-      objeto.usuario_sistema, // Usuario alta
-    ];
+      const valores = [
+        objeto.id_persona,
+        objeto.id_tipo_documento,
+        objeto.numero,
+        objeto.activo || 'S',
+        fecha_alta,
+        objeto.usuario_sistema,
+      ];
 
-    try {
-      await pool.query("BEGIN");
       const resultado = await pool.query(query, valores);
       await pool.query("COMMIT");
       return resultado.rows;
@@ -478,6 +500,7 @@ async getAllWithFilters(filtros = {}) {
     }
   }
 
+  
   //ALTA
   async createPerson(objeto) {
     // Formato estándar de base de datos sin offset de zona horaria
